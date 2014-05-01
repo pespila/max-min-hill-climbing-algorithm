@@ -1,0 +1,23 @@
+\beamer@endinputifotherversion {3.10pt}
+\beamer@sectionintoc {1}{Introduction}{2}{0}{1}
+\beamer@subsectionintoc {1}{1}{Learning a graph and its structure}{3}{0}{1}
+\beamer@sectionintoc {2}{Graph theory - Part I}{4}{0}{2}
+\beamer@subsectionintoc {2}{1}{DAG (directed acyclic graph)}{5}{0}{2}
+\beamer@subsectionintoc {2}{2}{Bayesian Network}{6}{0}{2}
+\beamer@sectionintoc {3}{Probability theory}{7}{0}{3}
+\beamer@subsectionintoc {3}{1}{Independence and Conditional Probability}{8}{0}{3}
+\beamer@subsectionintoc {3}{2}{Conditional Independence}{10}{0}{3}
+\beamer@sectionintoc {4}{Graph theory - Part II}{11}{0}{4}
+\beamer@subsectionintoc {4}{1}{Markow Condition}{12}{0}{4}
+\beamer@subsectionintoc {4}{2}{Collider}{13}{0}{4}
+\beamer@subsectionintoc {4}{3}{A blocked path}{14}{0}{4}
+\beamer@sectionintoc {5}{Statistics}{21}{0}{5}
+\beamer@subsectionintoc {5}{1}{$G^{2}$}{23}{0}{5}
+\beamer@subsectionintoc {5}{2}{$\chi ^{2}$ distribution}{24}{0}{5}
+\beamer@subsectionintoc {5}{3}{$\chi ^{2}$ distribution}{25}{0}{5}
+\beamer@subsectionintoc {5}{4}{$\chi ^{2}$ distribution}{26}{0}{5}
+\beamer@subsectionintoc {5}{5}{$\chi ^{2}$ distribution}{27}{0}{5}
+\beamer@sectionintoc {6}{Computational properties}{28}{0}{6}
+\beamer@subsectionintoc {6}{1}{The MMHC}{29}{0}{6}
+\beamer@sectionintoc {7}{Example}{33}{0}{7}
+\beamer@subsectionintoc {7}{1}{A practical example}{33}{0}{7}

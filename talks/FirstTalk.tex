@@ -274,10 +274,40 @@
 			\begin{frame}
 				\begin{center}
 					\begin{figure}
-						\includegraphics[scale=0.75]{chi}
-							\tiny{
-								\url{http://www.medcalc.org/manual/_help/images/chi-sq_curve.png}
-							}
+						\includegraphics[scale=0.4,angle=270]{chi1}
+					\end{figure}
+				\end{center}
+			\end{frame}
+		\end{center}
+
+	\subsection{$\chi^{2}$ distribution}
+		\begin{center}
+			\begin{frame}
+				\begin{center}
+					\begin{figure}
+						\includegraphics[scale=0.4,angle=270]{chi2}
+					\end{figure}
+				\end{center}
+			\end{frame}
+		\end{center}
+
+	\subsection{$\chi^{2}$ distribution}
+		\begin{center}
+			\begin{frame}
+				\begin{center}
+					\begin{figure}
+						\includegraphics[scale=0.4,angle=270]{chi3}
+					\end{figure}
+				\end{center}
+			\end{frame}
+		\end{center}
+
+	\subsection{$\chi^{2}$ distribution}
+		\begin{center}
+			\begin{frame}
+				\begin{center}
+					\begin{figure}
+						\includegraphics[scale=0.4,angle=270]{chi4}
 					\end{figure}
 				\end{center}
 			\end{frame}
@@ -308,91 +338,105 @@
 \section{Example}
 	\subsection{A practical example}
 		\begin{frame}
-				$
-					\psmatrix[colsep=0.5cm,rowsep=0.5cm,mnode=circle]
-					1&Difficulty&&Intelligence&2\\
-					&3&Grade&&SAT\\
-					&&Letter&4 \\
-					&&5
-					\ncline{->}{1,2}{2,3}
-					\ncline{->}{1,4}{2,3}
-					\ncline{->}{1,4}{2,5}
-					\ncline{->}{2,3}{3,3}
-					\endpsmatrix
-				$
+			\begin{small}
+				\begin{psmatrix}[emnode=r,colsep=0.5cm,rowsep=0.6cm,mnodesize=2cm]
+					[name=Tdiff]
+						\begin{tabular}{|c|c|}
+							\hline
+							$\textbf{d}^{0}$ & $\textbf{d}^{1}$ \\
+							\hline	0.6 & 0.4  \\
+							\hline
+							\end{tabular}
+					&[name=Diff,mnode=circle]
+						Difficulty
+					&
+					&[name=Intell,mnode=circle]
+						Intelligence
+					&[name=TInt]
+						\begin{tabular}{|c|c|}
+							\hline
+							$\textbf{i}^{0}$ & $\textbf{i}^{1}$ \\
+							\hline 0.7 & 0.3  \\
+							\hline 
+						\end{tabular}
+					\\
+					[name=TGrade]
+						\begin{tabular}{|c|c|c|c|}
+							\hline
+							& $\textbf{g}^{1}$ & $\textbf{g}^{2}$ & $\textbf{g}^{3}$ \\
+							\hline
+							$\textbf{i}^{0}$,$\textbf{d}^{0}$ & 0.3 & 0.4 & 0.3  \\
+							\hline
+							$\textbf{i}^{0}$,$\textbf{d}^{1}$ & 0.05 & 0.25 & 0.7  \\
+							\hline
+							$\textbf{i}^{1}$,$\textbf{d}^{0}$ & 0.9 & 0.08 & 0.02  \\
+							\hline
+							$\textbf{i}^{1}$,$\textbf{d}^{1}$ & 0.5 & 0.3 & 0.2  \\
+							\hline
+						\end{tabular}
+					&
+					&[name=Grade,mnode=circle]Grade
+					&
+					&[name=SAT,mnode=circle]SAT
+					\\
+					[name=Tlet]
+						\begin{tabular}{|c|c|c|}
+							\hline
+							& $\textbf{l}^{0}$ & $\textbf{l}^{1}$ \\
+							\hline
+							$\textbf{g}^{1}$ & 0.95 & 0.05  \\
+							\hline
+							$\textbf{g}^{2}$ & 0.2 & 0.8  \\
+							\hline
+							$\textbf{g}^{3}$ & 0.2 & 0.8  \\
+							\hline
+						\end{tabular}
+					&
+					&[name=Let,mnode=circle]Letter
+					&[name=TSAT]
+						\begin{tabular}{|c|c|c|}
+							\hline
+							& $\textbf{s}^{0}$ & $\textbf{s}^{1}$ \\
+							\hline
+							$\textbf{i}^{0}$ & 0.95 & 0.05  \\
+							\hline
+							$\textbf{i}^{1}$ & 0.2 & 0.8  \\
+							\hline
+						\end{tabular}
+					&
+					% \\
+					% &[name=Tlet]
+					% 	\begin{tabular}{|c|c|c|}
+					% 		\hline
+					% 		& $\textbf{l}^{0}$ & $\textbf{l}^{1}$ \\
+					% 		\hline
+					% 		$\textbf{g}^{1}$ & 0.95 & 0.05  \\
+					% 		\hline
+					% 		$\textbf{g}^{2}$ & 0.2 & 0.8  \\
+					% 		\hline
+					% 		$\textbf{g}^{3}$ & 0.2 & 0.8  \\
+					% 		\hline
+					% 	\end{tabular}
+					% &
+					% &
+					% &
+				\end{psmatrix}
+			\end{small}
+				\psset{nodesep=1pt,arrows=->}
+				\ncline{Diff}{Grade}
+				\ncline{Intell}{Grade}
+				\ncline{Intell}{SAT}
+				\ncline{Grade}{Let}
+				\psset{nodesep=6pt,arrows=-}
+				\ncline{Tdiff}{Diff}
+				\ncline{TInt}{Intell}
+				\ncline{TSAT}{SAT}
+				\ncline{TGrade}{Grade}
+				\ncline{Tlet}{Let}
+			% \ncline{A}{B} \ncline{A}{C} 
+			% \ncline{A}{D} 
 		\end{frame}
 
-\section{Abschnitt Nr.3} 
-\subsection{Tabellen}
-\begin{frame}\frametitle{Tabellen}
-	\begin{tabular}{|c|c|}
-	\hline
-	$\textbf{d}^{0}$ & $\textbf{d}^{1}$ \\
-	\hline
-	0.6 & 0.4  \\
-	\hline
-	\end{tabular}
-\end{frame}
-
-\section{Abschnitt Nr.3} 
-\subsection{Tabellen}
-\begin{frame}\frametitle{Tabellen}
-	\begin{tabular}{|c|c|}
-	\hline
-	$\textbf{i}^{0}$ & $\textbf{i}^{1}$ \\
-	\hline
-	0.7 & 0.3  \\
-	\hline
-	\end{tabular}
-\end{frame}
-
-\section{Abschnitt Nr.3} 
-\subsection{Tabellen}
-\begin{frame}\frametitle{Tabellen}
-	\begin{tabular}{|c|c|c|}
-	\hline
-	& $\textbf{s}^{0}$ & $\textbf{s}^{1}$ \\
-	\hline
-	$\textbf{i}^{0}$ & 0.95 & 0.05  \\
-	\hline
-	$\textbf{i}^{1}$ & 0.2 & 0.8  \\
-	\hline
-	\end{tabular}
-\end{frame}
-
-\section{Abschnitt Nr.3} 
-\subsection{Tabellen}
-\begin{frame}\frametitle{Tabellen}
-	\begin{tabular}{|c|c|c|}
-	\hline
-	& $\textbf{l}^{0}$ & $\textbf{l}^{1}$ \\
-	\hline
-	$\textbf{g}^{1}$ & 0.95 & 0.05  \\
-	\hline
-	$\textbf{g}^{2}$ & 0.2 & 0.8  \\
-	\hline
-	$\textbf{g}^{3}$ & 0.2 & 0.8  \\
-	\hline
-	\end{tabular}
-\end{frame}
-
-\section{Abschnitt Nr.3} 
-\subsection{Tabellen}
-\begin{frame}\frametitle{Tabellen}
-	\begin{tabular}{|c|c|c|c|}
-	\hline
-	& $\textbf{g}^{1}$ & $\textbf{g}^{2}$ & $\textbf{g}^{3}$ \\
-	\hline
-	$\textbf{i}^{0}$,$\textbf{d}^{0}$ & 0.3 & 0.4 & 0.3  \\
-	\hline
-	$\textbf{i}^{0}$,$\textbf{d}^{1}$ & 0.05 & 0.25 & 0.7  \\
-	\hline
-	$\textbf{i}^{1}$,$\textbf{d}^{0}$ & 0.9 & 0.08 & 0.02  \\
-	\hline
-	$\textbf{i}^{1}$,$\textbf{d}^{1}$ & 0.5 & 0.3 & 0.2  \\
-	\hline
-	\end{tabular}
-\end{frame}
 
 % \section{Abschnitt Nr. 5}
 % \subsection{Geteilter Bildschirm}
