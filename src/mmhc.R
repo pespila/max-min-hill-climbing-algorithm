@@ -1,7 +1,7 @@
 if(!("Rcpp" %in% rownames(installed.packages()))) install.packages("Rcpp")
 
 library("Rcpp")
-sourceCpp("mmpc.cpp");
+sourceCpp("mmhc.cpp");
 
 MMPC <- function() UseMethod("MMPC")
 
@@ -37,19 +37,19 @@ MMPC.Cardinality <- function(observedMatrix) {
     return (Df)
 }
 
-MMPC.DegreesOfFreedom <- function(Df,target,selected,subset) {
-    out <- (Df[target]-1)*(Df[selected]-1)
-    if(length(subset)==1) {
-        out <- out*Df[subset]
-    } else {
-        for (i in 1:length(subset)) {
-            out <- out*Df[subset[i]]
-        }
-    }
-    return (out)
-}
+# MMPC.DegreesOfFreedom <- function(Df,target,selected,subset) {
+#     out <- (Df[target]-1)*(Df[selected]-1)
+#     if(length(subset)==1) {
+#         out <- out*Df[subset]
+#     } else {
+#         for (i in 1:length(subset)) {
+#             out <- out*Df[subset[i]]
+#         }
+#     }
+#     return (out)
+# }
 
-MMPC.Main <- function(observedMatrix,target,selected,subset) {
+MMPC.Statistic <- function(observedMatrix,target,selected,subset) {
     out <- 0
     ABCvec <- observedMatrix[1,c(target,selected,subset)]
     ACvec <- ABCvec[c(1,3:length(ABCvec))]
@@ -84,9 +84,10 @@ MMPC.Main <- function(observedMatrix,target,selected,subset) {
 
 MMPC.Pvalue <- function(a,b,c) {
     tmp <- MMPC.Example(1000)
-    statistic <- MMPC.Main(tmp,a,b,c)
+    statistic <- MMPC.Statistic(tmp,a,b,c)
     df <- MMPC.Cardinality(tmp)
-    df <- MMPC.DegreesOfFreedom(df,a,b,c)
+    df <- Df(df,a,b,c)
+    # df <- MMPC.DegreesOfFreedom(df,a,b,c)
     out <- pchisq(statistic, df, lower.tail = FALSE)
     return (out)
 }
