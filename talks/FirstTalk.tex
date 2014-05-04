@@ -11,7 +11,7 @@
 \usepackage{pst-bar,pst-plot,pstricks-add}
 \usepackage{graphics,graphicx}
 \usepackage{pstricks,pst-node,pst-tree}
-\setbeameroption{show notes}
+% \setbeameroption{show notes}
 \setcounter{tocdepth}{1}
 
 \setbeamertemplate{navigation symbols}{}
@@ -20,133 +20,46 @@
 \usecolortheme{seahorse}
 
 \begin{document}
-\title{The max-min-hill-climbing algorithm}  
-\author[M. Bauer]{Michael Bauer}
-\institute[M.Sc. Comp. Science]{M.Sc. Comp. Science}
-\date{\today}
+	\title{The max-min-hill-climbing algorithm}  
+	\author[M. Bauer]{Michael Bauer}
+	\institute[M.Sc. Comp. Science]{M.Sc. Comp. Science}
+	\date{\today}
+
 
 \begin{frame}
-\titlepage
-\end{frame} 
+	\titlepage
+\end{frame}
+\note{
+	\begin{itemize}
+		\item the max-min part is a constrained-based part
+		\item hill-climbing is a greedy (local) search
+	\end{itemize}
+}
 
-% \begin{frame}
-% \tableofcontents
-% \end{frame} 
-
-% \section{Introduction}
-% 	\subsection{A practical example}
-% 		\begin{frame}
-% 			\begin{small}
-% 				\begin{psmatrix}[emnode=r,colsep=0.5cm,rowsep=0.6cm,mnodesize=2cm]
-% 					[name=Tdiff]
-% 						\begin{tabular}{|c|c|}
-% 							\hline
-% 							$\textbf{d}^{0}$ & $\textbf{d}^{1}$ \\
-% 							\hline	0.6 & 0.4  \\
-% 							\hline
-% 							\end{tabular}
-% 					&[name=Diff,mnode=circle]
-% 						Difficulty
-% 					&
-% 					&[name=Intell,mnode=circle]
-% 						Intelligence
-% 					&[name=TInt]
-% 						\begin{tabular}{|c|c|}
-% 							\hline
-% 							$\textbf{i}^{0}$ & $\textbf{i}^{1}$ \\
-% 							\hline 0.7 & 0.3  \\
-% 							\hline 
-% 						\end{tabular}
-% 					\\
-% 					[name=TGrade]
-% 						\begin{tabular}{|c|c|c|c|}
-% 							\hline
-% 							& $\textbf{g}^{1}$ & $\textbf{g}^{2}$ & $\textbf{g}^{3}$ \\
-% 							\hline
-% 							$\textbf{i}^{0}$,$\textbf{d}^{0}$ & 0.3 & 0.4 & 0.3  \\
-% 							\hline
-% 							$\textbf{i}^{0}$,$\textbf{d}^{1}$ & 0.05 & 0.25 & 0.7  \\
-% 							\hline
-% 							$\textbf{i}^{1}$,$\textbf{d}^{0}$ & 0.9 & 0.08 & 0.02  \\
-% 							\hline
-% 							$\textbf{i}^{1}$,$\textbf{d}^{1}$ & 0.5 & 0.3 & 0.2  \\
-% 							\hline
-% 						\end{tabular}
-% 					&
-% 					&[name=Grade,mnode=circle]Grade
-% 					&
-% 					&[name=SAT,mnode=circle]SAT
-% 					\\
-% 					[name=Tlet]
-% 						\begin{tabular}{|c|c|c|}
-% 							\hline
-% 							& $\textbf{l}^{0}$ & $\textbf{l}^{1}$ \\
-% 							\hline
-% 							$\textbf{g}^{1}$ & 0.95 & 0.05  \\
-% 							\hline
-% 							$\textbf{g}^{2}$ & 0.2 & 0.8  \\
-% 							\hline
-% 							$\textbf{g}^{3}$ & 0.2 & 0.8  \\
-% 							\hline
-% 						\end{tabular}
-% 					&
-% 					&[name=Let,mnode=circle]Letter
-% 					&[name=TSAT]
-% 						\begin{tabular}{|c|c|c|}
-% 							\hline
-% 							& $\textbf{s}^{0}$ & $\textbf{s}^{1}$ \\
-% 							\hline
-% 							$\textbf{i}^{0}$ & 0.95 & 0.05  \\
-% 							\hline
-% 							$\textbf{i}^{1}$ & 0.2 & 0.8  \\
-% 							\hline
-% 						\end{tabular}
-% 					&		
-% 				\end{psmatrix}
-% 			\end{small}
-% 				\psset{nodesep=1pt,arrows=->}
-% 				\ncline{Diff}{Grade}
-% 				\ncline{Intell}{Grade}
-% 				\ncline{Intell}{SAT}
-% 				\ncline{Grade}{Let}
-% 				\psset{nodesep=6pt,arrows=-}
-% 				\ncline{Tdiff}{Diff}
-% 				\ncline{TInt}{Intell}
-% 				\ncline{TSAT}{SAT}
-% 				\ncline{TGrade}{Grade}
-% 				\ncline{Tlet}{Let}
-% 		\end{frame}
 
 \section{Introduction}
 	\subsection{Introduction}
 		\begin{frame}
+			\begin{center}
 				$
 					\psmatrix[colsep=1.2cm,rowsep=1cm,mnode=circle]
-					&Difficulty&&Intelligence\\
-					&&Grade&&SAT\\
-					&&Letter
+					Difficulty&&Intelligence\\
+					&Grade\\
 					\endpsmatrix
 				$
+			\end{center}
 		\end{frame}
+	\note{
+		\begin{itemize}
+			\item What is the algorithm about?
+			\item Why do we need it?
+			\item Where do I start from?
+			\item having a matrix (dataframe in R) with observed date which follow probabilistic distributions
+			\item talk about picture
+		\end{itemize}
+	}
 
 \section{Probability theory}
-	% \subsection{Independence and Conditional Probability}
-	% 	\begin{frame}
-	% 		\frametitle{Reminder}
-	% 		\begin{block}{Definition (Independence)}
-	% 			Let $A$, $B$ denote random variables. Then $A$ and $B$ are independent iff
-	% 				\begin{equation}
-	% 					P(A \cap B) = P(A)*P(B).
-	% 				\end{equation}
-	% 		\end{block}
-	% 		\begin{block}{Definition (Conditional Probability)}
-	% 			Let $A$, $B$ denote random variables and $P(B) > 0$. The probability of $A$ given $B$ is defined as:
-	% 				\begin{equation}
-	% 					P(A | B) = \frac{P(A \cap B)}{P(B)}.
-	% 				\end{equation}
-	% 		\end{block}
-	% 	\end{frame}
-	
 	\subsection{Conditional Independence}
 		\begin{frame}
 			\begin{block}{Definition (Conditional Independence)}
@@ -162,28 +75,43 @@
 				where $Assoc(X;Y|\textbf{Z})$ is the strength association (dependency) of $X$ and $Y$ given $\textbf{Z}$.
 			\end{block}
 		\end{frame}
+	\note{
+		\begin{itemize}
+			\item \underline{Independence:} coin toss; is a useful concept but not common. Most of the time two events are independent given an additional event
+			\item \underline{conditional probability:} pick a student -> intelligence -> grade
+			\item \underline{conditional independence:}
+			\begin{itemize}
+				\item say admitted to Google, admitted to Apple
+				\item in most reasonable distributions these two events are not independent
+				\item assume they base their decision only on the grade
+				\item we assume that (pick one) student has grade A
+				\item the grade holds the relevant information
+				\item Google is conditional independent of Apple given grade A
+			\end{itemize}
+			\item \underline{Assoc:} Do not forget about Assoc -> Min and Max
+		\end{itemize}
+	}
 
-\section{Statistics}
-	\subsection{The $G^{2}$ value}
+	\subsection{Graph for example}
 		\begin{frame}
-			\begin{block}{Definition}
-				We calculate the $G^{2}$ value under the nullhypothesis of the conditional independence of $Ind_{P}(X_{i},X_{j}|\textbf{X}_{k})$ holding. Then, the $G^{2}$ value is defined as:
-				\begin{equation}
-					G^{2} := 2 * \sum_{a,b,c} S^{ab\textbf{c}}_{ijk} * ln \left( \frac{S^{ab\textbf{c}}_{ijk}*S^{\textbf{c}}_{k}}{S^{a\textbf{c}}_{ik}*S^{b\textbf{c}}_{jk}} \right)
-				\end{equation}
-			\end{block}
+			\begin{center}
+				$
+					\psmatrix[colsep=1.2cm,rowsep=1cm,mnode=circle]
+					&Grade\\
+					Google&&Apple\\
+					\endpsmatrix
+					\ncline{->}{1,2}{2,1}
+					\ncline{->}{1,2}{2,3}
+				$
+			\end{center}
 		\end{frame}
-	
-	\subsection{$\chi^{2}$ and hypothesis testing}
-		\begin{center}
-			\begin{frame}
-				\begin{center}
-					\begin{figure}
-						\includegraphics[scale=0.4,angle=270]{img/chi}
-					\end{figure}
-				\end{center}
-			\end{frame}
-		\end{center}
+	\note{
+		\begin{itemize}
+			\item DAG
+			\item vertice - random variable
+			\item edge - follow probability distributions
+		\end{itemize}
+	}
 
 \section{Graph theory}
 	\subsection{Bayesian Network}
@@ -202,28 +130,13 @@
 				$
 		\end{frame}
 
-	\subsection{Collider}
-		\begin{frame}
-			\frametitle{Collider}
-			\begin{center}
-				$
-					\psmatrix[colsep=1.2cm,rowsep=1cm,mnode=circle]
-					X&[fillstyle=solid,fillcolor=orange]V&Z
-					\ncline{->}{1,1}{1,2}
-					\ncline{->}{1,3}{1,2}
-					\endpsmatrix
-				$
-			\end{center}
-		\end{frame}
-
 	\subsection{Blocked paths}
 		\begin{frame}
-			\frametitle{Blocked paths}
-			\begin{block}{Define four sets}
+			\frametitle{Blocked paths \& d-seperation}
+			\begin{block}{Define three sets}
 				\begin{center}
 					Let $A_{1}$, $A_{2}$ and $A_{3}$ denote sets with:
 					\begin{eqnarray}
-						% Z_{1} &=& \{ \emptyset \} \notag \\
 						A_{1} &=& \{W\} \notag \\
 						A_{2} &=& \{R, V\} \notag \\
 						A_{3} &=& \{R, P\} \notag
@@ -231,17 +144,24 @@
 				\end{center}
 			\end{block}
 		\end{frame}
+	\note{
+		A path from X to Y is blocked by a set of nodes A if there is a node P on the path holding one of the following two conditions:
+		\begin{itemize}
+			\item P is not a collider and P is not in A or
+			\item P is a collider and neither P or one of its descendants are in A.
+		\end{itemize}
+	}
 
 		\begin{frame}
-			% \begin{center}
-			% 	$
-			% 		\psmatrix[colsep=1.0cm,rowsep=1cm,mnode=circle]
-			% 		X&W&Y
-			% 		\ncline{->}{1,1}{1,2}
-			% 		\ncline{->}{1,3}{1,2}
-			% 		\endpsmatrix
-			% 	$ \pause \pause
-			% \end{center}
+			\begin{center}
+				$
+					\psmatrix[colsep=1.2cm,rowsep=1cm,mnode=circle]
+					X&C&Y
+					\ncline{->}{1,1}{1,2}
+					\ncline{->}{1,3}{1,2}
+					\endpsmatrix
+				$
+			\end{center}
 			\begin{center}
 				$
 					\psmatrix[colsep=1.0cm,rowsep=1cm,mnode=circle]
@@ -249,7 +169,7 @@
 					\ncline{->}{1,1}{1,2}
 					\ncline{->}{1,3}{1,2}
 					\endpsmatrix
-				$ \pause \pause
+				$
 			\end{center}
 			\begin{center}
 				$
@@ -262,7 +182,7 @@
 					\ncline{->}{1,6}{1,5}
 					\ncline{->}{1,5}{1,4}
 					\endpsmatrix
-				$ \pause \pause
+				$
 			\end{center}
 			\begin{center}
 				$
@@ -306,118 +226,9 @@
 			\end{frame}
 		\end{center}
 
-	% \subsection{Recall the first example}
-	% 	\begin{frame}
-	% 		\begin{small}
-	% 			\begin{psmatrix}[emnode=r,colsep=0.5cm,rowsep=0.6cm,mnodesize=2cm]
-	% 				[name=Tdiff]
-	% 					\begin{tabular}{|c|c|}
-	% 						\hline
-	% 						$\textbf{d}^{0}$ & $\textbf{d}^{1}$ \\
-	% 						\hline	0.6 & 0.4  \\
-	% 						\hline
-	% 						\end{tabular}
-	% 				&[name=Diff,mnode=circle]
-	% 					Difficulty
-	% 				&
-	% 				&[name=Intell,mnode=circle]
-	% 					Intelligence
-	% 				&[name=TInt]
-	% 					\begin{tabular}{|c|c|}
-	% 						\hline
-	% 						$\textbf{i}^{0}$ & $\textbf{i}^{1}$ \\
-	% 						\hline 0.7 & 0.3  \\
-	% 						\hline 
-	% 					\end{tabular}
-	% 				\\
-	% 				[name=TGrade]
-	% 					\begin{tabular}{|c|c|c|c|}
-	% 						\hline
-	% 						& $\textbf{g}^{1}$ & $\textbf{g}^{2}$ & $\textbf{g}^{3}$ \\
-	% 						\hline
-	% 						$\textbf{i}^{0}$,$\textbf{d}^{0}$ & 0.3 & 0.4 & 0.3  \\
-	% 						\hline
-	% 						$\textbf{i}^{0}$,$\textbf{d}^{1}$ & 0.05 & 0.25 & 0.7  \\
-	% 						\hline
-	% 						$\textbf{i}^{1}$,$\textbf{d}^{0}$ & 0.9 & 0.08 & 0.02  \\
-	% 						\hline
-	% 						$\textbf{i}^{1}$,$\textbf{d}^{1}$ & 0.5 & 0.3 & 0.2  \\
-	% 						\hline
-	% 					\end{tabular}
-	% 				&
-	% 				&[name=Grade,mnode=circle]Grade
-	% 				&
-	% 				&[name=SAT,mnode=circle]SAT
-	% 				\\
-	% 				[name=Tlet]
-	% 					\begin{tabular}{|c|c|c|}
-	% 						\hline
-	% 						& $\textbf{l}^{0}$ & $\textbf{l}^{1}$ \\
-	% 						\hline
-	% 						$\textbf{g}^{1}$ & 0.95 & 0.05  \\
-	% 						\hline
-	% 						$\textbf{g}^{2}$ & 0.2 & 0.8  \\
-	% 						\hline
-	% 						$\textbf{g}^{3}$ & 0.2 & 0.8  \\
-	% 						\hline
-	% 					\end{tabular}
-	% 				&
-	% 				&[name=Let,mnode=circle]Letter
-	% 				&[name=TSAT]
-	% 					\begin{tabular}{|c|c|c|}
-	% 						\hline
-	% 						& $\textbf{s}^{0}$ & $\textbf{s}^{1}$ \\
-	% 						\hline
-	% 						$\textbf{i}^{0}$ & 0.95 & 0.05  \\
-	% 						\hline
-	% 						$\textbf{i}^{1}$ & 0.2 & 0.8  \\
-	% 						\hline
-	% 					\end{tabular}
-	% 				&		
-	% 			\end{psmatrix}
-	% 		\end{small}
-	% 			\psset{nodesep=1pt,arrows=-}
-	% 			\ncline{Diff}{Grade}
-	% 			\ncline{Intell}{Grade}
-	% 			\ncline{Intell}{SAT}
-	% 			\ncline{Grade}{Let}
-	% 			\psset{nodesep=6pt,arrows=-}
-	% 			\ncline{Tdiff}{Diff}
-	% 			\ncline{TInt}{Intell}
-	% 			\ncline{TSAT}{SAT}
-	% 			\ncline{TGrade}{Grade}
-	% 			\ncline{Tlet}{Let}
-	% 	\end{frame}
-
 	\subsection{Thank you}
 		\begin{frame}
 			\begin{block}{\center{\Huge{Thanks for your attention!}}}\end{block}
 		\end{frame}
-
-% \section{Abschnitt Nr. 5}
-% \subsection{Geteilter Bildschirm}
-
-% \begin{frame}\frametitle{Zerteilen des Bildschirmes}
-% \begin{columns}
-% \begin{column}{5cm}
-% \begin{itemize}
-% \item Beamer 
-% \item Beamer Class 
-% \item Beamer Class Latex 
-% \end{itemize}
-% \end{column}
-% \begin{column}{5cm}
-% \begin{tabular}{|c|c|}
-% \hline
-% \textbf{Kursleiter} & \textbf{Titel} \\
-% \hline
-% Sascha Frank &  \LaTeX \ Kurs 1 \\
-% \hline
-% Sascha Frank & \LaTeX \ Kursreihe \\
-% \hline
-% \end{tabular}
-% \end{column}
-% \end{columns}
-% \end{frame}
 
 \end{document}
