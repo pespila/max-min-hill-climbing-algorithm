@@ -64,6 +64,14 @@ bool allC(SEXP s,SEXP t) {
 }
 
 // [[Rcpp::export]]
+DataFrame DaFr(SEXP data) {
+	DataFrame frame(data);
+	NumericVector out;
+	out.push_back(0);
+	return frame;
+}
+
+// [[Rcpp::export]]
 NumericVector Test(SEXP a,SEXP X,int type=1) {
 	NumericVector out;
 	out.push_back(0);
