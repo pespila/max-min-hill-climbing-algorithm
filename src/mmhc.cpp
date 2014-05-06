@@ -4,30 +4,6 @@
 #include <R.h>
 using namespace Rcpp;
 
-// [[Rcpp::export]]
-NumericVector Sabc(NumericMatrix A,NumericVector x) {
-	int n=A.nrow(),m=A.ncol(),S_abc=0,S_abc_tmp=0;
-	NumericVector out;
-	out.push_back(0);
-	#pragma omp parallel
-	{
-		#pragma omp for
-		for (int i = 0; i < n; i++)
-		{
-			S_abc_tmp=0;
-			for (int j = 0; j < m; j++)
-			{
-				if(x[j]==A(i,j)) S_abc_tmp++;
-			}
-			if(S_abc_tmp==m) {
-				out[0]++;
-				out.push_back((-1)*(i+1));
-			}
-		}
-	}
-	return out;
-}
-
 bool allCpp(NumericVector& x,NumericVector& y) {
 	bool out=TRUE;
 	if(x.size()!=y.size()) out=FALSE;
@@ -61,14 +37,6 @@ bool allC(SEXP s,SEXP t) {
 			if(x[i]!=y[i]) {out=FALSE;break;}
 	}
 	return out;
-}
-
-// [[Rcpp::export]]
-DataFrame DaFr(SEXP data) {
-	DataFrame frame(data);
-	NumericVector out;
-	out.push_back(0);
-	return frame;
 }
 
 // [[Rcpp::export]]
@@ -111,26 +79,15 @@ NumericVector Test(SEXP a,SEXP X,int type=1) {
 }
 
 // [[Rcpp::export]]
-bool Proof(NumericVector x, NumericVector y) {
-	// NumericVector out(x);
-	// if(x==y) out=1;
-	// else out=0;
-	return is_true(any(x==y));
-}
-
-// [[Rcpp::export]]
-int Df(NumericVector DfSet,int target,int selected,NumericVector subset) {
+int Df(NumericVector DfSet) {
 	int df;
-	df=(DfSet[target-1]-1)*(DfSet[selected-1]-1);
-	if(subset.size()==1) df*=DfSet[subset[0]-1];
-	else {
-		#pragma omp parallel
+	df=(DfSet[0]-1)*(DfSet[1]-1);
+	#pragma omp parallel
+	{
+		#pragma omp for 
+		for (int i = 2; i < DfSet.size(); i++)
 		{
-			#pragma omp for 
-			for (int i = 0; i < subset.size(); i++)
-			{
-				df*=DfSet[subset[i]-1];
-			}
+			df*=DfSet[i];
 		}
 	}
 	return df;
