@@ -83,8 +83,12 @@ double Statistic(SEXP x, SEXP y, SEXP z) {
 							count[1]++;
 						if(allC(v,u,0))
 							count[2]++;
-						if(allC(v,u,-2))
-							count[3]++;
+						if(v.size() == n) 
+							count[3] = n;
+						else {
+							if(allC(v,u,-2))
+								count[3]++;
+						}
 					}
 					sum[0] += 2 * count[0] * log( ( count[0] * count[3] ) / ( count[1] * count[2] ) );
 				}
