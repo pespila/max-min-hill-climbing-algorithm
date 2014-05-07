@@ -2,7 +2,7 @@
 # For any questions send me an email via michael1.bauer@stud.uni-r.de
 # File description comment, including purpose of program, inputs and outputs
 
-Example <- function(rows, cols = 6, char = TRUE) {
+Example <- function(rows, cols = 5, char = TRUE) {
   binary <- c()
   trinary <- c()
   if(char) {
@@ -12,11 +12,11 @@ Example <- function(rows, cols = 6, char = TRUE) {
     binary <- c(0, 1)
     trinary <- c(1, 2, 3)
   }
-  dimnames <- list(c(), c("difficulty", "intelligence", "SAT", "grade", "letter", "prop"))
+  dimnames <- list(c(), c("difficulty", "intelligence", "SAT", "grade", "letter"))#, "prop"))
   studentMatrix <- matrix(, rows, cols, dimnames = dimnames)
   student <- data.frame(studentMatrix, check.names = FALSE)
-  cardinality <- c(2, 2, 2, 3, 2, sample(0, (rows - 5), replace = TRUE))
-  student$prop <- cardinality
+  # cardinality <- c(2, 2, 2, 3, 2, sample(0, (rows - 5), replace = TRUE))
+  # student$prop <- cardinality
   student$difficulty <- sample(binary, rows, replace = TRUE, prob = c(0.6, 0.4))
   student$intelligence <- sample(binary, rows, replace = TRUE, prob = c(0.7, 0.3))
   n <- 1
