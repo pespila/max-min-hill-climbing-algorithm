@@ -49,11 +49,10 @@ Run <- function(mat) {
 }
 
 tempo <- as.matrix(Example(100, char=FALSE))
-
-bench <- function(tmp) {
-    Statistic(tmp, unique(tmp))
-}
-
-a<-benchmark(Run(tempo),replications=1)
-x<-benchmark(bench(tempo),replications=29)
-y<-benchmark(Cardinality(tempo),replications=1000)
+# u<-c(2,2,2,3,2)
+# a<-benchmark(Run(tempo),replications=1)
+v<-benchmark(Statistic(tempo[,c(1,2)], unique(tempo[,c(1,2)])),replications=29)
+x<-benchmark(Run(tempo),replications=1)
+# x<-benchmark(Df(u),replications=1000)
+# y<-benchmark(Cardinality(tempo),replications=1000)
+# z<-benchmark(allC(1:10,1:10),replications=1000)

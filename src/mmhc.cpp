@@ -2,7 +2,9 @@
 #include <omp.h>
 #include <Rinternals.h>
 #include <R.h>
+#include <vector>
 using namespace Rcpp;
+using namespace std;
 
 // bool allC(SEXP a, SEXP b, int del = -1) {
 // 	bool out = TRUE;
@@ -50,15 +52,19 @@ using namespace Rcpp;
 // 	return out;
 // }
 
+// [[Rcpp::export]]
 bool allC(SEXP a, SEXP b, int del = -1) {
 	bool out = TRUE;
-	NumericVector x(a), y(b);
-	if(x.size()!=y.size()) out=FALSE;
+	double *x = REAL(a), *y = REAL(b);
+	if(XLENGTH(a)!=XLENGTH(b)) out=FALSE;
 	else {
-		for (int i = 0; i < x.size(); i++) {
+		for (int i = 0; i < XLENGTH(a); i++) {
 			if(i == del) continue;
 			if(del == -2 && (i == 0 || i == 1)) continue;
-			if(x[i]!=y[i]) {out=FALSE;break;}
+			if(x[i]!=y[i]) {
+				out=FALSE;
+				break;
+			}
 		}
 	}
 	return out;
@@ -69,21 +75,26 @@ NumericVector Cardinality(SEXP x) {
 	NumericMatrix A(x);
 	NumericVector out;
 	int m = A.nrow(), n = A.ncol();
+	vector<double> count;
 
-	for (int i = 0; i < n; i++)
+	#pragma omp parallel
 	{
-		NumericVector count;
-		for (int j = 0; j < m; j++)
+		#pragma omp for collapse(2)
+		for (int i = 0; i < n; i++)
 		{
-			if(i == m)
-				count.push_back(A(i,j));
-			for (int k = 0; k < count.size(); k++)
+			for (int j = 0; j < m; j++)
 			{
-				if(A(i,j) != count[k])
+				if(i == m)
 					count.push_back(A(i,j));
+				for (int k = 0; k < count.size(); k++)
+				{
+					if(A(i,j) != count[k])
+						count.push_back(A(i,j));
+				}
 			}
+			out.push_back(count.size());
+			count.clear();
 		}
-		out.push_back(count.size());
 	}
 	return out;
 }
@@ -213,6 +224,17 @@ NumericVector Cardinality(SEXP x) {
 // }
 
 // [[Rcpp::export]]
+int Df(SEXP x) {
+	double *DfSet = REAL(x);
+	int df = (DfSet[0]-1)*(DfSet[1]-1);
+	for (int i = 2; i < XLENGTH(x); i++)
+	{
+		df*=DfSet[i];
+	}
+	return df;
+}
+
+// [[Rcpp::export]]
 double Statistic(SEXP x, SEXP y) {
 	int n, m;
 	NumericVector count(4,0.0);
@@ -228,7 +250,7 @@ double Statistic(SEXP x, SEXP y) {
 
 	#pragma omp parallel
 	{
-		#pragma omp for 
+		#pragma omp for collapse(2)
 		for (int i = 0; i < m; i++)
 		{
 			count[0] = count[1] = count[2] = count[3] = 0;
@@ -250,94 +272,52 @@ double Statistic(SEXP x, SEXP y) {
 	}
 
 	df = Cardinality(A);
-	
-	int DF = (df[0] - 1) * (df[1] - 1);
-
-	for (int i = 2; i < df.size(); i++)
-	{
-		DF *= df[i];
-	}
-
+	int DF = Df(df);
 	pvalue = pchisq(sum, DF, FALSE);
+	
 	return pvalue[0];
 }
 
 // [[Rcpp::export]]
-int S(SEXP a,SEXP X,int type=1) {
-	int out = 0;
-	if(type) {
-		NumericVector x(X);
-		NumericMatrix A(a);
-		NumericVector tmp(A.nrow());
+double Stats(SEXP x, SEXP y) {
+	int n, m;
+	NumericVector count(4,0.0);
+	NumericVector sum(1,0.0), pvalue(1,0.0);
+	NumericVector df;
+	
+	NumericMatrix A(x);
+	NumericMatrix B(y);
+	n = A.nrow();
+	m = B.nrow();
+	NumericVector u;
+	NumericVector v;
 
-		int n=A.nrow(),m=A.ncol();
-		#pragma omp parallel
-		{
-			#pragma omp for
-			for (int i = 0; i < n; i++)
-			{
-				tmp=A.row(i);
-				if(allC(x,tmp))
-					out++;
-			}
-		}
-	}
-	else {
-		CharacterVector x(X);
-		CharacterMatrix A(a);
-		CharacterVector tmp(A.nrow());
-
-		int n=A.nrow(),m=A.ncol();
-		#pragma omp parallel
-		{
-			#pragma omp for
-			for (int i = 0; i < n; i++)
-			{
-				tmp=A.row(i);
-				if(allC(x,tmp))
-					out++;
-			}
-		}
-	}
-	return out;
-}
-
-// // [[Rcpp::export]]
-// NumericVector Run(SEXP x,SEXP y) {
-// 	CharacterMatrix A(x);
-// 	CharacterMatrix B(y);
-// 	CharacterVector tmpOrig;
-// 	CharacterVector tmpUniqu;
-// 	NumericVector out(B.nrow());
-
-// 	#pragma omp parallel
-// 	{
-// 		#pragma omp for
-// 		for (int i = 0; i < B.nrow(); i++)
-// 		{
-// 			for (int j = 0; j < A.nrow(); j++)
-// 			{
-// 				tmpOrig = A.row(j);
-// 				tmpUniqu = B.row(i);
-// 				if (allCp(tmpOrig, tmpUniqu))
-// 					out[i]++;
-// 			}
-// 		}
-// 	}
-// 	return out;
-// }
-
-// [[Rcpp::export]]
-int Df(NumericVector DfSet) {
-	int df;
-	df=(DfSet[0]-1)*(DfSet[1]-1);
 	#pragma omp parallel
 	{
-		#pragma omp for 
-		for (int i = 2; i < DfSet.size(); i++)
+		#pragma omp for collapse(2)
+		for (int i = 0; i < m; i++)
 		{
-			df*=DfSet[i];
+			count[0] = count[1] = count[2] = count[3] = 0;
+			u = B.row(i);
+			for (int j = 0; j < n; j++)
+			{
+				v = A.row(j);
+				if(allC(v,u))
+					count[0]++;
+				if(allC(v,u,1))
+					count[1]++;
+				if(allC(v,u,0))
+					count[2]++;
+				if(allC(v,u,-2))
+					count[3]++;
+			}
+			sum[0] += 2 * count[0] * log( ( count[0] * count[3] ) / ( count[1] * count[2] ) );
 		}
 	}
-	return df;
+
+	df = Cardinality(A);
+	int DF = Df(df);
+	pvalue = pchisq(sum, DF, FALSE);
+	
+	return pvalue[0];
 }
