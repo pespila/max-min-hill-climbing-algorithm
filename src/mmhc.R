@@ -15,21 +15,14 @@ sourceCpp("mmhc.cpp")
 source("mmhc_test.R")
 
 MaxMinHeuristic <- function(T, CPC, mat, card, iterate) {
-    reject <- c(0, 0)
-    accepted <- c()
+    reject <- c()
     for (X in iterate) {
-        print(c(X, T, CPC))
         statisticMatrix <- mat[, c(X, T, CPC)]
         pvalue <- Statistic(statisticMatrix, unique(statisticMatrix), card[c(X, T, CPC)])
         if (pvalue < 0.05) {
-            if (pvalue > reject[2]) {
-                reject <- c(X, pvalue)
-            }
-        } else {
-            accepted <- c(accepted, X)
+            reject <- c(reject, X)
         }
     }
-    reject <- c(reject, accepted)
     return (reject)
 }
 
@@ -38,25 +31,44 @@ MMPCtmp <- function(mat, card, T) {
     Fset <- c()
     iterate <- 1:dim(mat)[2]
     iterate <- iterate[!(iterate == T)]
-    tmp <- c()
 
     repeat {
-        tmp <- c()
         Fset <- MaxMinHeuristic(T, CPC[length(CPC)], mat, card, iterate)
-        iterate <- iterate[!(iterate == Fset[1])]
-        if (length(Fset) > 2) {
-            tmp <- Fset[3:length(Fset)]
-            iterate <- iterate[!(iterate == tmp)]
-        }
-        if (Fset[2] != 0) {
-            CPC <- c(CPC, Fset[1])
-        }
-        if (length(tmp) == 0) {
+        tmp <- which(Fset %in% iterate)
+        iterate <- iterate[-tmp]
+        CPC <- c(CPC, Fset)
+
+        if (length(which(CPC == Fset[1])) != 0) {
             break
         }
     }
     return (CPC)
 }
+
+# MMPCtmp <- function(mat, card, T) {
+#     CPC <- c()
+#     Fset <- c()
+#     iterate <- 1:dim(mat)[2]
+#     iterate <- iterate[!(iterate == T)]
+#     tmp <- c()
+
+#     repeat {
+#         tmp <- c()
+#         Fset <- MaxMinHeuristic(T, CPC[length(CPC)], mat, card, iterate)
+#         iterate <- iterate[!(iterate == Fset[1])]
+#         if (length(Fset) > 2) {
+#             tmp <- Fset[3:length(Fset)]
+#             iterate <- iterate[!(iterate == tmp)]
+#         }
+#         if (Fset[2] != 0) {
+#             CPC <- c(CPC, Fset[1])
+#         }
+#         if (length(tmp) == 0) {
+#             break
+#         }
+#     }
+#     return (CPC)
+# }
 
 ForwardPhase <- function(mat, card, dimMat = dim(mat)[2], alpha = 0.05) {
     cpc <- c()
@@ -149,12 +161,15 @@ BackwardPhase <- function(mat, cpc, card) {
     return (cpc)
 }
 
-tempo <- as.matrix(Example(1000, char=FALSE))
+tempo <- as.matrix(Example(100, char=FALSE))
 card <- c(2,2,2,3,2)
+iter <- 1:5
 for (i in 1:5) {
     print(MMPCtmp(tempo, card, i))
+    # x <- MaxMinHeuristic(i, NULL, tempo, card, iter)
+    # print(x)
 }
-# FWP <- ForwardPhase(tempo, card)
+FWP <- ForwardPhase(tempo, card)
 # BWP <- BackwardPhase(tempo, FWP, card)
 # test <- recursion(tempo, 1, 2:5)
 # bm <- benchmark(Run(tempo), RunI(tempo), replications = 100, columns = c("elapsed", "relative", "test"))
