@@ -60,6 +60,7 @@ bool allC(SEXP a, SEXP b, int del = -1) {
 	else {
 		for (int i = 0; i < XLENGTH(a); i++) {
 			if(i == del) continue;
+			if(del == -2 && XLENGTH(b) == 2) {out=TRUE; break;}
 			if(del == -2 && (i == 0 || i == 1)) continue;
 			if(x[i]!=y[i]) {
 				out=FALSE;
@@ -70,34 +71,33 @@ bool allC(SEXP a, SEXP b, int del = -1) {
 	return out;
 }
 
-// [[Rcpp::export]]
-NumericVector Cardinality(SEXP x) {
-	NumericMatrix A(x);
-	NumericVector out;
-	int m = A.nrow(), n = A.ncol();
-	vector<double> count;
+// // [[Rcpp::export]]
+// NumericVector Cardinality(SEXP x) {
+// 	NumericMatrix A(x);
+// 	NumericVector out;
+// 	int m = A.nrow(), n = A.ncol();
+// 	vector<double> count;
 
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-		for (int i = 0; i < n; i++)
-		{
-			for (int j = 0; j < m; j++)
-			{
-				if(i == m)
-					count.push_back(A(i,j));
-				for (int k = 0; k < count.size(); k++)
-				{
-					if(A(i,j) != count[k])
-						count.push_back(A(i,j));
-				}
-			}
-			out.push_back(count.size());
-			count.clear();
-		}
-	}
-	return out;
-}
+// 	#pragma omp parallel
+// 	{
+// 		#pragma omp for collapse(2)
+// 		for (int i = 0; i < n; i++)
+// 		{
+// 			for (int j = 0; j < m; j++)
+// 			{
+// 				count.push_back(A(j,i));
+// 				for (int k = 0; k < count.size(); k++)
+// 				{
+// 					if(A(j,i) != count[k])
+// 						count.push_back(A(j,i));
+// 				}
+// 			}
+// 			out.push_back(count.size());
+// 			count.clear();
+// 		}
+// 	}
+// 	return out;
+// }
 
 // // [[Rcpp::export]]
 // double Statistic(SEXP x, SEXP y, SEXP z) {
@@ -235,11 +235,11 @@ int Df(SEXP x) {
 }
 
 // [[Rcpp::export]]
-double Statistic(SEXP x, SEXP y) {
+double Statistic(SEXP x, SEXP y, SEXP z) {
 	int n, m;
 	NumericVector count(4,0.0);
 	NumericVector sum(1,0.0), pvalue(1,0.0);
-	NumericVector df;
+	NumericVector df(z);
 	
 	NumericMatrix A(x);
 	NumericMatrix B(y);
@@ -271,51 +271,7 @@ double Statistic(SEXP x, SEXP y) {
 		}
 	}
 
-	df = Cardinality(A);
-	int DF = Df(df);
-	pvalue = pchisq(sum, DF, FALSE);
-	
-	return pvalue[0];
-}
-
-// [[Rcpp::export]]
-double Stats(SEXP x, SEXP y) {
-	int n, m;
-	NumericVector count(4,0.0);
-	NumericVector sum(1,0.0), pvalue(1,0.0);
-	NumericVector df;
-	
-	NumericMatrix A(x);
-	NumericMatrix B(y);
-	n = A.nrow();
-	m = B.nrow();
-	NumericVector u;
-	NumericVector v;
-
-	#pragma omp parallel
-	{
-		#pragma omp for collapse(2)
-		for (int i = 0; i < m; i++)
-		{
-			count[0] = count[1] = count[2] = count[3] = 0;
-			u = B.row(i);
-			for (int j = 0; j < n; j++)
-			{
-				v = A.row(j);
-				if(allC(v,u))
-					count[0]++;
-				if(allC(v,u,1))
-					count[1]++;
-				if(allC(v,u,0))
-					count[2]++;
-				if(allC(v,u,-2))
-					count[3]++;
-			}
-			sum[0] += 2 * count[0] * log( ( count[0] * count[3] ) / ( count[1] * count[2] ) );
-		}
-	}
-
-	df = Cardinality(A);
+	// df = Cardinality(A);
 	int DF = Df(df);
 	pvalue = pchisq(sum, DF, FALSE);
 	
