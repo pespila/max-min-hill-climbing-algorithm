@@ -1,0 +1,60 @@
+# This implemenation of the max-min-hill-climbing algorithm has its Copyright by Michael Bauer
+# For any questions send me an email via michael1.bauer@stud.uni-r.de
+# File description comment, including purpose of program, inputs and outputs
+
+if (!("Rcpp" %in% rownames(installed.packages())))
+  install.packages("Rcpp")
+if(!("sets" %in% rownames(installed.packages())))
+  install.packages("sets")
+
+require("Rcpp")
+require("bnlearn")
+require("rbenchmark")
+require("sets")
+sourceCpp("mmhc.cpp")
+source("mmhc_test.R")
+
+cardinality <<- c(2, 2, 2, 3, 2)
+Matrix <- as.matrix(Example(250, char = FALSE))
+
+MaxMinHeuristic <- function(T, CPC, Matrix) {
+	reject <- c(0, 1, 1)
+	accepted <- c()
+	maxNumberOfVariables <- 1:dim(Matrix)[2]
+	maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == T)]
+	for (crossOut in CPC) {
+		maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == crossOut)]	
+	}
+	for (X in maxNumberOfVariables) {
+		setForSvalues <- c(X, T, CPC)
+		statisticMatrix <- Matrix[, setForSvalues]
+		pvalue <- Statistic(statisticMatrix, unique(statisticMatrix), card[setForSvalues])
+		if (pvalue[1] < 0.05) {
+			if (pvalue[1] < reject[2]) {
+				reject <- c(X, pvalue[1], pvalue[2])
+			}
+			if (pvalue[1] == reject[2] && pvalue[2] > reject[3]) {
+				reject <- c(X, reject[2], pvalue[2])
+			}
+		} else {
+			accepted <- c(accepted, X)
+		}
+	}
+	out <- list()
+	if (reject[1] == 0) {
+		out <- list("accepted" = accepted)
+	} else {
+		out <- list("accepted" = accepted, "CPC" = reject)
+	}
+	return (out)
+}
+
+
+ForwardPhase <- function(T, Matrix) {
+	CPCset <- MaxMinHeuristic(T, NULL, Matrix)
+	CPC <- as.integer(CPCset$CPC[1])
+	return (CPC)
+}
+
+# print(MaxMinHeuristic(1, NULL, Matrix))
+print(ForwardPhase(1, Matrix))

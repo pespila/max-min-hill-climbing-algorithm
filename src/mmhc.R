@@ -10,38 +10,94 @@ if (!("Rcpp" %in% rownames(installed.packages())))
 require("Rcpp")
 require("bnlearn")
 require("rbenchmark")
-# require("sets")
+require("sets")
 sourceCpp("mmhc.cpp")
 source("mmhc_test.R")
 
+InitMMPC <- function(mat, card, T, iterate) {
+    CPC <- c()
+    reject <- c(0, 1)
+    accepted <- c()
+    # repeat {
+        for (X in iterate) {
+            statisticMatrix <- mat[, c(X, T)]
+            pvalue <- Statistic(statisticMatrix, unique(statisticMatrix), card[c(X, T)])
+            c(statisticMatrix, unique(statisticMatrix), card[c(X, T)])
+            # print(c("X: ", X, " T: ", T, " pvalue: ", pvalue))
+            if (pvalue < 0.05) {
+                if (pvalue < reject[2]) {
+                    reject <- c(X, pvalue)
+                }
+            } else {
+                accepted <- c(accepted, X)
+            }
+        }
+        CPC <- c(CPC, reject[1])
+    #     if (length(CPC) != 0) {
+    #         break
+    #     } else {
+    #         T <- T + 1
+    #     }
+    # }
+    return (c(CPC, accepted))
+}
+
 MaxMinHeuristic <- function(T, CPC, mat, card, iterate) {
-    reject <- c()
+    i <- 1
+    out <- matrix(1, 2, length(iterate))
     for (X in iterate) {
         statisticMatrix <- mat[, c(X, T, CPC)]
         pvalue <- Statistic(statisticMatrix, unique(statisticMatrix), card[c(X, T, CPC)])
+        # print("CPC: ", CPC, " pvalue: ", pvalue)
         if (pvalue < 0.05) {
-            reject <- c(reject, X)
+            if (pvalue < out[1, 1]) {
+                out[1, 1] <- pvalue
+                out[1, 2] <- X
+            }
+        } else {
+            out[2, i] <- X
+            i <- i + 1
         }
     }
-    return (reject)
+    return (out)
 }
 
 MMPCtmp <- function(mat, card, T) {
-    CPC <- c()
-    Fset <- c()
+    reject <- c()
     iterate <- 1:dim(mat)[2]
     iterate <- iterate[!(iterate == T)]
-
-    repeat {
-        Fset <- MaxMinHeuristic(T, CPC[length(CPC)], mat, card, iterate)
-        tmp <- which(Fset %in% iterate)
-        iterate <- iterate[-tmp]
-        CPC <- c(CPC, Fset)
-
-        if (length(which(CPC == Fset[1])) != 0) {
-            break
+    CPC <- InitMMPC(mat, card, T, iterate)
+    accepted <- CPC[2:length(CPC)]
+    CPC <- CPC[1]
+    for (y in accepted) {
+        iterate <- iterate[!(iterate == y)]
+    }
+    CPCset <- as.set(CPC)
+    for (S in CPCset) {
+        Z <- as.numeric(S)
+        if (length(tmp) != 0) {
+            MMH <- MaxMinHeuristic(T, Z, mat, card, iterate)
+            if (MMH[1, 1] != 1) {
+                CPC <- c(CPC, MMH[1, 2])
+            }
         }
     }
+    
+    # repeat {
+    #     X <- MaxMinHeuristic(T, CPC, mat, card, iterate)
+    #     print(X)
+    #     accepted <- X[2, ]
+    #     if (X[1, 1] != 1) {
+    #         CPC <- c(CPC, X[1, 2])
+    #         iterate <- iterate[!(iterate == X[1, 2])]
+    #     }
+    #     for (i in 1:length(accepted)) {
+    #         iterate <- iterate[!(iterate == accepted[i])]
+    #     }
+    #     if (length(iterate)) {
+    #         break
+    #     }
+    # }
     return (CPC)
 }
 
@@ -164,8 +220,9 @@ BackwardPhase <- function(mat, cpc, card) {
 tempo <- as.matrix(Example(100, char=FALSE))
 card <- c(2,2,2,3,2)
 iter <- 1:5
+print(MMPCtmp(tempo, card, 1))
 for (i in 1:5) {
-    print(MMPCtmp(tempo, card, i))
+    # print(MMPCtmp(tempo, card, i))
     # x <- MaxMinHeuristic(i, NULL, tempo, card, iter)
     # print(x)
 }

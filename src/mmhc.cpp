@@ -52,25 +52,6 @@ using namespace std;
 // 	return out;
 // }
 
-// [[Rcpp::export]]
-bool allC(SEXP a, SEXP b, int del = -1) {
-	bool out = TRUE;
-	double *x = REAL(a), *y = REAL(b);
-	if(XLENGTH(a)!=XLENGTH(b)) out=FALSE;
-	else {
-		for (int i = 0; i < XLENGTH(a); i++) {
-			if(i == del) continue;
-			if(del == -2 && XLENGTH(b) == 2) {out=TRUE; break;}
-			if(del == -2 && (i == 0 || i == 1)) continue;
-			if(x[i]!=y[i]) {
-				out=FALSE;
-				break;
-			}
-		}
-	}
-	return out;
-}
-
 // // [[Rcpp::export]]
 // NumericVector Cardinality(SEXP x) {
 // 	NumericMatrix A(x);
@@ -223,6 +204,26 @@ bool allC(SEXP a, SEXP b, int del = -1) {
 // 	return pvalue[0];
 // }
 
+
+// [[Rcpp::export]]
+bool allC(SEXP a, SEXP b, int del = -1) {
+	bool out = TRUE;
+	double *x = REAL(a), *y = REAL(b);
+	if(XLENGTH(a)!=XLENGTH(b)) out=FALSE;
+	else {
+		for (int i = 0; i < XLENGTH(a); i++) {
+			if(i == del) continue;
+			if(del == -2 && XLENGTH(b) == 2) {out=TRUE; break;}
+			if(del == -2 && (i == 0 || i == 1)) continue;
+			if(x[i]!=y[i]) {
+				out=FALSE;
+				break;
+			}
+		}
+	}
+	return out;
+}
+
 // [[Rcpp::export]]
 int Df(SEXP x) {
 	double *DfSet = REAL(x);
@@ -235,11 +236,13 @@ int Df(SEXP x) {
 }
 
 // [[Rcpp::export]]
-double Statistic(SEXP x, SEXP y, SEXP z) {
+NumericVector Statistic(SEXP x, SEXP y, SEXP z) {
 	int n, m;
 	NumericVector count(4,0.0);
-	NumericVector sum(1,0.0), pvalue(1,0.0);
+	NumericVector sum(1,0.0);
+	NumericVector pvalue(1,0.0);
 	NumericVector df(z);
+	NumericVector out(2, 0.0);
 	
 	NumericMatrix A(x);
 	NumericMatrix B(y);
@@ -274,6 +277,8 @@ double Statistic(SEXP x, SEXP y, SEXP z) {
 	// df = Cardinality(A);
 	int DF = Df(df);
 	pvalue = pchisq(sum, DF, FALSE);
-	
-	return pvalue[0];
+	out[0] = pvalue[0];
+	out[1] = sum[0];
+
+	return out;
 }
