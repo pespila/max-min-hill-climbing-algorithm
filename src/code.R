@@ -14,7 +14,7 @@ require("sets")
 sourceCpp("mmhc.cpp")
 source("mmhc_test.R")
 
-cardinality <<- c(2, 2, 2, 3, 2)
+card <<- c(2, 2, 2, 3, 2)
 Matrix <- as.matrix(Example(250, char = FALSE))
 
 MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables, selectedBefore = 0, minimum = 1) {
@@ -83,7 +83,6 @@ ForwardPhase <- function(T, Matrix) {
 	return (CPC)
 }
 
-# print(MaxMinHeuristic(1, NULL, Matrix))
 for (i in 1:5) {
 	print(ForwardPhase(i, Matrix))
 }
