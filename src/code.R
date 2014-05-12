@@ -17,13 +17,11 @@ source("mmhc_test.R")
 cardinality <<- c(2, 2, 2, 3, 2)
 Matrix <- as.matrix(Example(250, char = FALSE))
 
-MaxMinHeuristic <- function(T, CPC, Matrix) {
+MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables) {
 	reject <- c(0, 1, 1)
 	accepted <- c()
-	maxNumberOfVariables <- 1:dim(Matrix)[2]
-	maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == T)]
-	for (crossOut in CPC) {
-		maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == crossOut)]	
+	for (crossOuts in CPC) {
+		maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == crossOuts)]	
 	}
 	for (X in maxNumberOfVariables) {
 		setForSvalues <- c(X, T, CPC)
@@ -51,10 +49,20 @@ MaxMinHeuristic <- function(T, CPC, Matrix) {
 
 
 ForwardPhase <- function(T, Matrix) {
-	CPCset <- MaxMinHeuristic(T, NULL, Matrix)
+	maxNumberOfVariables <- 1:dim(Matrix)[2]
+	maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == T)]
+	CPCset <- MaxMinHeuristic(T, NULL, Matrix, maxNumberOfVariables)
 	CPC <- as.integer(CPCset$CPC[1])
-	return (CPC)
+	crossOuts <- c(as.integer(CPCset$accepted), CPC)
+	
+	for (crossOut in crossOuts) {
+		maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == crossOut)]
+	}
+
+	return (maxNumberOfVariables)
 }
 
 # print(MaxMinHeuristic(1, NULL, Matrix))
-print(ForwardPhase(1, Matrix))
+for (i in 1:5) {
+	print(ForwardPhase(i, Matrix))
+}
