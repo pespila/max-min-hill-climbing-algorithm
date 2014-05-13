@@ -225,6 +225,33 @@ bool allC(SEXP a, SEXP b, int del = -1) {
 }
 
 // [[Rcpp::export]]
+bool All(SEXP a, SEXP b) {
+	bool out = FALSE;
+	NumericMatrix A(a);
+	double *x = REAL(b);
+	// NumericVector x(b);
+	int n;
+
+	for (int i = 0; i < A.nrow(); i++)
+	{
+		n = 0;
+		for (int j = 0; j < A.ncol(); j++)
+		{
+			if (A(i, j) == x[j]) {
+				n++;
+			} else {
+				break;
+			}
+		}
+		if (n == A.ncol()) {
+			out = TRUE;
+			break;
+		}
+	}
+	return out;
+}
+
+// [[Rcpp::export]]
 int Df(SEXP x) {
 	double *DfSet = REAL(x);
 	int df = (DfSet[0]-1)*(DfSet[1]-1);
@@ -234,6 +261,33 @@ int Df(SEXP x) {
 	}
 	return df;
 }
+
+// // [[Rcpp::export]]
+// SEXP Unique(SEXP x) {
+// 	NumericMatrix A(x);
+// 	NumericVector u(A.ncol()), w(A.ncol());
+// 	int cols = A.ncol();
+// 	int** U = new int*[cols];
+// 	for (int i = 0; i < rows; ++i)
+// 	NumericMatrix U;
+// 	int n = 0;
+// 	for (int i = 0; i < A.nrow(); i++)
+// 	{
+//     	U[i] = new int[cols];
+// 		v = A(i, _);
+// 		if (All(u, w)) {
+// 			continue;
+// 		} else {
+// 			for (int j = 0; j < U.ncol(); j++)
+// 			{
+// 				U(n, j) = A(i, j);
+// 			}
+// 			// U(n, _) = u;
+// 			n++;
+// 		}
+// 	}
+// 	return A;
+// }
 
 // [[Rcpp::export]]
 NumericVector Statistic(SEXP x, SEXP y, SEXP z) {

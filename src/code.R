@@ -15,11 +15,11 @@ sourceCpp("mmhc.cpp")
 source("mmhc_test.R")
 
 card <<- c(2, 2, 2, 3, 2)
-Matrix <- as.matrix(Example(250, char = FALSE))
+# Matrix <- as.matrix(Example(250, char = FALSE))
 
 MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables, selectedBefore = 0, minimum = 1) {
 	reject <- c(selectedBefore, minimum, 1)
-	temporaryMinimum <- 0
+	temporaryMinimum <- reject
 	accepted <- c()
 	for (crossOuts in CPC) {
 		maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == crossOuts)]	
@@ -30,6 +30,7 @@ MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables, selectedBefore
 		pvalue <- Statistic(statisticMatrix, unique(statisticMatrix), card[setForSvalues])
 		if (pvalue[1] < 0.05) {
 			if (pvalue[1] < reject[2]) {
+				temporaryMinimum <- reject
 				reject <- c(X, pvalue[1], pvalue[2])
 			} else if (pvalue[1] == reject[2] && pvalue[2] > reject[3]) {
 				reject <- c(X, reject[2], pvalue[2])
@@ -38,9 +39,12 @@ MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables, selectedBefore
 			accepted <- c(accepted, X)
 		}
 	}
+	# out <- list("accepted" = accepted, "CPC" = reject, "tmpMin" = temporaryMinimum)
 	out <- list()
 	if (reject[1] == 0) {
 		out <- list("accepted" = accepted)
+	} else if (temporaryMinimum[1] != 0) {
+		out <- list("accepted" = accepted, "CPC" = reject, "tmpMin" = temporaryMinimum)
 	} else {
 		out <- list("accepted" = accepted, "CPC" = reject)
 	}
@@ -66,7 +70,12 @@ ForwardPhase <- function(T, Matrix) {
 		}
 
 		if (length(CPC) == 1) {
-			CPCset <- MaxMinHeuristic(T, CPC, Matrix, maxNumberOfVariables)
+			if (length(CPCset$tmpMin) == 0) {
+				CPCset <- MaxMinHeuristic(T, CPC, Matrix, maxNumberOfVariables)
+			} else {
+				CPCset <- MaxMinHeuristic(T, CPC, Matrix, maxNumberOfVariables, CPCset$tmpMin[1], CPCset$tmpMin[2])
+			}
+			# CPCset <- MaxMinHeuristic(T, CPC, Matrix, maxNumberOfVariables)
 			CPC <- c(CPC, as.integer(CPCset$CPC[1]))
 			temporaryMinimum <- CPCset$CPC[2]
 			crossOuts <- c(as.integer(CPCset$accepted), CPC)
@@ -75,7 +84,42 @@ ForwardPhase <- function(T, Matrix) {
 				maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == crossOut)]
 			}
 		} else {
-			maxNumberOfVariables <- c()
+			CPCiterationSet <- 2 ^ as.set(CPC)
+			tmpCPCset <- 2 ^ as.set(CPC[1:(length(CPC)-1)])
+			CPCiterationSet <- CPCiterationSet - tmpCPCset
+			CPCiterationList <- as.list(CPCiterationSet)
+			n <- 1
+			rejectList <- list()
+			reject <- c(0, 1)
+			for (cpc in CPCiterationList) {
+				if (length(CPCset$tmpMin) == 0 || CPCset$tmpMin[1] %in% CPC) {
+					CPCset <- MaxMinHeuristic(T, as.numeric(cpc), Matrix, maxNumberOfVariables)
+				} else {
+					CPCset <- MaxMinHeuristic(T, as.numeric(cpc), Matrix, maxNumberOfVariables, CPCset$tmpMin[1], CPCset$tmpMin[2])
+				}
+
+				if (length(CPCset$CPC) != 0) {
+					rejectList[[n]] <- CPCset$CPC
+					n <- n + 1
+				}
+			}
+
+			if (length(rejectList) != 0) {
+				for (x in rejectList) {
+					if (x[2] < reject[2]) {
+						reject <- x
+					}
+				}
+				CPC <- c(CPC, as.numeric(reject[1]))
+				temporaryMinimum <- reject[2]
+				crossOuts <- c(as.integer(CPCset$accepted), CPC)
+				for (crossOut in crossOuts) {
+					maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == crossOut)]
+				}
+			} else {
+				maxNumberOfVariables <- c()
+			}
+				# maxNumberOfVariables <- c()
 		}
 
 	}
@@ -83,6 +127,6 @@ ForwardPhase <- function(T, Matrix) {
 	return (CPC)
 }
 
-for (i in 1:5) {
-	print(ForwardPhase(i, Matrix))
-}
+# for (i in 1:5) {
+# 	print(ForwardPhase(i, Matrix))
+# }
