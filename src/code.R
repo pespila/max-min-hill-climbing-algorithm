@@ -149,7 +149,7 @@ BackwardPhase <- function(T, CPC) {
 }
 
 MMPC <- function(Matrix) {
-	out <- list()
+	PC <- list()
 	for (T in 1:dim(Matrix)[2]) {
 		CPC <- ForwardPhase(T, Matrix)
 		CPC <- BackwardPhase(T, CPC)
@@ -162,10 +162,26 @@ MMPC <- function(Matrix) {
 				CPC <- CPC[!(CPC == T)]
 			}
 		}
-		out[[T]] <- CPC
+		PC[[T]] <- CPC
 	}
 
-	return (out)
+	return (PC)
 }
+
+Scoring <- function(PC) {
+	for (X in PC) {
+
+	}
+}
+
+# library("igraph")
+# mat <- matrix(0,5,5)
+# mat[1,4]<-1
+# mat[2,3]<-1
+# mat[2,4]<-1
+# mat[4,5]<-1
+# aj <- graph.adjacency(mat)
+# plot(aj)
+# mat
 
 # bench <- benchmark(MMPC(Matrix), mmpc(Example(250,char=FALSE)), replications=1)
