@@ -168,10 +168,15 @@ MMPC <- function(Matrix) {
 	return (PC)
 }
 
+# Actually not :)
 Scoring <- function(PC) {
-	for (X in PC) {
-
+	scoreMatrix <- matrix(0, length(PC), length(PC))
+	for (i in 1:length(PC)) {
+		if (length(PC[[i]]) == 1) {
+			scoreMatrix[i, PC[[i]][1]] <- 1
+		}
 	}
+	return (scoreMatrix)
 }
 
 # library("igraph")
