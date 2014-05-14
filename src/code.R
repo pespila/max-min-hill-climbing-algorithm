@@ -15,7 +15,7 @@ sourceCpp("mmhc.cpp")
 source("mmhc_test.R")
 
 card <<- c(2, 2, 2, 3, 2)
-# Matrix <- as.matrix(Example(250, char = FALSE))
+Matrix <- as.matrix(Example(250, char = FALSE))
 
 MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables, selectedBefore = 0, minimum = 1) {
 	reject <- c(selectedBefore, minimum, 1)
@@ -39,7 +39,6 @@ MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables, selectedBefore
 			accepted <- c(accepted, X)
 		}
 	}
-	# out <- list("accepted" = accepted, "CPC" = reject, "tmpMin" = temporaryMinimum)
 	out <- list()
 	if (reject[1] == 0) {
 		out <- list("accepted" = accepted)
@@ -75,7 +74,6 @@ ForwardPhase <- function(T, Matrix) {
 			} else {
 				CPCset <- MaxMinHeuristic(T, CPC, Matrix, maxNumberOfVariables, CPCset$tmpMin[1], CPCset$tmpMin[2])
 			}
-			# CPCset <- MaxMinHeuristic(T, CPC, Matrix, maxNumberOfVariables)
 			CPC <- c(CPC, as.integer(CPCset$CPC[1]))
 			temporaryMinimum <- CPCset$CPC[2]
 			crossOuts <- c(as.integer(CPCset$accepted), CPC)
@@ -119,7 +117,6 @@ ForwardPhase <- function(T, Matrix) {
 			} else {
 				maxNumberOfVariables <- c()
 			}
-				# maxNumberOfVariables <- c()
 		}
 
 	}
@@ -127,6 +124,48 @@ ForwardPhase <- function(T, Matrix) {
 	return (CPC)
 }
 
-# for (i in 1:5) {
-# 	print(ForwardPhase(i, Matrix))
-# }
+BackwardPhase <- function(T, CPC) {
+	if (length(CPC) == 1) {
+		return (CPC)
+	} else {
+		CPCset <- 2 ^ as.set(CPC)
+		CPCList <- as.list(CPCset)
+		remove <- c()
+
+		for (X in CPC) {
+			for (cpc in CPCList) {
+				setForSvalues <- c(X, T, as.numeric(cpc))
+				statisticMatrix <- Matrix[, setForSvalues]
+				pvalue <- Statistic(statisticMatrix, unique(statisticMatrix), card[setForSvalues])
+
+				if (pvalue[1] > 0.05 && pvalue[1] != 1) {
+					CPC <- CPC[!(CPC == X)]
+					break
+				}
+			}
+		}
+		return (CPC)
+	}
+}
+
+MMPC <- function(Matrix) {
+	out <- list()
+	for (T in 1:dim(Matrix)[2]) {
+		CPC <- ForwardPhase(T, Matrix)
+		CPC <- BackwardPhase(T, CPC)
+
+		for (X in CPC) {
+			tmp <- ForwardPhase(X, Matrix)
+			tmp <- BackwardPhase(X, tmp)
+
+			if (!(T %in% tmp)) {
+				CPC <- CPC[!(CPC == T)]
+			}
+		}
+		out[[T]] <- CPC
+	}
+
+	return (out)
+}
+
+# bench <- benchmark(MMPC(Matrix), mmpc(Example(250,char=FALSE)), replications=1)
