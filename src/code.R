@@ -71,7 +71,7 @@ MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables, selectedBefore
 
 			accepted <- c(accepted, X)
 		
-		} # ELSE
+		} # IF/ELSE
 
 	} # FOR
 
@@ -97,7 +97,7 @@ MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables, selectedBefore
 } # MAXMINHEURISTIC
 
 # Function ForwardPhase which takes the target variable T and the underlying matrix (later on a data frame)
-# it returns a possible CPC set but it could have some false positive values
+# it returns a possible CPC set which could have some false positive values
 
 ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 
@@ -128,55 +128,103 @@ ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 		# If CPC has length one, we just want to take the last added value of CPC for calculation, else: take the subsets
 		if (length(CPC) == 1) { # IF
 			
-			if (length(CPCset$tmpMin) == 0) {
+			# From chapter 6: decides if there was a minimum before which could also be taken
+			if (length(CPCset$tmpMin) == 0) { # IF
+
 				CPCset <- MaxMinHeuristic(T, CPC, Matrix, maxNumberOfVariables)
-			} else {
+			
+			} else { # ELSE
+
 				CPCset <- MaxMinHeuristic(T, CPC, Matrix, maxNumberOfVariables, CPCset$tmpMin[1], CPCset$tmpMin[2])
-			}
+			
+			} # IF/ELSE
+			
+			# Set the CPC set, a possible temporary minimum and the values which gonna be crossed out for iteration
 			CPC <- c(CPC, as.integer(CPCset$CPC[1]))
 			temporaryMinimum <- CPCset$CPC[2]
 			crossOuts <- c(as.integer(CPCset$accepted), CPC)
 
-			for (crossOut in crossOuts) {
+			# Cross specific values out
+			for (crossOut in crossOuts) { # FOR
+
 				maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == crossOut)]
-			}
-		} else {
+			
+			} # FOR
+
+		} else { # ELSE
+
+			# According to chapter 6: just iterate over the subsets where the new node (random variable) is element of.
+			# First take the power set of CPC, then a second power set without the new added value (in last iteration), subtract
+			# the temporary power set from the original one and make a list out of it (for computations)
 			CPCiterationSet <- 2 ^ as.set(CPC)
 			tmpCPCset <- 2 ^ as.set(CPC[1:(length(CPC)-1)])
 			CPCiterationSet <- CPCiterationSet - tmpCPCset
 			CPCiterationList <- as.list(CPCiterationSet)
-			n <- 1
-			rejectList <- list()
-			reject <- c(0, 1)
-			for (cpc in CPCiterationList) {
-				if (length(CPCset$tmpMin) == 0 || CPCset$tmpMin[1] %in% CPC) {
-					CPCset <- MaxMinHeuristic(T, as.numeric(cpc), Matrix, maxNumberOfVariables)
-				} else {
-					CPCset <- MaxMinHeuristic(T, as.numeric(cpc), Matrix, maxNumberOfVariables, CPCset$tmpMin[1], CPCset$tmpMin[2])
-				}
 
-				if (length(CPCset$CPC) != 0) {
+			n <- 1 # helps for iteration
+			rejectList <- list() # list with the rejected nullhypothesises
+			reject <- c(0, 1) # single rejecting array, needed for the temporary minimum of this iteration (if there exists one)
+			
+			# Go over all subset S (namely cpc) in CPC (CPCiterationList) and call the MaxMinHeuristic depending if there was another
+			# minimum before or not.
+			for (cpc in CPCiterationList) { # FOR
+
+				if (length(CPCset$tmpMin) == 0 || CPCset$tmpMin[1] %in% CPC) { # IF
+
+					CPCset <- MaxMinHeuristic(T, as.numeric(cpc), Matrix, maxNumberOfVariables)
+				
+				} else { # IF
+
+					CPCset <- MaxMinHeuristic(T, as.numeric(cpc), Matrix, maxNumberOfVariables, CPCset$tmpMin[1], CPCset$tmpMin[2])
+				
+				} # IF/ELSE
+
+				# If CPC is not empty then there was a variable to reject the nullhypothesis with
+				if (length(CPCset$CPC) != 0) { # IF
+
 					rejectList[[n]] <- CPCset$CPC
 					n <- n + 1
-				}
-			}
+				
+				} # IF
 
-			if (length(rejectList) != 0) {
-				for (x in rejectList) {
-					if (x[2] < reject[2]) {
+			} # FOR
+
+			# Proof whether there was a new variable for which the nullhypothesis could be rejected. Also test if there were two or more variables
+			# for which the nullhypothesis could be rejected. The 'maximum' (in this computation it's actually a minimum) without the real maximum/minimum
+			# is taken for the temporary minimum set.
+			if (length(rejectList) != 0) { # IF
+
+				# Testing for maximum pvalue (actually a minimum is computed because I took the positive and not the negative pvalue)
+				for (x in rejectList) { # FOR
+
+					# minimum testing
+					if (x[2] < reject[2]) { # IF
+
 						reject <- x
-					}
-				}
+					
+					} # IF
+				
+				} # FOR
+
+				# Set CPC, temporary minimum and cross out values
 				CPC <- c(CPC, as.numeric(reject[1]))
 				temporaryMinimum <- reject[2]
 				crossOuts <- c(as.integer(CPCset$accepted), CPC)
-				for (crossOut in crossOuts) {
+
+				# cross specific values out
+				for (crossOut in crossOuts) { # FOR
+
 					maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == crossOut)]
+				
 				}
-			} else {
+			
+			} else { # ELSE
+
 				maxNumberOfVariables <- c()
-			}
-		}
+
+			} # IF/ELSE
+
+		} # IF/ELSE
 
 	} # REPEAT
 
