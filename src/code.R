@@ -101,11 +101,12 @@ MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables, selectedBefore
 
 ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 
+	CPC <- c() # Empty cpc set
 	temporaryMinimum <- 0 # will be set if there where more then one values for which the nullhypothesis could have been rejected
 	maxNumberOfVariables <- 1:dim(Matrix)[2] # iteration array...
 	maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == T)] # ...iterate over all values except the target (trivial case)
 	CPCset <- MaxMinHeuristic(T, NULL, Matrix, maxNumberOfVariables) # the first CPC set where we start with the empty set
-	CPC <- as.integer(CPCset$CPC[1]) # convert the CPC set as an array from the set (list) getting from one line above
+	CPC <- c(CPC, as.integer(CPCset$CPC[1])) # convert the CPC set as an array from the set (list) getting from one line above
 	crossOuts <- c(as.integer(CPCset$accepted), CPC) # sets the variables where we do not iterate over again because they where accepted or rejected
 	
 	# set new iteration array
@@ -275,6 +276,7 @@ BackwardPhase <- function(T, CPC) { # BACKWARDPHASE
 # possible target variables
 
 MMPC <- function(Matrix) { # MMPC
+	bench <- list()
 	PC <- list()
 
 	# iterate over all target variables
@@ -282,6 +284,8 @@ MMPC <- function(Matrix) { # MMPC
 
 		CPC <- ForwardPhase(T, Matrix) # Runs the ForwardPhase
 		CPC <- BackwardPhase(T, CPC) # Runs the BackwardPhase
+
+		bench[[T]] <- benchmark(ForwardPhase(T, Matrix), BackwardPhase(T, CPC), columns = c(1,2,3), replications = 1)
 
 		# calculates whether the observed target variable is a member of the temporary CPC set with target X out of CPC
 		# if so then X from CPC is a parent or child of T, if not then it's not likely that X from CPC is a parent or child
@@ -304,6 +308,8 @@ MMPC <- function(Matrix) { # MMPC
 		PC[[T]] <- CPC
 
 	} # FOR
+
+	print(bench)
 
 	return (PC)
 } # MMPC
@@ -330,3 +336,4 @@ Scoring <- function(PC) {
 # mat
 
 # bench <- benchmark(MMPC(Matrix), mmpc(Example(250,char=FALSE)), replications=1)
+# bench <- benchmark(MaxMinHeuristic(1, 4, Matrix, c(2,5)), ForwardPhase(1, Matrix), BackwardPhase(1, 4), columns = c(1,2,3), replications = 5)

@@ -3,6 +3,8 @@
 #include <Rinternals.h>
 #include <R.h>
 #include <vector>
+#include <R_ext/Arith.h>
+#include <R_ext/Utils.h>
 using namespace Rcpp;
 using namespace std;
 
@@ -335,4 +337,41 @@ NumericVector Statistic(SEXP x, SEXP y, SEXP z) {
 	out[1] = sum[0];
 
 	return out;
+}
+
+bool In(int x, NumericVector& y) {
+
+	bool out = FALSE;
+	for (int i = 0; i < y.size(); i++)
+	{
+		if (y[i] == x) {
+			out = TRUE;
+			break;
+		}
+	}
+
+	return out;
+
+}
+
+// [[Rcpp::export]]
+SEXP Unique(SEXP vec) {
+
+	NumericMatrix A(vec);
+
+	return duplicated(A);
+
+	// int *x = INTEGER(vec);
+	// NumericVector y;
+	// y.push_back(x[0]);
+
+	// for (int i = 1; i < XLENGTH(vec); i++)
+	// {
+	// 	if (!(In(x[i], y))) {
+	// 		y.push_back(x[i]);
+	// 	}
+	// }
+
+	// return y;
+
 }
