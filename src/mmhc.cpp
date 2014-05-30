@@ -10,54 +10,9 @@
 #include <R_ext/Utils.h>
 // #include <unordered_map>
 #include <tr1/unordered_map>
-// using namespace Rcpp;
 using namespace std;
 using namespace std::tr1;
-
 using namespace Rcpp;
-
-
-class my
-{
-private:
-	NumericVector x;
-public:
-	my(int n) {}
-	~my();
-	NumericVector Get() {
-		return this->x;
-	}
-};
-
-// namespace Rcpp {
-// 	template <my> SEXP wrap( const my& ) ;
-// }
-
-
-/// create an external pointer to a Uniform object
-RcppExport SEXP my__new(SEXP n) {
-	// convert inputs to appropriate C++ types
-	NumericVector x(as<int>(n),1.0);
-	// int N = as<int>(n);
-	// create a pointer to an Uniform object and wrap it
-	// as an external pointer
-	Rcpp::XPtr<my> ptr( new my( as<int>(n) ), true );
-	// return the external pointer to the R side
-	return ptr;
-}
-
-/// invoke the draw method
-RcppExport SEXP my__Get( SEXP xp ) {
-	// grab the object as a XPtr (smart pointer) to Uniform
-	Rcpp::XPtr<my> ptr(xp);
-	// convert the parameter to int
-	// invoke the function
-	NumericVector res = ptr->Get();
-	// return the result to R
-	return res;
-}
-
-// [[plugins(cpp11)]]
 
 // 	int DF = (df[0] - 1) * (df[1] - 1);
 
@@ -176,6 +131,41 @@ NumericVector Statistic(SEXP x, SEXP y, SEXP z) {
 	return out;
 }
 
+// unordered_map<int*, int> Map(SEXP x, SEXP ncol, SEXP nrow) {
+
+// // [[Rcpp::export]]
+// unordered_map<double*, int> Map(SEXP x) {
+// 	typedef unordered_map<double*, int> Map_t;
+// 	Map_t Map;
+
+// 	// int *A = INTEGER(x);
+// 	// int col = INTEGER(ncol)[0];
+// 	// int row = INTEGER(nrow)[0];
+
+// 	NumericMatrix A(x);
+// 	int col = A.ncol();
+// 	int row = A.nrow();
+// 	// NumericVector tmp(row,0.0);
+
+// 	double *hash = (double*)R_alloc(row, sizeof(double));
+
+// 	for (int i = 0; i < col; i++)
+// 	{
+// 		for (int j = 0; j < row; j++)
+// 		{
+// 			hash[j] = A(j,i);
+// 		}
+// 		if (Map[hash] == 0)
+// 			Map[hash] = 1;
+// 		if (Map[hash] != 0)
+// 			Map[hash] = Map[hash] + 1;
+// 	}
+
+// 	Rprintf("%d \n", Map.size());
+
+// 	return Map;
+// }
+
 // // [[Rcpp::export]]
 // double Norm(SEXP x, SEXP y, SEXP a) {
 // 	IntegerVector X(x);
@@ -277,32 +267,32 @@ NumericVector Statistic(SEXP x, SEXP y, SEXP z) {
 // 	return mapping;
 // }
 
-bool In(int x, NumericVector& y) {
+// bool In(int x, NumericVector& y) {
 
-	bool out = FALSE;
-	for (int i = 0; i < y.size(); i++)
-	{
-		if (y[i] == x) {
-			out = TRUE;
-			break;
-		}
-	}
+// 	bool out = FALSE;
+// 	for (int i = 0; i < y.size(); i++)
+// 	{
+// 		if (y[i] == x) {
+// 			out = TRUE;
+// 			break;
+// 		}
+// 	}
 
-	return out;
+// 	return out;
 
-}
+// }
 
-// [[Rcpp::export]]
-SEXP Calc(SEXP m) {
-	NumericMatrix A(m);
+// // [[Rcpp::export]]
+// SEXP Calc(SEXP m) {
+// 	NumericMatrix A(m);
 
-	for (int i = 0; i < A.ncol(); i++)
-	{
-		for (int j = 0; j < A.nrow(); j++)
-		{
-			A(j,i) = sqrt(A(j,i) / sqrt(3));
-		}
-	}
+// 	for (int i = 0; i < A.ncol(); i++)
+// 	{
+// 		for (int j = 0; j < A.nrow(); j++)
+// 		{
+// 			A(j,i) = sqrt(A(j,i) / sqrt(3));
+// 		}
+// 	}
 
-	return A;
-}
+// 	return A;
+// }

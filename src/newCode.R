@@ -16,13 +16,15 @@ if(!("sets" %in% rownames(installed.packages())))
 # - rbenchmark: will be removed
 # - sets: to create and handle sets
 # - mmhc.cpp: the C++-file which holds the 'fast' code blocks
-# - mmhc_test.R: my Examples based on the book of Daphne Koller
+# - mmhc_test.R: my Example's based on the book of Daphne Koller
 require("Rcpp")
 require("bnlearn")
 require("rbenchmark")
 require("sets")
-sourceCpp("mmhc.cpp")
+sourceCpp("newMMPC.cpp")
 source("mmhc_test.R")
+
+Matrix <<- t(Matrix)
 
 # Function MaxMinHeuristic which takes:
 # - the target variable T for whose children and parents we are seeking for.
@@ -33,6 +35,28 @@ source("mmhc_test.R")
 # It returns a list of parents and children for a specific target variable, the variables where the
 # nullhypothesis holds (they are going to be crossed out) and maybe the variables with the (second) highest association
 # for which the nullhypothesis also could have been reject.
+
+
+# C++!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+# ____________________________________________________________________________
+# UpdateCPC <- function(currentCPC, selected) {
+# 	if (length(currentCPC) == 0) {
+# 		currentCPC[[1]] <- 1
+# 		currentCPC[[2]] <- NULL
+# 	} else if (length(currentCPC) == 1) {
+# 		currentCPC[[3]] <- selected
+# 		currentCPC[[1]] <- 3
+# 	} else {
+# 		CPClength <- length(currentCPC)
+# 		currentCPC[[1]] <- CPClength + 1
+# 		for (i in 2:CPClength) {
+# 			currentCPC[[CPClength + i - 1]] <- c(currentCPC[[i]], selected)
+# 		}
+# 	}
+
+# 	return (currentCPC)
+# }
+# ____________________________________________________________________________
 
 MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables, selectedBefore = 0, minimum = 1) { # MAXMINHEURISTIC
 	reject <- c(selectedBefore, minimum, 1) # set which holds the values to compare (reject the nullhypothesis)
@@ -50,8 +74,9 @@ MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables, selectedBefore
 	for (X in maxNumberOfVariables) { # FOR: iteration over X
 		
 		setForSvalues <- c(X, T, CPC) # set the S values
-		statisticMatrix <- Matrix[, setForSvalues] # take the specific columns of the matrix
-		pvalue <- Statistic(statisticMatrix, unique(statisticMatrix), card[setForSvalues]) # compute the pvalue
+		statisticMatrix <- Matrix[setForSvalues, ] # take the specific columns of the matrix
+		U <- t(unique(t(statisticMatrix)))
+		pvalue <- Statistics(statisticMatrix, U, card[setForSvalues]) # compute the pvalue
 
 		# statistical testing
 		if (pvalue[1] < alpha) { # IF: reject nullhypothesis
@@ -101,13 +126,16 @@ MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables, selectedBefore
 
 ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 
-	CPC <- c() # Empty cpc set
+	# CPC <- c() # Empty cpc set
+	CPC <- list()
+	CPC <- UpdateCPC(CPC, 0)
 	temporaryMinimum <- 0 # will be set if there where more then one values for which the nullhypothesis could have been rejected
-	maxNumberOfVariables <- 1:dim(Matrix)[2] # iteration array...
+	maxNumberOfVariables <- 1:dim(Matrix)[1] # iteration array...
 	maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == T)] # ...iterate over all values except the target (trivial case)
 	CPCset <- MaxMinHeuristic(T, NULL, Matrix, maxNumberOfVariables) # the first CPC set where we start with the empty set
-	CPC <- c(CPC, as.integer(CPCset$CPC[1])) # convert the CPC set as an array from the set (list) getting from one line above
-	crossOuts <- c(as.integer(CPCset$accepted), CPC) # sets the variables where we do not iterate over again because they where accepted or rejected
+	# CPC <- c(CPC, as.integer(CPCset$CPC[1])) # convert the CPC set as an array from the set (list) getting from one line above
+	CPC <- UpdateCPC(CPC, as.integer(CPCset$CPC[1]))
+	crossOuts <- c(as.integer(CPCset$accepted), CPC[[length(CPC)]]) # sets the variables where we do not iterate over again because they where accepted or rejected #!!!!!!BEFOR CPC
 	
 	# set new iteration array
 	for (crossOut in crossOuts) { # FOR
@@ -127,23 +155,27 @@ ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 		} # IF
 
 		# If CPC has length one, we just want to take the last added value of CPC for calculation, else: take the subsets
-		if (length(CPC) == 1) { # IF
+		if (length(CPC) == 3) { # IF !!!!!!!!!!!!!Before == 1
 			
 			# From chapter 6: decides if there was a minimum before which could also be taken
 			if (length(CPCset$tmpMin) == 0) { # IF
 
-				CPCset <- MaxMinHeuristic(T, CPC, Matrix, maxNumberOfVariables)
+				CPCset <- MaxMinHeuristic(T, CPC[[3]], Matrix, maxNumberOfVariables)
 			
 			} else { # ELSE
 
-				CPCset <- MaxMinHeuristic(T, CPC, Matrix, maxNumberOfVariables, CPCset$tmpMin[1], CPCset$tmpMin[2])
+				CPCset <- MaxMinHeuristic(T, CPC[[3]], Matrix, maxNumberOfVariables, CPCset$tmpMin[1], CPCset$tmpMin[2])
 			
 			} # IF/ELSE
 			
 			# Set the CPC set, a possible temporary minimum and the values which gonna be crossed out for iteration
-			CPC <- c(CPC, as.integer(CPCset$CPC[1]))
+			
+			# CPC <- c(CPC, as.integer(CPCset$CPC[1]))
+			# print(as.integer(CPCset$CPC[1]))
+			if (length(CPCset$CPC[1]) != 0)
+				CPC <- UpdateCPC(CPC, as.integer(CPCset$CPC[1]))
 			temporaryMinimum <- CPCset$CPC[2]
-			crossOuts <- c(as.integer(CPCset$accepted), CPC)
+			crossOuts <- c(as.integer(CPCset$accepted), CPC[[length(CPC)]])
 
 			# Cross specific values out
 			for (crossOut in crossOuts) { # FOR
@@ -160,7 +192,8 @@ ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 			CPCiterationSet <- 2 ^ as.set(CPC)
 			tmpCPCset <- 2 ^ as.set(CPC[1:(length(CPC)-1)])
 			CPCiterationSet <- CPCiterationSet - tmpCPCset
-			CPCiterationList <- as.list(CPCiterationSet)
+			# CPCiterationList <- as.list(CPCiterationSet)
+			CPCiterationList <- CPC[CPC[[1]]:length(CPC)]
 
 			n <- 1 # helps for iteration
 			rejectList <- list() # list with the rejected nullhypothesises
@@ -170,7 +203,7 @@ ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 			# minimum before or not.
 			for (cpc in CPCiterationList) { # FOR
 
-				if (length(CPCset$tmpMin) == 0 || CPCset$tmpMin[1] %in% CPC) { # IF
+				if (length(CPCset$tmpMin) == 0 || CPCset$tmpMin[1] %in% CPC[[length(CPC)]]) { # IF
 
 					CPCset <- MaxMinHeuristic(T, as.numeric(cpc), Matrix, maxNumberOfVariables)
 				
@@ -208,9 +241,12 @@ ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 				} # FOR
 
 				# Set CPC, temporary minimum and cross out values
-				CPC <- c(CPC, as.numeric(reject[1]))
+				# CPC <- c(CPC, as.numeric(reject[1]))
+				if (length(CPCset$CPC[1]) != 0)
+					CPC <- UpdateCPC(CPC, as.integer(CPCset$CPC[1]))
+				# CPC <- UpdateCPC(CPC, as.numeric(reject[1]))
 				temporaryMinimum <- reject[2]
-				crossOuts <- c(as.integer(CPCset$accepted), CPC)
+				crossOuts <- c(as.integer(CPCset$accepted), CPC[[length(CPC)]])
 
 				# cross specific values out
 				for (crossOut in crossOuts) { # FOR
@@ -229,7 +265,7 @@ ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 
 	} # REPEAT
 
-	return (CPC)
+	return (CPC[[length(CPC)]])
 }
 
 # Function BackwardPhase which detects false positive elements of CPC and removes them
@@ -242,7 +278,7 @@ BackwardPhase <- function(T, CPC) { # BACKWARDPHASE
 		return (CPC) # return the CPC set, if its length is 1. Trivial case...
 
 	} else { # ELSE
-
+		CPC <- UpdateCPC(CPC, 0)
 		CPCset <- 2 ^ as.set(CPC) # power set of CPC
 		CPCList <- as.list(CPCset) # make a list out of the power set for iteration and computing purpose
 		remove <- c() # the array which should hold the values 'to be removed' from CPC
@@ -254,8 +290,9 @@ BackwardPhase <- function(T, CPC) { # BACKWARDPHASE
 			for (cpc in CPCList) { # FOR
 
 				setForSvalues <- c(X, T, as.numeric(cpc)) # S values for calculation of the pvalue
-				statisticMatrix <- Matrix[, setForSvalues] # the underlying matrix for calculation
-				pvalue <- Statistic(statisticMatrix, unique(statisticMatrix), card[setForSvalues]) # calculate the pvalue
+				statisticMatrix <- Matrix[setForSvalues, ] # the underlying matrix for calculation
+				U <- t(unique(t(statisticMatrix)))
+				pvalue <- Statistics(statisticMatrix, U, card[setForSvalues]) # calculate the pvalue
 
 				# if there exists a subset S of CPC for which a value X from CPC is removed, remove it and stop the for loop
 				if (pvalue[1] > alpha && pvalue[1] != 1) { # IF
@@ -280,7 +317,7 @@ MMPC <- function(Matrix) { # MMPC
 	PC <- list()
 
 	# iterate over all target variables
-	for (T in 1:dim(Matrix)[2]) { # FOR
+	for (T in 1:dim(Matrix)[1]) { # FOR
 
 		CPC <- ForwardPhase(T, Matrix) # Runs the ForwardPhase
 		CPC <- BackwardPhase(T, CPC) # Runs the BackwardPhase
@@ -335,7 +372,9 @@ Scoring <- function(PC) {
 # plot(aj)
 # mat
 
-bench <- benchmark(MMPC(Matrix), mmpc(Example(250,char=FALSE)), replications=1, columns = c("test", "elapsed", "relative"))
+# bench <- benchmark(MMPC(Matrix), mmpc(Example(250,char=FALSE)), replications=1, columns = c("test", "elapsed", "relative"))
+
+
 # bench <- benchmark(MaxMinHeuristic(1, 4, Matrix, c(2,5)), ForwardPhase(1, Matrix), BackwardPhase(1, 4), columns = c(1,2,3), replications = 5)
 # vec <- Matrix[1,c(1,2,3)]
 # cnt <- 0
