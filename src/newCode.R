@@ -20,7 +20,7 @@ if(!("sets" %in% rownames(installed.packages())))
 require("Rcpp")
 require("bnlearn")
 require("rbenchmark")
-require("sets")
+# require("sets")
 sourceCpp("newMMPC.cpp")
 source("mmhc_test.R")
 
@@ -174,6 +174,7 @@ ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 			# print(as.integer(CPCset$CPC[1]))
 			if (length(CPCset$CPC[1]) != 0)
 				CPC <- UpdateCPC(CPC, as.integer(CPCset$CPC[1]))
+
 			temporaryMinimum <- CPCset$CPC[2]
 			crossOuts <- c(as.integer(CPCset$accepted), CPC[[length(CPC)]])
 
@@ -189,9 +190,9 @@ ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 			# According to chapter 6: just iterate over the subsets where the new node (random variable) is element of.
 			# First take the power set of CPC, then a second power set without the new added value (in last iteration), subtract
 			# the temporary power set from the original one and make a list out of it (for computations)
-			CPCiterationSet <- 2 ^ as.set(CPC)
-			tmpCPCset <- 2 ^ as.set(CPC[1:(length(CPC)-1)])
-			CPCiterationSet <- CPCiterationSet - tmpCPCset
+			# CPCiterationSet <- 2 ^ as.set(CPC)
+			# tmpCPCset <- 2 ^ as.set(CPC[1:(length(CPC)-1)])
+			# CPCiterationSet <- CPCiterationSet - tmpCPCset
 			# CPCiterationList <- as.list(CPCiterationSet)
 			CPCiterationList <- CPC[CPC[[1]]:length(CPC)]
 
@@ -245,6 +246,7 @@ ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 				if (length(CPCset$CPC[1]) != 0)
 					CPC <- UpdateCPC(CPC, as.integer(CPCset$CPC[1]))
 				# CPC <- UpdateCPC(CPC, as.numeric(reject[1]))
+
 				temporaryMinimum <- reject[2]
 				crossOuts <- c(as.integer(CPCset$accepted), CPC[[length(CPC)]])
 
@@ -278,7 +280,7 @@ BackwardPhase <- function(T, CPC) { # BACKWARDPHASE
 		return (CPC) # return the CPC set, if its length is 1. Trivial case...
 
 	} else { # ELSE
-		CPC <- UpdateCPC(CPC, 0)
+
 		CPCset <- 2 ^ as.set(CPC) # power set of CPC
 		CPCList <- as.list(CPCset) # make a list out of the power set for iteration and computing purpose
 		remove <- c() # the array which should hold the values 'to be removed' from CPC
