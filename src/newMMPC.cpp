@@ -1,18 +1,22 @@
-#include <RcppCommon.h>
-#include <Rcpp.h>
+// #include <RcppCommon.h>
+// #include <Rcpp.h>
 #include <omp.h>
 #include <R.h>
-#include <Rinternals.h>
+// #include <Rinternals.h>
 #include <Rmath.h>
-#include <Rdefines.h>
-#include <vector>
-#include <R_ext/Arith.h>
-#include <R_ext/Utils.h>
+// #include <Rdefines.h>
+// #include <vector>
+// #include <R_ext/Arith.h>
+// #include <R_ext/Utils.h>
 // #include <unordered_map>
-#include <tr1/unordered_map>
+// #include <tr1/unordered_map>
+#include <RcppArmadillo.h>
 using namespace std;
 using namespace std::tr1;
 using namespace Rcpp;
+using namespace arma;
+
+// [[Rcpp::depends("RcppArmadillo")]]
 
 // [[Rcpp::export]]
 bool allC(SEXP a, SEXP b, int del = -1) {
@@ -38,6 +42,93 @@ bool allC(SEXP a, SEXP b, int del = -1) {
 	}
 	return out;
 }
+
+bool IsIn(mat X, mat R) {
+	int row = X.n_rows, col = X.n_cols, test;
+	bool equaled = FALSE;
+	for (int i = 0; i < row; i++)
+	{
+		test = 0;
+		for (int j = 0; j < col; j++)
+		{
+			if (X(i, j) == R(0, j))
+				test++;
+		}
+		if (test == col) {
+			equaled = TRUE;
+			break;
+		}
+	}
+	return equaled;
+}
+
+void insert(const mat& R, mat& A, int j) {
+	for (int i = 0; i < R.n_cols; i++)
+	{
+		A(j, i) = R(0, i);
+	}
+}
+
+// [[Rcpp::export]]
+SEXP T(SEXP x, SEXP n, SEXP m) {
+	double *A = REAL(x);
+	int *N = INTEGER(n), *M = INTEGER(m);
+	NumericMatrix B(*N, *M);
+	for (int i = 0; i < *M; i++)
+		for (int j = 0; j < *N; j++)
+			B(i, j) = A[j + i * (*M)];
+	return B;
+}
+
+// // [[Rcpp::export]]
+// SEXP Test(SEXP x, SEXP n, SEXP m) {
+// 	int *X = INTEGER(x), *N = INTEGER(n), *M = INTEGER(m);
+// 	int K = (*N) * (*M);
+// 	// int **A = (int**)R_alloc((*N), sizeof(int*));
+// 	int *A = (int*)R_alloc(K, sizeof(int));
+// 	cout << XLENGTH(A) << endl;
+// 	for (int i = 0; i < K; i++)
+// 	{
+// 		// A[i] = X[i];
+// 	}
+// 	// for (int i = 0; i < *M; i++)
+// 	// {
+// 	// 	// A[i] = (int*)R_alloc((*M), sizeof(int));
+// 	// 	for (int j = 0; j < *N; j++)
+// 	// 	{
+// 	// 		cout << X[j + i * (*M)] << endl;
+// 	// 		// A[j + i * (*M)] = X[j + i * (*M)];
+// 	// 	}
+// 	// }
+// 	return (SEXP)A;
+// }
+
+// // [[Rcpp::export]]
+// mat Unique(SEXP x) {
+// 	// if (A.n_cols >= A.n_rows) {
+// 	// 	continue;
+// 	// } else {
+// 	// 	x = T(x);
+// 	// }
+
+
+
+
+// 	mat U(1, A.n_cols, fill::zeros);
+// 	for (int i = 0; i < A.n_rows; i++)
+// 	{
+// 		if (!(IsIn(U, A.row(i)))) {
+// 			insert(A.row(i), U, i);
+// 			U.resize(U.n_rows+1, U.n_cols);
+// 		}
+// 	}
+// 	return U;
+// }
+
+// // [[Rcpp::export]]
+// mat MyTest(mat A) {
+// 	return unique(A);
+// }
 
 // [[Rcpp::export]]
 SEXP UpdateCPC(SEXP x, int selected = 0) {

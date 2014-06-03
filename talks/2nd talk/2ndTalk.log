@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=latex 2014.1.27)  1 JUN 2014 16:03
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=latex 2014.1.27)  2 JUN 2014 17:20
 entering extended mode
  %&-line parsing enabled.
 **2ndTalk.tex
@@ -894,10 +894,6 @@ LaTeX Info: Redefining \pageref on input line 22.
 \openout5 = `2ndTalk.out'.
 
 \AtBeginShipoutBox=\box59
-
-
-Package hyperref Warning: Rerun to get /PageLabels entry.
-
 LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
 (Font)                  OT1/cmr/m/n --> OT1/cmss/m/n on input line 22.
 LaTeX Font Info:    Overwriting symbol font `operators' in version `bold'
@@ -978,63 +974,76 @@ LaTeX Font Warning: Font shape `OT1/cmss/m/n' in size <4> not available
 ]
 File: img/mmpc_bar.eps Graphic file (type eps)
  <img/mmpc_bar.eps>
-LaTeX Font Info:    Try loading font information for U+msa on input line 41.
+Overfull \vbox (2.45609pt too high) detected at line 41
+ []
+
+[2
+
+]
+LaTeX Font Info:    Try loading font information for U+msa on input line 63.
  (/usr/share/texmf-texlive/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2009/06/22 v3.00 AMS symbols A
 )
-LaTeX Font Info:    Try loading font information for U+msb on input line 41.
+LaTeX Font Info:    Try loading font information for U+msb on input line 63.
 
 (/usr/share/texmf-texlive/tex/latex/amsfonts/umsb.fd
 File: umsb.fd 2009/06/22 v3.00 AMS symbols B
-) [2
-
-] [3
+) [3
 
 ] [4
 
 ] [5
 
+] [6
+
 ]
 File: img/chi1.eps Graphic file (type eps)
 
-<img/chi1.eps> [6
+<img/chi1.eps> [7
 
 ]
 File: img/chi2.eps Graphic file (type eps)
- <img/chi2.eps> [7
+ <img/chi2.eps> [8
+
+]
+File: img/example_part1.eps Graphic file (type eps)
+ <img/example_part1.eps> [9
 
 ]
 File: img/mmpc_bar.eps Graphic file (type eps)
- <img/mmpc_bar.eps>
-Overfull \vbox (15.77856pt too high) detected at line 102
+
+<img/mmpc_bar.eps>
+Overfull \vbox (2.45609pt too high) detected at line 118
  []
 
-[8
+[10
 
 ]
 File: img/backward.eps Graphic file (type eps)
- <img/backward.eps> [9
+ <img/backward.eps> [11
 
 ]
-File: img/falsePositive.eps Graphic file (type eps)
- <img/falsePositive.eps> [10
-
-]
-File: img/mmpc.eps Graphic file (type eps)
- <img/mmpc.eps> [11
-
-]
-Overfull \hbox (63.81006pt too wide) detected at line 219
+Overfull \hbox (5.47258pt too wide) detected at line 213
  [] 
  []
 
 
-Overfull \hbox (24.36899pt too wide) detected at line 219
+Overfull \hbox (14.29485pt too wide) detected at line 213
  [] 
  []
 
 
-Overfull \hbox (21.42451pt too wide) detected at line 219
+Overfull \hbox (63.81006pt too wide) detected at line 213
+ [] 
+ []
+
+
+Overfull \hbox (24.36899pt too wide) detected at line 213
+ [] 
+ []
+
+
+Overfull \hbox (21.42451pt too wide) detected at line 213
  [] 
  []
 
@@ -1063,12 +1072,12 @@ LaTeX Font Warning: Size substitutions with differences
 
  ) 
 Here is how much of TeX's memory you used:
- 17265 strings out of 494949
- 312585 string characters out of 1179546
+ 17273 strings out of 494949
+ 312645 string characters out of 1179546
  451046 words of memory out of 3000000
- 20002 multiletter control sequences out of 15000+50000
+ 20011 multiletter control sequences out of 15000+50000
  15384 words of font info for 57 fonts, out of 3000000 for 9000
  73 hyphenation exceptions out of 8191
- 49i,19n,60p,438b,728s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 49i,19n,60p,438b,697s stack positions out of 5000i,500n,10000p,200000b,50000s
 
-Output written on 2ndTalk.dvi (15 pages, 120980 bytes).
+Output written on 2ndTalk.dvi (15 pages, 128764 bytes).

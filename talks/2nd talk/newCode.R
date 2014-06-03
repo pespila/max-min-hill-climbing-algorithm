@@ -18,7 +18,6 @@ if(!("sets" %in% rownames(installed.packages())))
 # - mmhc.cpp: the C++-file which holds the 'fast' code blocks
 # - mmhc_test.R: my Example's based on the book of Daphne Koller
 require("Rcpp")
-require("RcppArmadillo")
 require("bnlearn")
 require("rbenchmark")
 require("sets")
@@ -268,17 +267,13 @@ ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 
 	} # REPEAT
 
-	# return (CPC[[length(CPC)]])
-	return (CPC)
+	return (CPC[[length(CPC)]])
 }
 
 # Function BackwardPhase which detects false positive elements of CPC and removes them
 # Takes the current target T and the current CPC set of T. Returns the 'clean' CPC set
 
-BackwardPhase <- function(T, CPCset) { # BACKWARDPHASE
-
-	CPC <- CPCset[[length(CPCset)]]
-	CPCList <- CPCset[2:length(CPCset)]
+BackwardPhase <- function(T, CPC) { # BACKWARDPHASE
 
 	if (length(CPC) == 1) { # IF
 
@@ -286,8 +281,8 @@ BackwardPhase <- function(T, CPCset) { # BACKWARDPHASE
 
 	} else { # ELSE
 
-		# CPCset <- 2 ^ as.set(CPC) # power set of CPC
-		# CPCList <- as.list(CPCset) # make a list out of the power set for iteration and computing purpose
+		CPCset <- 2 ^ as.set(CPC) # power set of CPC
+		CPCList <- as.list(CPCset) # make a list out of the power set for iteration and computing purpose
 		remove <- c() # the array which should hold the values 'to be removed' from CPC
 
 		# iterate over all values in CPC

@@ -1,15 +1,15 @@
 \beamer@endinputifotherversion {3.10pt}
-\beamer@sectionintoc {1}{$\mathaccentV {bar}016{MMPC}$}{2}{0}{1}
+\beamer@sectionintoc {1}{MMPC}{2}{0}{1}
 \beamer@sectionintoc {2}{Statistics}{3}{0}{2}
 \beamer@subsectionintoc {2}{1}{Conditional Independence}{3}{0}{2}
-\beamer@subsectionintoc {2}{2}{The $G^{2}$ value}{5}{0}{2}
-\beamer@subsectionintoc {2}{3}{Query the graph}{6}{0}{2}
-\beamer@subsectionintoc {2}{4}{Query the graph}{7}{0}{2}
-\beamer@sectionintoc {3}{MMPC}{8}{0}{3}
-\beamer@sectionintoc {4}{Backward phase}{9}{0}{4}
-\beamer@sectionintoc {5}{But...}{10}{0}{5}
-\beamer@sectionintoc {6}{MMPC}{11}{0}{6}
-\beamer@sectionintoc {7}{Example}{12}{0}{7}
-\beamer@sectionintoc {8}{Till now...}{13}{0}{8}
-\beamer@sectionintoc {9}{What's next?}{14}{0}{9}
-\beamer@sectionintoc {10}{Thank you}{15}{0}{10}
+\beamer@subsectionintoc {2}{2}{The $G^{2}$ value}{6}{0}{2}
+\beamer@subsectionintoc {2}{3}{Query the graph}{7}{0}{2}
+\beamer@subsectionintoc {2}{4}{Query the graph}{8}{0}{2}
+\beamer@sectionintoc {3}{Forward Phase}{9}{0}{3}
+\beamer@subsectionintoc {3}{1}{How the algorithm works}{9}{0}{3}
+\beamer@sectionintoc {4}{MMPC}{10}{0}{4}
+\beamer@sectionintoc {5}{Backward phase}{11}{0}{5}
+\beamer@sectionintoc {6}{Example}{12}{0}{6}
+\beamer@sectionintoc {7}{Till now...}{13}{0}{7}
+\beamer@sectionintoc {8}{What's next?}{14}{0}{8}
+\beamer@sectionintoc {9}{Thank you}{15}{0}{9}
