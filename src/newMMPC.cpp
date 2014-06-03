@@ -43,6 +43,46 @@ bool allC(SEXP a, SEXP b, int del = -1) {
 	return out;
 }
 
+// [[Rcpp::export]]
+SEXP UN(SEXP x) {
+	int *X = INTEGER(x);
+	typedef unordered_map<int,int> map_t;
+	map_t Map;
+	for (int i = 0; i < XLENGTH(x); i++)
+	{
+		Map.insert(map_t::value_type(X[i], 0));
+		Map[X[i]]++;
+	}
+	return wrap(Map);
+}
+
+double combine(double a, double b) {
+   	double times = 1;
+   	while (times <= b)
+		times *= 10;
+   	return a*times + b;
+} 
+
+// [[Rcpp::export]]
+SEXP UNB(SEXP x, SEXP n, SEXP m) {
+	double *X = REAL(x);
+	int *N = INTEGER(n), *M = INTEGER(m);
+	double k;
+	typedef unordered_map<int,int> map_t;
+	map_t Map;
+	for (int i = 0; i < *N; i++)
+	{
+		k = X[i];
+		for (int j = 1; j < *M; j++)
+		{
+			k = combine(k, X[i + j * (*M)]);
+		}
+		Map.insert(map_t::value_type(k, 0));
+		Map[k]++;
+	}
+	return wrap(Map);
+}
+
 bool IsIn(mat X, mat R) {
 	int row = X.n_rows, col = X.n_cols, test;
 	bool equaled = FALSE;

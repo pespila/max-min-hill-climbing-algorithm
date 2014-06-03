@@ -7,8 +7,8 @@ if (!("Rcpp" %in% rownames(installed.packages())))
   install.packages("Rcpp")
 
 # Checks whether 'sets' is installed or not. If not it will be installed
-if(!("sets" %in% rownames(installed.packages())))
-  install.packages("sets")
+# if(!("sets" %in% rownames(installed.packages())))
+#   install.packages("sets")
 
 # Load the packages which are neede:
 # - Rcpp: for compiling
@@ -21,7 +21,7 @@ require("Rcpp")
 require("RcppArmadillo")
 require("bnlearn")
 require("rbenchmark")
-require("sets")
+# require("sets")
 sourceCpp("newMMPC.cpp")
 source("mmhc_test.R")
 
@@ -78,6 +78,7 @@ MaxMinHeuristic <- function(T, CPC, Matrix, maxNumberOfVariables, selectedBefore
 		statisticMatrix <- Matrix[setForSvalues, ] # take the specific columns of the matrix
 		U <- t(unique(t(statisticMatrix)))
 		pvalue <- Statistics(statisticMatrix, U, card[setForSvalues]) # compute the pvalue
+		n <<- n + 1
 
 		# statistical testing
 		if (pvalue[1] < alpha) { # IF: reject nullhypothesis
@@ -218,8 +219,6 @@ ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 				# If CPC is not empty then there was a variable to reject the nullhypothesis with
 				if (length(CPCset$CPC) != 0) { # IF
 
-					rejectList[[n]] <- CPCset$CPC
-					n <- n + 1
 				
 				} # IF
 
