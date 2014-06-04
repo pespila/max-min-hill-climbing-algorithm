@@ -10,7 +10,7 @@ Example <- function(rows, cols = 5, char = TRUE) {
     trinary <- c("A", "B", "C")
   } else {
     binary <- c(0, 1)
-    trinary <- c(1, 2, 3)
+    trinary <- c(0, 1, 2)
   }
   dimnames <- list(c(), c("difficulty", "intelligence", "SAT", "grade", "letter"))#, "prop"))
   studentMatrix <- matrix(, rows, cols, dimnames = dimnames)
@@ -58,7 +58,7 @@ Example <- function(rows, cols = 5, char = TRUE) {
 # This array is set global
 card <<- c(2, 2, 2, 3, 2)
 
-alpha <<- 0.01
+alpha <<- 0.05
 
 # Allocating the example of the book. Make it global and allocate it as a matrix for testing
 # purpose. Later on it should be a data frame.

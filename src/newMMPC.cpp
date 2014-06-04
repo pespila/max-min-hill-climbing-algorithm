@@ -246,57 +246,57 @@ double ***ThreeD(double x, double y, double z) {
 	return matrix;
 }
 
-// int ****FourD(int x, int y, int z, int a) {
-// 	int ****matrix = (int****)R_alloc(x, sizeof(int*));
+double ****FourD(double x, double y, double z, double a) {
+	double ****matrix = (double****)R_alloc(x, sizeof(double*));
 
-// 	for (int i = 0; i < x; i++)
-// 	{
-// 		matrix[i] = (int**)R_alloc(y, sizeof(int*));
-// 		for (int j = 0; j < y; j++)
-// 		{
-// 			matrix[i][j] = (int*)R_alloc(z, sizeof(int*));
-// 			for (int k = 0; k < z; k++)
-// 			{
-// 				matrix[i][j][k] = (int*)R_alloc(a, sizeof(int));
-// 				for (int l = 0; l < a; l++)
-// 				{
-// 					matrix[i][j][k][l] = 0;
-// 				}
-// 			}
-// 		}
-// 	}
+	for (int i = 0; i < x; i++)
+	{
+		matrix[i] = (double***)R_alloc(y, sizeof(double*));
+		for (int j = 0; j < y; j++)
+		{
+			matrix[i][j] = (double**)R_alloc(z, sizeof(double*));
+			for (int k = 0; k < z; k++)
+			{
+				matrix[i][j][k] = (double*)R_alloc(a, sizeof(double));
+				for (int l = 0; l < a; l++)
+				{
+					matrix[i][j][k][l] = 0;
+				}
+			}
+		}
+	}
 
-//       // memset(p[i][j], '\0', sizeof(int) * depth);
+      // memset(p[i][j], '\0', sizeof(int) * depth);
 
-// 	return matrix;
-// }
+	return matrix;
+}
 
-// int *****FiveD(int x, int y, int z, int a, int b) {
-// 	int *****matrix = (int*****)R_alloc(x, sizeof(int*));
+double *****FiveD(double x, double y, double z, double a, double b) {
+	double *****matrix = (double*****)R_alloc(x, sizeof(double*));
 
-// 	for (int i = 0; i < x; i++)
-// 	{
-// 		matrix[i] = (int**)R_alloc(y, sizeof(int*));
-// 		for (int j = 0; j < y; j++)
-// 		{
-// 			matrix[i][j] = (int*)R_alloc(z, sizeof(int*));
-// 			for (int k = 0; k < z; k++)
-// 			{
-// 				matrix[i][j][k] = (int*)R_alloc(a, sizeof(int*));
-// 				for (int l = 0; l < a; l++)
-// 				{
-// 					matrix[i][j][k][l] = (int*)R_alloc(b, sizeof(int));
-// 					for (int m = 0; m < b; m++)
-// 					{
-// 						matrix[i][j][k][l][m] = 0;
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}
+	for (int i = 0; i < x; i++)
+	{
+		matrix[i] = (double****)R_alloc(y, sizeof(double*));
+		for (int j = 0; j < y; j++)
+		{
+			matrix[i][j] = (double***)R_alloc(z, sizeof(double*));
+			for (int k = 0; k < z; k++)
+			{
+				matrix[i][j][k] = (double**)R_alloc(a, sizeof(double*));
+				for (int l = 0; l < a; l++)
+				{
+					matrix[i][j][k][l] = (double*)R_alloc(b, sizeof(double));
+					for (int m = 0; m < b; m++)
+					{
+						matrix[i][j][k][l][m] = 0;
+					}
+				}
+			}
+		}
+	}
 
-// 	return matrix;
-// }
+	return matrix;
+}
 
 // // [[Rcpp::export]]
 // SEXP Svalue(SEXP x) {
@@ -387,7 +387,7 @@ SEXP MySvalue(SEXP mat) {
 			{
 				for (int h = 0; h < k; h++)
 				{
-					cout << z[i][j][h] << " * 2 * log( ( " << z[i][j][h] << " * " << v[h] << " ) / ( " << x[i][h] << " * " << y[j][h] << " ) ) = " << 2 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) ) << endl;
+					// cout << z[i][j][h] << " * 2 * log( ( " << z[i][j][h] << " * " << v[h] << " ) / ( " << x[i][h] << " * " << y[j][h] << " ) ) = " << 2 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) ) << endl;
 					if (x[i][h] == 0 || y[j][h] == 0)
 						continue;
 
@@ -400,38 +400,89 @@ SEXP MySvalue(SEXP mat) {
 		// sum[0] *= 2;
 		// int DF = Df(df);
 		int DF = (m-1) * (l-1) * k;
-		cout << DF << endl;
+		// cout << DF << endl;
 		pvalue = pchisq(sum, DF, FALSE);
 		out[0] = pvalue[0];
 		out[1] = sum[0];
 
 		return out;
-	}
-	// else if (hDim == 4) {
-	// 	int k = max(A(_, 2)), l = max(A(_, 1)), m = max(A(_, 0));
-	// 	int *v = OneD(k), ***x = ThreeD(m, k), ***y = ThreeD(l, m), ****z = FourD(m, l, k);
+	} else if (hDim == 4) {
+		int n = max(A(_, 3)) + 1, k = max(A(_, 2)) + 1, l = max(A(_, 1)) + 1, m = max(A(_, 0)) + 1;
+		double **v = TwoD(k, n), ***x = ThreeD(m, k, n), ***y = ThreeD(l, k, n), ****z = FourD(m, l, k, n);
 
-	// 	for (int i = 0; i < vDim; i++)
-	// 	{
-	// 		v[A(i, 2)]++;
-	// 		x[A(i, 0)][A(i, 2)]++;
-	// 		y[A(i, 0)][A(i, 1)]++;
-	// 		z[A(i, 0)][A(i, 1)][A(i, 2)]++;
-	// 	}
-	// } else if (hDim == 5) {
-	// 	int k = max(A(_, 2)), l = max(A(_, 1)), m = max(A(_, 0));
-	// 	int *v = OneD(k), ****x = FourD(m, k), ****y = FourD(l, m), *****z = FiveD(m, l, k);
+		for (int i = 0; i < vDim; i++)
+		{
+			v[(int)A(i, 2)][(int)A(i, 3)]++;
+			x[(int)A(i, 0)][(int)A(i, 2)][(int)A(i, 3)]++;
+			y[(int)A(i, 1)][(int)A(i, 2)][(int)A(i, 3)]++;
+			z[(int)A(i, 0)][(int)A(i, 1)][(int)A(i, 2)][(int)A(i, 3)]++;
+		}
 
-	// 	for (int i = 0; i < vDim; i++)
-	// 	{
-	// 		v[A(i, 2)]++;
-	// 		x[A(i, 0)][A(i, 2)]++;
-	// 		y[A(i, 0)][A(i, 1)]++;
-	// 		z[A(i, 0)][A(i, 1)][A(i, 2)]++;
-	// 	}
-	// }
-	else {
-		return sum;
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < l; j++)
+			{
+				for (int h = 0; h < k; h++)
+				{
+					for (int f = 0; f < n; f++)
+					{
+						if (x[i][h][f] == 0 || y[j][h][f] == 0 || z[i][j][h][f] == 0)
+							continue;
+						sum[0] += 2.0 * z[i][j][h][f] * log( (z[i][j][h][f] * v[h][f]) / (x[i][h][f] * y[j][h][f]) );
+						// cout << z[i][j][h][f] << " * 2 * log( ( " << z[i][j][h][f] << " * " << v[h][f] << " ) / ( " << x[i][h][f] << " * " << y[j][h][f] << " ) ) = " << 2 * z[i][j][h][f] * log( (z[i][j][h][f] * v[h][f]) / (x[i][h][f] * y[j][h][f]) ) << endl;
+					}
+				}
+			}
+		}
+
+		int DF = (m-1) * (l-1) * k * (n-1);
+		// cout << DF << endl;
+		pvalue = pchisq(sum, DF, FALSE);
+		out[0] = pvalue[0];
+		out[1] = sum[0];
+
+		return out;
+
+	} else if (hDim == 5) {
+		int o = max(A(_, 4)) + 1, n = max(A(_, 3)) + 1, k = max(A(_, 2)) + 1, l = max(A(_, 1)) + 1, m = max(A(_, 0)) + 1;
+		double ***v = ThreeD(k, n, o), ****x = FourD(m, k, n, o), ****y = FourD(l, k, n, o), *****z = FiveD(m, l, k, n, o);
+
+		for (int i = 0; i < vDim; i++)
+		{
+			v[(int)A(i, 2)][(int)A(i, 3)][(int)A(i, 4)]++;
+			x[(int)A(i, 0)][(int)A(i, 2)][(int)A(i, 3)][(int)A(i, 4)]++;
+			y[(int)A(i, 1)][(int)A(i, 2)][(int)A(i, 3)][(int)A(i, 4)]++;
+			z[(int)A(i, 0)][(int)A(i, 1)][(int)A(i, 2)][(int)A(i, 3)][(int)A(i, 4)]++;
+		}
+
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < l; j++)
+			{
+				for (int h = 0; h < k; h++)
+				{
+					for (int f = 0; f < n; f++)
+					{
+						for (int e = 0; e < o; e++)
+						{
+							if (x[i][h][f][e] == 0 || y[j][h][f][e] == 0 || z[i][j][h][f][e] == 0)
+								continue;
+							sum[0] += 2.0 * z[i][j][h][f][e] * log( (z[i][j][h][f][e] * v[h][f][e]) / (x[i][h][f][e] * y[j][h][f][e]) );
+						}
+					}
+				}
+			}
+		}
+
+		int DF = (m-1) * (l-1) * k * (n-1) * o;
+		pvalue = pchisq(sum, DF, FALSE);
+		out[0] = pvalue[0];
+		out[1] = sum[0];
+
+		return out;
+		
+	} else {
+		return out;
 	}
 }
 
@@ -497,7 +548,7 @@ NumericVector Statistics(SEXP x, SEXP y, SEXP z) {
 					if(allC(v,u,-2))
 						count[3]++;
 				}
-				cout << count[0] << " * 2 * log( ( " << count[0] << " * " << count[3] << " ) / ( " << count[1] << " * " << count[2] << " ) ) = " << 2 * count[0] * log( (count[0] * count[3]) / (count[1] * count[2]) ) << endl;
+				// cout << count[0] << " * 2 * log( ( " << count[0] << " * " << count[3] << " ) / ( " << count[1] << " * " << count[2] << " ) ) = " << 2 * count[0] * log( (count[0] * count[3]) / (count[1] * count[2]) ) << endl;
 				sum[0] += 2 * count[0] * log( ( count[0] * count[3] ) / ( count[1] * count[2] ) );
 				// cout << sum[0] << endl;
 			}
@@ -506,7 +557,7 @@ NumericVector Statistics(SEXP x, SEXP y, SEXP z) {
 
 	// df = Cardinality(A);
 	int DF = Df(df);
-	cout << DF << endl;
+	// cout << DF << endl;
 	pvalue = pchisq(sum, DF, FALSE);
 	out[0] = pvalue[0];
 	out[1] = sum[0];
