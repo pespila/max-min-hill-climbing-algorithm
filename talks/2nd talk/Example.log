@@ -1,8 +1,8 @@
-This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=latex 2014.1.27)  3 JUN 2014 13:19
+This is pdfTeX, Version 3.1415926-1.40.10 (TeX Live 2009/Debian) (format=latex 2014.1.27)  3 JUN 2014 11:01
 entering extended mode
  %&-line parsing enabled.
-**2ndTalk.tex
-(./2ndTalk.tex
+**Example.tex
+(./Example.tex
 LaTeX2e <2009/09/24>
 Babel <v3.8l> and hyphenation patterns for english, usenglishmax, dumylang, noh
 yphenation, ngerman, german, german-x-2009-06-19, ngerman-x-2009-06-19, ibycus,
@@ -816,8 +816,9 @@ Package: beamercolorthemebeaver 2010/06/17  (rcs-revision d02a7cf4d8ae)
 (/usr/share/texmf/tex/latex/beamer/base/themes/color/beamercolorthemeseahorse.s
 ty
 Package: beamercolorthemeseahorse 2010/06/17  (rcs-revision d02a7cf4d8ae)
-) (./2ndTalk.aux)
-\openout1 = `2ndTalk.aux'.
+)
+No file Example.aux.
+\openout1 = `Example.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 22.
 LaTeX Font Info:    ... okay on input line 22.
@@ -833,7 +834,6 @@ LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 22.
 LaTeX Font Info:    ... okay on input line 22.
 LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 22.
 LaTeX Font Info:    ... okay on input line 22.
-
 *geometry auto-detecting driver*
 *geometry detected driver: dvips*
 -------------------- Geometry parameters
@@ -888,12 +888,14 @@ Package: refcount 2008/08/11 v3.1 Data extraction from references (HO)
 )
 LaTeX Info: Redefining \ref on input line 22.
 LaTeX Info: Redefining \pageref on input line 22.
- (./2ndTalk.out)
-(./2ndTalk.out)
 \@outlinefile=\write5
-\openout5 = `2ndTalk.out'.
+\openout5 = `Example.out'.
 
 \AtBeginShipoutBox=\box59
+
+
+Package hyperref Warning: Rerun to get /PageLabels entry.
+
 LaTeX Font Info:    Overwriting symbol font `operators' in version `normal'
 (Font)                  OT1/cmr/m/n --> OT1/cmss/m/n on input line 22.
 LaTeX Font Info:    Overwriting symbol font `operators' in version `bold'
@@ -960,82 +962,74 @@ Dictionary: translator-numbers-dictionary, Language: English
 (/usr/share/texmf/tex/latex/beamer/base/translator/dicts/translator-theorem-dic
 tionary/translator-theorem-dictionary-English.dict
 Dictionary: translator-theorem-dictionary, Language: English 
-) (./2ndTalk.nav)
+)
+No file Example.nav.
 
 Package hyperref Warning: Option `pdfauthor' has already been used,
 (hyperref)                setting the option has no effect on input line 24.
 
+LaTeX Font Info:    Try loading font information for U+msa on input line 109.
+(/usr/share/texmf-texlive/tex/latex/amsfonts/umsa.fd
+File: umsa.fd 2009/06/22 v3.00 AMS symbols A
+)
+LaTeX Font Info:    Try loading font information for U+msb on input line 109.
+
+(/usr/share/texmf-texlive/tex/latex/amsfonts/umsb.fd
+File: umsb.fd 2009/06/22 v3.00 AMS symbols B
+)
+Overfull \hbox (5.47258pt too wide) detected at line 109
+ [] 
+ []
+
+
+Overfull \hbox (14.29485pt too wide) detected at line 109
+ [] 
+ []
+
+
+Overfull \hbox (63.81006pt too wide) detected at line 109
+ [] 
+ []
+
+
+Overfull \hbox (24.36899pt too wide) detected at line 109
+ [] 
+ []
+
+
+Overfull \hbox (21.42451pt too wide) detected at line 109
+ [] 
+ []
+
 
 LaTeX Font Warning: Font shape `OT1/cmss/m/n' in size <4> not available
-(Font)              size <5> substituted on input line 31.
+(Font)              size <5> substituted on input line 109.
 
 [1
 
 ]
-File: img/mmpc_bar.eps Graphic file (type eps)
- <img/mmpc_bar.eps>
-Overfull \vbox (2.45609pt too high) detected at line 41
- []
-
-[2
-
-]
-LaTeX Font Info:    Try loading font information for U+msa on input line 58.
- (/usr/share/texmf-texlive/tex/latex/amsfonts/umsa.fd
-File: umsa.fd 2009/06/22 v3.00 AMS symbols A
-)
-LaTeX Font Info:    Try loading font information for U+msb on input line 58.
-
-(/usr/share/texmf-texlive/tex/latex/amsfonts/umsb.fd
-File: umsb.fd 2009/06/22 v3.00 AMS symbols B
-) [3
-
-] [4
-
-]
-File: img/chi1.eps Graphic file (type eps)
- <img/chi1.eps>
-[5
-
-]
-File: img/mmpc_bar.eps Graphic file (type eps)
- <img/mmpc_bar.eps>
-Overfull \vbox (2.45609pt too high) detected at line 104
- []
-
-[6
-
-]
-File: img/backward.eps Graphic file (type eps)
- <img/backward.eps> [7
-
-] [8
-
-] [9
-
-]
 \tf@nav=\write6
-\openout6 = `2ndTalk.nav'.
+\openout6 = `Example.nav'.
 
 \tf@toc=\write7
-\openout7 = `2ndTalk.toc'.
+\openout7 = `Example.toc'.
 
 \tf@snm=\write8
-\openout8 = `2ndTalk.snm'.
+\openout8 = `Example.snm'.
 
- (./2ndTalk.aux)
+ (./Example.aux)
 
 LaTeX Font Warning: Size substitutions with differences
 (Font)              up to 1.0pt have occurred.
 
  ) 
 Here is how much of TeX's memory you used:
- 17237 strings out of 494949
- 312181 string characters out of 1179546
- 446046 words of memory out of 3000000
- 19977 multiletter control sequences out of 15000+50000
- 12136 words of font info for 45 fonts, out of 3000000 for 9000
+ 17000 strings out of 494949
+ 307698 string characters out of 1179546
+ 458046 words of memory out of 3000000
+ 19758 multiletter control sequences out of 15000+50000
+ 9089 words of font info for 34 fonts, out of 3000000 for 9000
  73 hyphenation exceptions out of 8191
- 49i,19n,60p,438b,697s stack positions out of 5000i,500n,10000p,200000b,50000s
+ 49i,17n,60p,438b,563s stack positions out of 5000i,500n,10000p,200000b,50000s
 
-Output written on 2ndTalk.dvi (9 pages, 70832 bytes).
+Output written on Example.dvi (1 page, 29204 bytes).

@@ -44,17 +44,12 @@
 \section{Statistics}
 	\subsection{Conditional Independence}
 		\begin{frame}
-			\begin{block}{Reminder (Conditional Independence)}
-				Two variables $X$ and $Y$ are \underline{conditionally independent given \textbf{Z}} w.r.t a probability distribution P, denoted as $Ind_{p}(X;Y|\textbf{Z})$, if $\forall x,y,\textbf{z}$, where $P(\textbf{Z} = \textbf{z}) > 0$,
-					\begin{equation}
-						P(X,Y|\textbf{Z}) = P(X|\textbf{Z})*P(Y|\textbf{Z}),
-					\end{equation}
-				where $P(X,Y|\textbf{Z}) = P(X \cap Y|\textbf{Z})$.\pause \\
-				It is equivalent
-					\begin{equation}
-						Ind(X;T|\textbf{Z}) \Longleftrightarrow (Assoc(X;T|\textbf{Z}) = 0),
-					\end{equation}
-				where $Assoc(X;T|\textbf{Z})$ is the strength association (dependency) of $X$ and $T$ given $\textbf{Z}$. \pause \\
+			\begin{block}{Definition}
+				% It is equivalent
+				% 	\begin{equation}
+				% 		Ind(X;T|\textbf{Z}) \Longleftrightarrow (Assoc(X;T|\textbf{Z}) = 0),
+				% 	\end{equation}
+				% where $Assoc(X;T|\textbf{Z})$ is the strength association (dependency) of $X$ and $T$ given $\textbf{Z}$. \\
 				We define the minimum association of $X$ and $T$ relative to a feature subset $\textbf{Z}$, as
 					\begin{equation}
 						MinAssoc(X;T | \textbf{Z}) = \min_{\textbf{S} \subseteq \textbf{Z}} Assoc(X; T | \textbf{S}).
@@ -62,6 +57,19 @@
 			\end{block}
 		\end{frame}
 
+% \section{Forward Phase}
+% 	\subsection{How the algorithm works}
+% 		\begin{center}
+% 			\begin{frame}
+% 				\begin{center}
+% 					\begin{figure}
+% 						\includegraphics[scale=0.3]{img/example_part1}
+% 					\end{figure}
+% 				\end{center}
+% 			\end{frame}
+% 		\end{center}
+
+\section{Statistics}
 	\subsection{The $G^{2}$ value}
 		\begin{frame}
 			\begin{block}{Definition}
@@ -80,32 +88,10 @@
 				\begin{figure}
 					\includegraphics[scale=0.3, angle = 270]{img/chi1}
 				\end{figure}
+				$\alpha = 0.05$
 			\end{center}
 		\end{frame}
 	\end{center}
-
-	\subsection{Query the graph}
-		\begin{center}
-		\begin{frame}
-			\begin{center}
-				\begin{figure}
-					\includegraphics[scale=0.3, angle = 270]{img/chi2}
-				\end{figure}
-			\end{center}
-		\end{frame}
-	\end{center}
-
-\section{Forward Phase}
-	\subsection{How the algorithm works}
-		\begin{center}
-			\begin{frame}
-				\begin{center}
-					\begin{figure}
-						\includegraphics[scale=0.3]{img/example_part1}
-					\end{figure}
-				\end{center}
-			\end{frame}
-		\end{center}
 
 \section{MMPC}
 	\begin{center}
@@ -128,105 +114,6 @@
 			\end{center}
 		\end{frame}
 	\end{center}
-
-\section{Example}
-	\begin{frame}
-		\begin{small}
-			\begin{psmatrix}[emnode=r,colsep=0.5cm,rowsep=0.6cm,mnodesize=2cm]
-				[name=Tdiff]
-					\begin{tabular}{|c|c|}
-						\hline
-						$\textbf{d}^{0}$ & $\textbf{d}^{1}$ \\
-						\hline	0.6 & 0.4  \\
-						\hline
-						\end{tabular}
-				&[name=Diff,mnode=circle]
-					Difficulty (1)
-				&
-				&[name=Intell,mnode=circle]
-					Intelligence (2)
-				&[name=TInt]
-					\begin{tabular}{|c|c|}
-						\hline
-						$\textbf{i}^{0}$ & $\textbf{i}^{1}$ \\
-						\hline 0.7 & 0.3  \\
-						\hline 
-					\end{tabular}
-				\\
-				[name=TGrade]
-					\begin{tabular}{|c|c|c|c|}
-						\hline
-						& $\textbf{g}^{1}$ & $\textbf{g}^{2}$ & $\textbf{g}^{3}$ \\
-						\hline
-						$\textbf{i}^{0}$,$\textbf{d}^{0}$ & 0.3 & 0.4 & 0.3  \\
-						\hline
-						$\textbf{i}^{0}$,$\textbf{d}^{1}$ & 0.05 & 0.25 & 0.7  \\
-						\hline
-						$\textbf{i}^{1}$,$\textbf{d}^{0}$ & 0.9 & 0.08 & 0.02  \\
-						\hline
-						$\textbf{i}^{1}$,$\textbf{d}^{1}$ & 0.5 & 0.3 & 0.2  \\
-						\hline
-					\end{tabular}
-				&
-				&[name=Grade,mnode=circle]Grade (4)
-				&
-				&[name=SAT,mnode=circle]SAT (3)
-				\\
-				[name=Tlet]
-					\begin{tabular}{|c|c|c|}
-						\hline
-						& $\textbf{l}^{0}$ & $\textbf{l}^{1}$ \\
-						\hline
-						$\textbf{g}^{1}$ & 0.95 & 0.05  \\
-						\hline
-						$\textbf{g}^{2}$ & 0.2 & 0.8  \\
-						\hline
-						$\textbf{g}^{3}$ & 0.2 & 0.8  \\
-						\hline
-					\end{tabular}
-				&
-				&[name=Let,mnode=circle]Letter (5)
-				&[name=TSAT]
-					\begin{tabular}{|c|c|c|}
-						\hline
-						& $\textbf{s}^{0}$ & $\textbf{s}^{1}$ \\
-						\hline
-						$\textbf{i}^{0}$ & 0.95 & 0.05  \\
-						\hline
-						$\textbf{i}^{1}$ & 0.2 & 0.8  \\
-						\hline
-					\end{tabular}
-				&		
-			\end{psmatrix}
-		\end{small}
-			\psset{nodesep=1pt,arrows=->}
-			\ncline{Diff}{Grade}
-			\ncline{Intell}{Grade}
-			\ncline{Intell}{SAT}
-			\ncline{Grade}{Let}
-			\psset{nodesep=5pt,arrows=-}
-			\ncline{Tdiff}{Diff}
-			\ncline{TInt}{Intell}
-			\ncline{TSAT}{SAT}
-			\ncline{TGrade}{Grade}
-			\ncline{Tlet}{Let}
-	\end{frame}
-
-\section{Till now...}
-	\begin{frame}
-			\frametitle{How this is working until now:}
-				$
-					\psmatrix[colsep=1.2cm,rowsep=1cm,mnode=circle]
-					&Difficulty&&Intelligence\\
-					&&Grade&&SAT\\
-					&&Letter
-					\ncline{-}{1,2}{2,3}
-					\ncline{-}{1,4}{2,3}
-					\ncline{-}{1,4}{2,5}
-					\ncline{-}{2,3}{3,3}
-					\endpsmatrix
-				$
-		\end{frame}
 
 \section{What's next?}
 	\begin{frame}

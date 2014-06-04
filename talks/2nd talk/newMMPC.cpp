@@ -34,6 +34,22 @@ bool Id(SEXP a, SEXP b, int del = -1) {
 }
 
 // [[Rcpp::export]]
+bool Identical(SEXP a, SEXP b) {
+	bool out = TRUE;
+	double *x = REAL(a), *y = REAL(b);
+	if(XLENGTH(a)!=XLENGTH(b)) out=FALSE;
+	else {
+		for (int i = 0; i < XLENGTH(a); i++) {
+			if(x[i]!=y[i]) {
+				out=FALSE;
+				break;
+			}
+		}
+	}
+	return out;
+}
+
+// [[Rcpp::export]]
 SEXP UpdateCPC(SEXP x, int selected = 0) {
 	NumericVector tmp;
 	List cpc(x);
@@ -72,16 +88,21 @@ int Df(SEXP x) {
 // [[Rcpp::export]]
 NumericVector Statistics(SEXP x, SEXP y, SEXP z) {
 	int n, m;
+
+	// Init vectors: count -> count number of times, sum -> Gsquare value, pvalue..., df, out
 	NumericVector count(4, 0.0);
 	NumericVector sum(1, 0.0);
 	NumericVector pvalue(1, 0.0);
 	NumericVector df(z);
 	NumericVector out(2, 0.0);
 	
+	// A is my matrix, B is the unique matrix
 	NumericMatrix A(x);
 	NumericMatrix B(y);
 	n = A.ncol();
 	m = B.ncol();
+
+	// temporary vectors
 	NumericVector u;
 	NumericVector v;
 
@@ -89,6 +110,7 @@ NumericVector Statistics(SEXP x, SEXP y, SEXP z) {
 	{
 		count[0] = count[1] = count[2] = count[3] = 0;
 		u = B(_,i);
+		
 		for (int j = 0; j < n; j++)
 		{
 			v = A(_, j);
@@ -100,9 +122,11 @@ NumericVector Statistics(SEXP x, SEXP y, SEXP z) {
 				count[2]++;
 			if(Id(v, u, -2))
 				count[3]++;
-		}
+		} // FOR
+		
 		sum[0] += 2 * count[0] * log( ( count[0] * count[3] ) / ( count[1] * count[2] ) );
-	}
+	
+	} // FOR
 
 	// df = Cardinality(A);
 	int DF = Df(df);

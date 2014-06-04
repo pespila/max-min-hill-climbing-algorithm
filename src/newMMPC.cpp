@@ -56,32 +56,34 @@ SEXP UN(SEXP x) {
 	return wrap(Map);
 }
 
-double combine(double a, double b) {
-   	double times = 1;
-   	while (times <= b)
-		times *= 10;
-   	return a*times + b;
-} 
+// double combine(double a, double b) {
+//    	double times = 1;
+//   //  	while (times <= b)
+// 		// times *= 10;
+//    	// return a*times + b;
+//    	return a^b;
+// } 
 
-// [[Rcpp::export]]
-SEXP UNB(SEXP x, SEXP n, SEXP m) {
-	double *X = REAL(x);
-	int *N = INTEGER(n), *M = INTEGER(m);
-	double k;
-	typedef unordered_map<int,int> map_t;
-	map_t Map;
-	for (int i = 0; i < *N; i++)
-	{
-		k = X[i];
-		for (int j = 1; j < *M; j++)
-		{
-			k = combine(k, X[i + j * (*M)]);
-		}
-		Map.insert(map_t::value_type(k, 0));
-		Map[k]++;
-	}
-	return wrap(Map);
-}
+// // [[Rcpp::export]]
+// SEXP UNB(SEXP x, SEXP n, SEXP m) {
+// 	double *X = REAL(x);
+// 	int *N = INTEGER(n), *M = INTEGER(m);
+// 	double k;
+// 	typedef unordered_map<int,int> map_t;
+// 	map_t Map;
+// 	a 
+// 	for (int i = 0; i < *N; i++)
+// 	{
+// 		k = X[i];
+// 		for (int j = 1; j < *M; j++)
+// 		{
+// 			k = combine(k, X[i + j * (*M)]);
+// 		}
+// 		Map.insert(map_t::value_type(k, 0));
+// 		Map[k]++;
+// 	}
+// 	return wrap(Map);
+// }
 
 bool IsIn(mat X, mat R) {
 	int row = X.n_rows, col = X.n_cols, test;
@@ -201,6 +203,246 @@ SEXP UpdateCPC(SEXP x, int selected = 0) {
 	return cpc;
 }
 
+double *OneD(double x) {
+	double *matrix = (double*)R_alloc(x, sizeof(double));
+	for (int i = 0; i < x; i++)
+	{
+		matrix[i] = 0;
+	}
+	return matrix;
+}
+
+double **TwoD(double x, double y) {
+	double **matrix = (double**)R_alloc(x, sizeof(double*));
+
+	for (int i = 0; i < x; i++)
+	{
+		matrix[i] = (double*)R_alloc(y, sizeof(double));
+		for (int j = 0; j < y; j++)
+		{
+			matrix[i][j] = 0;
+		}
+	}
+
+	return matrix;
+}
+
+double ***ThreeD(double x, double y, double z) {
+	double ***matrix = (double***)R_alloc(x, sizeof(double*));
+
+	for (int i = 0; i < x; i++)
+	{
+		matrix[i] = (double**)R_alloc(y, sizeof(double*));
+		for (int j = 0; j < y; j++)
+		{
+			matrix[i][j] = (double*)R_alloc(z, sizeof(double));
+			for (int k = 0; k < z; k++)
+			{
+				matrix[i][j][k] = 0;
+			}
+		}
+	}
+
+	return matrix;
+}
+
+// int ****FourD(int x, int y, int z, int a) {
+// 	int ****matrix = (int****)R_alloc(x, sizeof(int*));
+
+// 	for (int i = 0; i < x; i++)
+// 	{
+// 		matrix[i] = (int**)R_alloc(y, sizeof(int*));
+// 		for (int j = 0; j < y; j++)
+// 		{
+// 			matrix[i][j] = (int*)R_alloc(z, sizeof(int*));
+// 			for (int k = 0; k < z; k++)
+// 			{
+// 				matrix[i][j][k] = (int*)R_alloc(a, sizeof(int));
+// 				for (int l = 0; l < a; l++)
+// 				{
+// 					matrix[i][j][k][l] = 0;
+// 				}
+// 			}
+// 		}
+// 	}
+
+//       // memset(p[i][j], '\0', sizeof(int) * depth);
+
+// 	return matrix;
+// }
+
+// int *****FiveD(int x, int y, int z, int a, int b) {
+// 	int *****matrix = (int*****)R_alloc(x, sizeof(int*));
+
+// 	for (int i = 0; i < x; i++)
+// 	{
+// 		matrix[i] = (int**)R_alloc(y, sizeof(int*));
+// 		for (int j = 0; j < y; j++)
+// 		{
+// 			matrix[i][j] = (int*)R_alloc(z, sizeof(int*));
+// 			for (int k = 0; k < z; k++)
+// 			{
+// 				matrix[i][j][k] = (int*)R_alloc(a, sizeof(int*));
+// 				for (int l = 0; l < a; l++)
+// 				{
+// 					matrix[i][j][k][l] = (int*)R_alloc(b, sizeof(int));
+// 					for (int m = 0; m < b; m++)
+// 					{
+// 						matrix[i][j][k][l][m] = 0;
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	return matrix;
+// }
+
+// // [[Rcpp::export]]
+// SEXP Svalue(SEXP x) {
+// 	NumericMatrix A(x);
+// 	int m = max(A(_, 0)) + 1;
+
+// 	if(A.ncol() == 1) {
+// 		IntegerVector B(m, 0);
+
+// 		for (int i = 0; i < A.nrow(); i++)
+// 		{
+// 			B[A[i]]++;
+// 		}
+
+// 		return B;
+// 	} else if(A.ncol() == 2) {
+// 		int l = max(A(_, 1)) + 1;
+// 		NumericMatrix B(m, l);
+
+// 		for (int i = 0; i < A.nrow(); i++)
+// 		{
+// 			B(A(i, 0), A(i, 1))++;
+// 		}
+
+// 		return B;
+// 	} else if(A.ncol() == 3) {
+// 		int l = max(A(_, 1)) + 1, k = max(A(_, 2)) + 1;
+// 		double ***B = ThreeD(m, l, k);
+
+// 		for (int i = 0; i < A.nrow(); i++)
+// 		{
+// 			B[(int)A(i, 0)][(int)A(i, 1)][(int)A(i, 2)]++;
+// 		}
+
+// 		return unique(A);
+// 		// return B[0][0][0];
+
+// 	}  else if(A.ncol() == 4) {
+// 		int l = max(A(_, 1)) + 1, k = max(A(_, 2)) + 1, n = max(A(_, 3)) + 1;
+// 		double ****B = ThreeD(m, l, k, n);
+
+// 		for (int i = 0; i < A.nrow(); i++)
+// 		{
+// 			B[(int)A(i, 0)][(int)A(i, 1)][(int)A(i, 2)][A(i, 3)]++;
+// 		}
+
+// 		return unique(A);
+// 		// return B[0][0][0];
+
+// 	}  else if(A.ncol() == 5) {
+// 		int l = max(A(_, 1)) + 1, k = max(A(_, 2)) + 1 n = max(A(_, 3)) + 1, o = max(A(_, 4)) + 1;
+// 		double *****B = ThreeD(m, l, k, n, o);
+
+// 		for (int i = 0; i < A.nrow(); i++)
+// 		{
+// 			B[(int)A(i, 0)][(int)A(i, 1)][(int)A(i, 2)][A(i, 3)][A(i, 4)]++;
+// 		}
+
+// 		return unique(A);
+// 		// return B[0][0][0];
+
+// 	} else {
+// 		return unique(A);
+// 	}
+// }
+
+// [[Rcpp::export]]
+SEXP MySvalue(SEXP mat) {
+	NumericMatrix A(mat);
+	int hDim = A.ncol(), vDim = A.nrow();
+	NumericVector sum(1, 0.0), pvalue(1, 0.0), out(2, 0.0);
+
+	if (hDim == 3) {
+		int k = max(A(_, 2)) + 1, l = max(A(_, 1)) + 1, m = max(A(_, 0)) + 1;
+		double *v = OneD(k), **x = TwoD(m, k), **y = TwoD(l, m), ***z = ThreeD(m, l, k);
+
+		for (int i = 0; i < vDim; i++)
+		{
+			v[(int)A(i, 2)]++;
+			x[(int)A(i, 0)][(int)A(i, 2)]++;
+			y[(int)A(i, 1)][(int)A(i, 2)]++;
+			z[(int)A(i, 0)][(int)A(i, 1)][(int)A(i, 2)]++;
+		}
+
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < l; j++)
+			{
+				for (int h = 0; h < k; h++)
+				{
+					cout << z[i][j][h] << " * 2 * log( ( " << z[i][j][h] << " * " << v[h] << " ) / ( " << x[i][h] << " * " << y[j][h] << " ) ) = " << 2 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) ) << endl;
+					if (x[i][h] == 0 || y[j][h] == 0)
+						continue;
+
+					sum[0] += 2.0 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) );
+					// cout << sum[0] << endl;
+				}
+			}
+		}
+
+		// sum[0] *= 2;
+		// int DF = Df(df);
+		int DF = (m-1) * (l-1) * k;
+		cout << DF << endl;
+		pvalue = pchisq(sum, DF, FALSE);
+		out[0] = pvalue[0];
+		out[1] = sum[0];
+
+		return out;
+	}
+	// else if (hDim == 4) {
+	// 	int k = max(A(_, 2)), l = max(A(_, 1)), m = max(A(_, 0));
+	// 	int *v = OneD(k), ***x = ThreeD(m, k), ***y = ThreeD(l, m), ****z = FourD(m, l, k);
+
+	// 	for (int i = 0; i < vDim; i++)
+	// 	{
+	// 		v[A(i, 2)]++;
+	// 		x[A(i, 0)][A(i, 2)]++;
+	// 		y[A(i, 0)][A(i, 1)]++;
+	// 		z[A(i, 0)][A(i, 1)][A(i, 2)]++;
+	// 	}
+	// } else if (hDim == 5) {
+	// 	int k = max(A(_, 2)), l = max(A(_, 1)), m = max(A(_, 0));
+	// 	int *v = OneD(k), ****x = FourD(m, k), ****y = FourD(l, m), *****z = FiveD(m, l, k);
+
+	// 	for (int i = 0; i < vDim; i++)
+	// 	{
+	// 		v[A(i, 2)]++;
+	// 		x[A(i, 0)][A(i, 2)]++;
+	// 		y[A(i, 0)][A(i, 1)]++;
+	// 		z[A(i, 0)][A(i, 1)][A(i, 2)]++;
+	// 	}
+	// }
+	else {
+		return sum;
+	}
+}
+
+// [[Rcpp::export]]
+void Do(SEXP x) {
+	NumericMatrix A(x);
+	int k = max(A(_,0));
+	NumericMatrix B(k, k);
+	cout << k << endl;
+}
+
 // [[Rcpp::export]]
 int Df(SEXP x) {
 	double *DfSet = REAL(x);
@@ -221,6 +463,7 @@ int Df(SEXP x) {
 // [[Rcpp::export]]
 NumericVector Statistics(SEXP x, SEXP y, SEXP z) {
 	int n, m;
+	// int *X = INTEGER(x);
 	NumericVector count(4,0.0);
 	NumericVector sum(1,0.0);
 	NumericVector pvalue(1,0.0);
@@ -254,13 +497,16 @@ NumericVector Statistics(SEXP x, SEXP y, SEXP z) {
 					if(allC(v,u,-2))
 						count[3]++;
 				}
+				cout << count[0] << " * 2 * log( ( " << count[0] << " * " << count[3] << " ) / ( " << count[1] << " * " << count[2] << " ) ) = " << 2 * count[0] * log( (count[0] * count[3]) / (count[1] * count[2]) ) << endl;
 				sum[0] += 2 * count[0] * log( ( count[0] * count[3] ) / ( count[1] * count[2] ) );
+				// cout << sum[0] << endl;
 			}
 		}
 	}
 
 	// df = Cardinality(A);
 	int DF = Df(df);
+	cout << DF << endl;
 	pvalue = pchisq(sum, DF, FALSE);
 	out[0] = pvalue[0];
 	out[1] = sum[0];

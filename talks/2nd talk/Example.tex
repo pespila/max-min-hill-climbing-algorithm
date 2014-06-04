@@ -1,0 +1,111 @@
+% Dieser Text ist urheberrechtlich geschützt
+% Er stellt einen Auszug eines von mir erstellten Referates dar
+% und darf nicht gewerblich genutzt werden
+% die private bzw. Studiums bezogen Nutzung ist frei
+% Mai. 2007
+% Autor: Sascha Frank 
+% Universität Freiburg 
+% www.informatik.uni-freiburg.de/~frank/
+\documentclass{beamer}
+% \documentclass[notes=only]{beamer}
+\usepackage{pst-bar,pst-plot,pstricks-add}
+\usepackage{graphics,graphicx}
+\usepackage{pstricks,pst-node,pst-tree}
+% \setbeameroption{show notes}
+\setcounter{tocdepth}{1}
+
+\setbeamertemplate{navigation symbols}{}
+\beamersetuncovermixins{\opaqueness<1>{25}}{\opaqueness<2->{15}}
+\usetheme{CambridgeUS}
+\usecolortheme{seahorse}
+
+\begin{document}
+	\title{The max-min-hill-climbing algorithm}  
+	\author[M. Bauer]{Michael Bauer}
+	\institute[M.Sc. Comp. Science]{M.Sc. Comp. Science}
+	\date{\today}
+
+\section{Example}
+	\begin{frame}
+		\begin{small}
+			\begin{psmatrix}[emnode=r,colsep=0.5cm,rowsep=0.6cm,mnodesize=2cm]
+				[name=Tdiff]
+					\begin{tabular}{|c|c|}
+						\hline
+						$\textbf{d}^{0}$ & $\textbf{d}^{1}$ \\
+						\hline	0.6 & 0.4  \\
+						\hline
+						\end{tabular}
+				&[name=Diff,mnode=circle]
+					Difficulty (1)
+				&
+				&[name=Intell,mnode=circle]
+					Intelligence (2)
+				&[name=TInt]
+					\begin{tabular}{|c|c|}
+						\hline
+						$\textbf{i}^{0}$ & $\textbf{i}^{1}$ \\
+						\hline 0.7 & 0.3  \\
+						\hline 
+					\end{tabular}
+				\\
+				[name=TGrade]
+					\begin{tabular}{|c|c|c|c|}
+						\hline
+						& $\textbf{g}^{1}$ & $\textbf{g}^{2}$ & $\textbf{g}^{3}$ \\
+						\hline
+						$\textbf{i}^{0}$,$\textbf{d}^{0}$ & 0.3 & 0.4 & 0.3  \\
+						\hline
+						$\textbf{i}^{0}$,$\textbf{d}^{1}$ & 0.05 & 0.25 & 0.7  \\
+						\hline
+						$\textbf{i}^{1}$,$\textbf{d}^{0}$ & 0.9 & 0.08 & 0.02  \\
+						\hline
+						$\textbf{i}^{1}$,$\textbf{d}^{1}$ & 0.5 & 0.3 & 0.2  \\
+						\hline
+					\end{tabular}
+				&
+				&[name=Grade,mnode=circle]Grade (4)
+				&
+				&[name=SAT,mnode=circle]SAT (3)
+				\\
+				[name=Tlet]
+					\begin{tabular}{|c|c|c|}
+						\hline
+						& $\textbf{l}^{0}$ & $\textbf{l}^{1}$ \\
+						\hline
+						$\textbf{g}^{1}$ & 0.95 & 0.05  \\
+						\hline
+						$\textbf{g}^{2}$ & 0.2 & 0.8  \\
+						\hline
+						$\textbf{g}^{3}$ & 0.2 & 0.8  \\
+						\hline
+					\end{tabular}
+				&
+				&[name=Let,mnode=circle]Letter (5)
+				&[name=TSAT]
+					\begin{tabular}{|c|c|c|}
+						\hline
+						& $\textbf{s}^{0}$ & $\textbf{s}^{1}$ \\
+						\hline
+						$\textbf{i}^{0}$ & 0.95 & 0.05  \\
+						\hline
+						$\textbf{i}^{1}$ & 0.2 & 0.8  \\
+						\hline
+					\end{tabular}
+				&		
+			\end{psmatrix}
+		\end{small}
+			\psset{nodesep=1pt,arrows=->}
+			\ncline{Diff}{Grade}
+			\ncline{Intell}{Grade}
+			\ncline{Intell}{SAT}
+			\ncline{Grade}{Let}
+			\psset{nodesep=5pt,arrows=-}
+			\ncline{Tdiff}{Diff}
+			\ncline{TInt}{Intell}
+			\ncline{TSAT}{SAT}
+			\ncline{TGrade}{Grade}
+			\ncline{Tlet}{Let}
+	\end{frame}
+
+\end{document}

@@ -1,0 +1,2 @@
+\beamer@endinputifotherversion {3.10pt}
+\beamer@sectionintoc {1}{Example}{1}{0}{1}

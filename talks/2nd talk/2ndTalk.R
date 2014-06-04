@@ -1,6 +1,10 @@
 source("newCode.R")
 
-U <- t(unique(t(Matrix)))
+Mat <- t(Matrix)
+
+U <<- t(unique(t(Matrix)))
+
+Ut <<- t(U)
 
 mmpcBench <- benchmark(MMPC(Matrix), mmpc(Example(250,char=FALSE)), replications=1, columns = c("test", "elapsed", "relative"))
 
