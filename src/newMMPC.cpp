@@ -369,7 +369,38 @@ SEXP MySvalue(SEXP mat) {
 	int hDim = A.ncol(), vDim = A.nrow();
 	NumericVector sum(1, 0.0), pvalue(1, 0.0), out(2, 0.0);
 
-	if (hDim == 3) {
+
+	if (hDim == 2) {
+		int l = max(A(_, 1)) + 1, m = max(A(_, 0)) + 1;
+		double *x = OneD(m), *y = OneD(l), **z = TwoD(m, l);
+
+		for (int i = 0; i < vDim; i++)
+		{
+			x[(int)A(i, 0)]++;
+			y[(int)A(i, 1)]++;
+			z[(int)A(i, 0)][(int)A(i, 1)]++;
+		}
+
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < l; j++)
+			{
+				if (x[i] == 0 || y[j] == 0 || z[i][j] == 0)
+					continue;
+
+				sum[0] += 2.0 * z[i][j] * log( (z[i][j] * vDim) / (x[i] * y[j]) );
+				// cout << z[i][j] << " * 2 * log( ( " << z[i][j] << " * " << vDim << " ) / ( " << x[i] << " * " << y[j] << " ) ) = " << 2 * z[i][j] * log( (z[i][j] * vDim) / (x[i] * y[j]) ) << endl;
+			}
+		}
+
+		int DF = (m-1) * (l-1);
+		pvalue = pchisq(sum, DF, FALSE);
+		out[0] = pvalue[0];
+		out[1] = sum[0];
+
+		return out;
+
+	} else if (hDim == 3) {
 		int k = max(A(_, 2)) + 1, l = max(A(_, 1)) + 1, m = max(A(_, 0)) + 1;
 		double *v = OneD(k), **x = TwoD(m, k), **y = TwoD(l, m), ***z = ThreeD(m, l, k);
 
@@ -388,7 +419,7 @@ SEXP MySvalue(SEXP mat) {
 				for (int h = 0; h < k; h++)
 				{
 					// cout << z[i][j][h] << " * 2 * log( ( " << z[i][j][h] << " * " << v[h] << " ) / ( " << x[i][h] << " * " << y[j][h] << " ) ) = " << 2 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) ) << endl;
-					if (x[i][h] == 0 || y[j][h] == 0)
+					if (x[i][h] == 0 || y[j][h] == 0 || z[i][j][h] == 0)
 						continue;
 
 					sum[0] += 2.0 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) );
@@ -406,6 +437,7 @@ SEXP MySvalue(SEXP mat) {
 		out[1] = sum[0];
 
 		return out;
+
 	} else if (hDim == 4) {
 		int n = max(A(_, 3)) + 1, k = max(A(_, 2)) + 1, l = max(A(_, 1)) + 1, m = max(A(_, 0)) + 1;
 		double **v = TwoD(k, n), ***x = ThreeD(m, k, n), ***y = ThreeD(l, k, n), ****z = FourD(m, l, k, n);
@@ -482,6 +514,9 @@ SEXP MySvalue(SEXP mat) {
 		return out;
 		
 	} else {
+		out[0] = 1.0;
+		out[1] = 1.0;
+
 		return out;
 	}
 }
