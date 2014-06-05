@@ -56,35 +56,6 @@ SEXP UN(SEXP x) {
 	return wrap(Map);
 }
 
-// double combine(double a, double b) {
-//    	double times = 1;
-//   //  	while (times <= b)
-// 		// times *= 10;
-//    	// return a*times + b;
-//    	return a^b;
-// } 
-
-// // [[Rcpp::export]]
-// SEXP UNB(SEXP x, SEXP n, SEXP m) {
-// 	double *X = REAL(x);
-// 	int *N = INTEGER(n), *M = INTEGER(m);
-// 	double k;
-// 	typedef unordered_map<int,int> map_t;
-// 	map_t Map;
-// 	a 
-// 	for (int i = 0; i < *N; i++)
-// 	{
-// 		k = X[i];
-// 		for (int j = 1; j < *M; j++)
-// 		{
-// 			k = combine(k, X[i + j * (*M)]);
-// 		}
-// 		Map.insert(map_t::value_type(k, 0));
-// 		Map[k]++;
-// 	}
-// 	return wrap(Map);
-// }
-
 bool IsIn(mat X, mat R) {
 	int row = X.n_rows, col = X.n_cols, test;
 	bool equaled = FALSE;
@@ -121,56 +92,6 @@ SEXP T(SEXP x, SEXP n, SEXP m) {
 			B(i, j) = A[j + i * (*M)];
 	return B;
 }
-
-// // [[Rcpp::export]]
-// SEXP Test(SEXP x, SEXP n, SEXP m) {
-// 	int *X = INTEGER(x), *N = INTEGER(n), *M = INTEGER(m);
-// 	int K = (*N) * (*M);
-// 	// int **A = (int**)R_alloc((*N), sizeof(int*));
-// 	int *A = (int*)R_alloc(K, sizeof(int));
-// 	cout << XLENGTH(A) << endl;
-// 	for (int i = 0; i < K; i++)
-// 	{
-// 		// A[i] = X[i];
-// 	}
-// 	// for (int i = 0; i < *M; i++)
-// 	// {
-// 	// 	// A[i] = (int*)R_alloc((*M), sizeof(int));
-// 	// 	for (int j = 0; j < *N; j++)
-// 	// 	{
-// 	// 		cout << X[j + i * (*M)] << endl;
-// 	// 		// A[j + i * (*M)] = X[j + i * (*M)];
-// 	// 	}
-// 	// }
-// 	return (SEXP)A;
-// }
-
-// // [[Rcpp::export]]
-// mat Unique(SEXP x) {
-// 	// if (A.n_cols >= A.n_rows) {
-// 	// 	continue;
-// 	// } else {
-// 	// 	x = T(x);
-// 	// }
-
-
-
-
-// 	mat U(1, A.n_cols, fill::zeros);
-// 	for (int i = 0; i < A.n_rows; i++)
-// 	{
-// 		if (!(IsIn(U, A.row(i)))) {
-// 			insert(A.row(i), U, i);
-// 			U.resize(U.n_rows+1, U.n_cols);
-// 		}
-// 	}
-// 	return U;
-// }
-
-// // [[Rcpp::export]]
-// mat MyTest(mat A) {
-// 	return unique(A);
-// }
 
 // [[Rcpp::export]]
 SEXP UpdateCPC(SEXP x, int selected = 0) {
@@ -297,71 +218,6 @@ double *****FiveD(double x, double y, double z, double a, double b) {
 
 	return matrix;
 }
-
-// // [[Rcpp::export]]
-// SEXP Svalue(SEXP x) {
-// 	NumericMatrix A(x);
-// 	int m = max(A(_, 0)) + 1;
-
-// 	if(A.ncol() == 1) {
-// 		IntegerVector B(m, 0);
-
-// 		for (int i = 0; i < A.nrow(); i++)
-// 		{
-// 			B[A[i]]++;
-// 		}
-
-// 		return B;
-// 	} else if(A.ncol() == 2) {
-// 		int l = max(A(_, 1)) + 1;
-// 		NumericMatrix B(m, l);
-
-// 		for (int i = 0; i < A.nrow(); i++)
-// 		{
-// 			B(A(i, 0), A(i, 1))++;
-// 		}
-
-// 		return B;
-// 	} else if(A.ncol() == 3) {
-// 		int l = max(A(_, 1)) + 1, k = max(A(_, 2)) + 1;
-// 		double ***B = ThreeD(m, l, k);
-
-// 		for (int i = 0; i < A.nrow(); i++)
-// 		{
-// 			B[(int)A(i, 0)][(int)A(i, 1)][(int)A(i, 2)]++;
-// 		}
-
-// 		return unique(A);
-// 		// return B[0][0][0];
-
-// 	}  else if(A.ncol() == 4) {
-// 		int l = max(A(_, 1)) + 1, k = max(A(_, 2)) + 1, n = max(A(_, 3)) + 1;
-// 		double ****B = ThreeD(m, l, k, n);
-
-// 		for (int i = 0; i < A.nrow(); i++)
-// 		{
-// 			B[(int)A(i, 0)][(int)A(i, 1)][(int)A(i, 2)][A(i, 3)]++;
-// 		}
-
-// 		return unique(A);
-// 		// return B[0][0][0];
-
-// 	}  else if(A.ncol() == 5) {
-// 		int l = max(A(_, 1)) + 1, k = max(A(_, 2)) + 1 n = max(A(_, 3)) + 1, o = max(A(_, 4)) + 1;
-// 		double *****B = ThreeD(m, l, k, n, o);
-
-// 		for (int i = 0; i < A.nrow(); i++)
-// 		{
-// 			B[(int)A(i, 0)][(int)A(i, 1)][(int)A(i, 2)][A(i, 3)][A(i, 4)]++;
-// 		}
-
-// 		return unique(A);
-// 		// return B[0][0][0];
-
-// 	} else {
-// 		return unique(A);
-// 	}
-// }
 
 // [[Rcpp::export]]
 SEXP MySvalue(SEXP mat) {
