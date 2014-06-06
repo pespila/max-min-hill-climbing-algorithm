@@ -17,6 +17,7 @@ using namespace Rcpp;
 using namespace arma;
 
 // [[Rcpp::depends("RcppArmadillo")]]
+// [[Rcpp::plugins(openmp)]]
 
 // [[Rcpp::export]]
 bool allC(SEXP a, SEXP b, int del = -1) {
@@ -24,62 +25,17 @@ bool allC(SEXP a, SEXP b, int del = -1) {
 	double *x = REAL(a), *y = REAL(b);
 	if(XLENGTH(a)!=XLENGTH(b)) out=FALSE;
 	else {
-		#pragma omp parallel
-		{
-			#pragma omp for
-			{
-				for (int i = 0; i < XLENGTH(a); i++) {
-					if(i == del) continue;
-					if(del == -2 && XLENGTH(b) == 2) {out=TRUE; break;}
-					if(del == -2 && (i == 0 || i == 1)) continue;
-					if(x[i]!=y[i]) {
-						out=FALSE;
-						break;
-					}
-				}
+		for (int i = 0; i < XLENGTH(a); i++) {
+			if(i == del) continue;
+			if(del == -2 && XLENGTH(b) == 2) {out=TRUE; break;}
+			if(del == -2 && (i == 0 || i == 1)) continue;
+			if(x[i]!=y[i]) {
+				out=FALSE;
+				break;
 			}
 		}
 	}
 	return out;
-}
-
-// [[Rcpp::export]]
-SEXP UN(SEXP x) {
-	int *X = INTEGER(x);
-	typedef unordered_map<int,int> map_t;
-	map_t Map;
-	for (int i = 0; i < XLENGTH(x); i++)
-	{
-		Map.insert(map_t::value_type(X[i], 0));
-		Map[X[i]]++;
-	}
-	return wrap(Map);
-}
-
-bool IsIn(mat X, mat R) {
-	int row = X.n_rows, col = X.n_cols, test;
-	bool equaled = FALSE;
-	for (int i = 0; i < row; i++)
-	{
-		test = 0;
-		for (int j = 0; j < col; j++)
-		{
-			if (X(i, j) == R(0, j))
-				test++;
-		}
-		if (test == col) {
-			equaled = TRUE;
-			break;
-		}
-	}
-	return equaled;
-}
-
-void insert(const mat& R, mat& A, int j) {
-	for (int i = 0; i < R.n_cols; i++)
-	{
-		A(j, i) = R(0, i);
-	}
 }
 
 // [[Rcpp::export]]
@@ -91,6 +47,13 @@ SEXP T(SEXP x, SEXP n, SEXP m) {
 		for (int j = 0; j < *N; j++)
 			B(i, j) = A[j + i * (*M)];
 	return B;
+}
+
+// [[Rcpp::export]]
+void Parallel() {
+	omp_set_num_threads(8);
+	#pragma omp parallel
+	cout << "Hi" << endl;
 }
 
 // [[Rcpp::export]]
@@ -107,17 +70,11 @@ SEXP UpdateCPC(SEXP x, int selected = 0) {
 		int cpcLength = cpc.size();
 		cpc[0] = cpcLength + 1;
 		cpc.push_back(selected);
-		#pragma omp parallel
+		for (int i = 2; i < cpcLength; i++)
 		{
-			#pragma omp for
-			{
-				for (int i = 2; i < cpcLength; i++)
-				{
-					tmp = as<NumericVector>(cpc[i]);
-					tmp.push_back(selected);
-					cpc.push_back(tmp);
-				}
-			}
+			tmp = as<NumericVector>(cpc[i]);
+			tmp.push_back(selected);
+			cpc.push_back(tmp);
 		}
 	}
 
@@ -225,11 +182,13 @@ SEXP MySvalue(SEXP mat) {
 	int hDim = A.ncol(), vDim = A.nrow();
 	NumericVector sum(1, 0.0), pvalue(1, 0.0), out(2, 0.0);
 
+	// omp_set_num_threads(2);
 
 	if (hDim == 2) {
 		int l = max(A(_, 1)) + 1, m = max(A(_, 0)) + 1;
 		double *x = OneD(m), *y = OneD(l), **z = TwoD(m, l);
 
+		// #pragma omp parallel for
 		for (int i = 0; i < vDim; i++)
 		{
 			x[(int)A(i, 0)]++;
@@ -241,11 +200,9 @@ SEXP MySvalue(SEXP mat) {
 		{
 			for (int j = 0; j < l; j++)
 			{
-				if (x[i] == 0 || y[j] == 0 || z[i][j] == 0)
+				if (x[i] < 1 || y[j] < 1 || z[i][j] < 1)
 					continue;
-
 				sum[0] += 2.0 * z[i][j] * log( (z[i][j] * vDim) / (x[i] * y[j]) );
-				// cout << z[i][j] << " * 2 * log( ( " << z[i][j] << " * " << vDim << " ) / ( " << x[i] << " * " << y[j] << " ) ) = " << 2 * z[i][j] * log( (z[i][j] * vDim) / (x[i] * y[j]) ) << endl;
 			}
 		}
 
@@ -258,8 +215,9 @@ SEXP MySvalue(SEXP mat) {
 
 	} else if (hDim == 3) {
 		int k = max(A(_, 2)) + 1, l = max(A(_, 1)) + 1, m = max(A(_, 0)) + 1;
-		double *v = OneD(k), **x = TwoD(m, k), **y = TwoD(l, m), ***z = ThreeD(m, l, k);
+		double *v = OneD(k), **x = TwoD(m, k), **y = TwoD(l, k), ***z = ThreeD(m, l, k);
 
+		// #pragma omp parallel for
 		for (int i = 0; i < vDim; i++)
 		{
 			v[(int)A(i, 2)]++;
@@ -274,20 +232,14 @@ SEXP MySvalue(SEXP mat) {
 			{
 				for (int h = 0; h < k; h++)
 				{
-					// cout << z[i][j][h] << " * 2 * log( ( " << z[i][j][h] << " * " << v[h] << " ) / ( " << x[i][h] << " * " << y[j][h] << " ) ) = " << 2 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) ) << endl;
-					if (x[i][h] == 0 || y[j][h] == 0 || z[i][j][h] == 0)
+					if (x[i][h] < 1 || y[j][h] < 1 || z[i][j][h] < 1 || v[h] < 1)
 						continue;
-
 					sum[0] += 2.0 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) );
-					// cout << sum[0] << endl;
 				}
 			}
 		}
 
-		// sum[0] *= 2;
-		// int DF = Df(df);
 		int DF = (m-1) * (l-1) * k;
-		// cout << DF << endl;
 		pvalue = pchisq(sum, DF, FALSE);
 		out[0] = pvalue[0];
 		out[1] = sum[0];
@@ -298,6 +250,7 @@ SEXP MySvalue(SEXP mat) {
 		int n = max(A(_, 3)) + 1, k = max(A(_, 2)) + 1, l = max(A(_, 1)) + 1, m = max(A(_, 0)) + 1;
 		double **v = TwoD(k, n), ***x = ThreeD(m, k, n), ***y = ThreeD(l, k, n), ****z = FourD(m, l, k, n);
 
+		// #pragma omp parallel for
 		for (int i = 0; i < vDim; i++)
 		{
 			v[(int)A(i, 2)][(int)A(i, 3)]++;
@@ -314,17 +267,15 @@ SEXP MySvalue(SEXP mat) {
 				{
 					for (int f = 0; f < n; f++)
 					{
-						if (x[i][h][f] == 0 || y[j][h][f] == 0 || z[i][j][h][f] == 0)
+						if (x[i][h][f] < 1 || y[j][h][f] < 1 || z[i][j][h][f] < 1 || v[h][f] < 1)
 							continue;
 						sum[0] += 2.0 * z[i][j][h][f] * log( (z[i][j][h][f] * v[h][f]) / (x[i][h][f] * y[j][h][f]) );
-						// cout << z[i][j][h][f] << " * 2 * log( ( " << z[i][j][h][f] << " * " << v[h][f] << " ) / ( " << x[i][h][f] << " * " << y[j][h][f] << " ) ) = " << 2 * z[i][j][h][f] * log( (z[i][j][h][f] * v[h][f]) / (x[i][h][f] * y[j][h][f]) ) << endl;
 					}
 				}
 			}
 		}
 
 		int DF = (m-1) * (l-1) * k * (n-1);
-		// cout << DF << endl;
 		pvalue = pchisq(sum, DF, FALSE);
 		out[0] = pvalue[0];
 		out[1] = sum[0];
@@ -335,6 +286,7 @@ SEXP MySvalue(SEXP mat) {
 		int o = max(A(_, 4)) + 1, n = max(A(_, 3)) + 1, k = max(A(_, 2)) + 1, l = max(A(_, 1)) + 1, m = max(A(_, 0)) + 1;
 		double ***v = ThreeD(k, n, o), ****x = FourD(m, k, n, o), ****y = FourD(l, k, n, o), *****z = FiveD(m, l, k, n, o);
 
+		// #pragma omp parallel for
 		for (int i = 0; i < vDim; i++)
 		{
 			v[(int)A(i, 2)][(int)A(i, 3)][(int)A(i, 4)]++;
@@ -353,7 +305,7 @@ SEXP MySvalue(SEXP mat) {
 					{
 						for (int e = 0; e < o; e++)
 						{
-							if (x[i][h][f][e] == 0 || y[j][h][f][e] == 0 || z[i][j][h][f][e] == 0)
+							if (x[i][h][f][e] < 1 || y[j][h][f][e] < 1 || z[i][j][h][f][e] < 1 || v[h][f][e] < 1)
 								continue;
 							sum[0] += 2.0 * z[i][j][h][f][e] * log( (z[i][j][h][f][e] * v[h][f][e]) / (x[i][h][f][e] * y[j][h][f][e]) );
 						}
@@ -378,26 +330,13 @@ SEXP MySvalue(SEXP mat) {
 }
 
 // [[Rcpp::export]]
-void Do(SEXP x) {
-	NumericMatrix A(x);
-	int k = max(A(_,0));
-	NumericMatrix B(k, k);
-	cout << k << endl;
-}
-
-// [[Rcpp::export]]
 int Df(SEXP x) {
 	double *DfSet = REAL(x);
 	int df = (DfSet[0]-1)*(DfSet[1]-1);
-	#pragma omp parallel
+	// #pragma omp parallel for
+	for (int i = 2; i < XLENGTH(x); i++)
 	{
-		#pragma omp for
-		{
-			for (int i = 2; i < XLENGTH(x); i++)
-			{
-				df*=DfSet[i];
-			}
-		}
+		df*=DfSet[i];
 	}
 	return df;
 }
@@ -405,7 +344,6 @@ int Df(SEXP x) {
 // [[Rcpp::export]]
 NumericVector Statistics(SEXP x, SEXP y, SEXP z) {
 	int n, m;
-	// int *X = INTEGER(x);
 	NumericVector count(4,0.0);
 	NumericVector sum(1,0.0);
 	NumericVector pvalue(1,0.0);
@@ -421,34 +359,28 @@ NumericVector Statistics(SEXP x, SEXP y, SEXP z) {
 
 	#pragma omp parallel
 	{
-		#pragma omp for collapse(2)
+		#pragma omp for
+		for (int i = 0; i < m; i++)
 		{
-			for (int i = 0; i < m; i++)
+			count[0] = count[1] = count[2] = count[3] = 0;
+			u = B(_,i);
+			for (int j = 0; j < n; j++)
 			{
-				count[0] = count[1] = count[2] = count[3] = 0;
-				u = B(_,i);
-				for (int j = 0; j < n; j++)
-				{
-					v = A(_,j);
-					if(allC(v,u))
-						count[0]++;
-					if(allC(v,u,1))
-						count[1]++;
-					if(allC(v,u,0))
-						count[2]++;
-					if(allC(v,u,-2))
-						count[3]++;
-				}
-				// cout << count[0] << " * 2 * log( ( " << count[0] << " * " << count[3] << " ) / ( " << count[1] << " * " << count[2] << " ) ) = " << 2 * count[0] * log( (count[0] * count[3]) / (count[1] * count[2]) ) << endl;
-				sum[0] += 2 * count[0] * log( ( count[0] * count[3] ) / ( count[1] * count[2] ) );
-				// cout << sum[0] << endl;
+				v = A(_,j);
+				if(allC(v,u))
+					count[0]++;
+				if(allC(v,u,1))
+					count[1]++;
+				if(allC(v,u,0))
+					count[2]++;
+				if(allC(v,u,-2))
+					count[3]++;
 			}
+			sum[0] += 2 * count[0] * log( ( count[0] * count[3] ) / ( count[1] * count[2] ) );
 		}
 	}
 
-	// df = Cardinality(A);
 	int DF = Df(df);
-	// cout << DF << endl;
 	pvalue = pchisq(sum, DF, FALSE);
 	out[0] = pvalue[0];
 	out[1] = sum[0];
