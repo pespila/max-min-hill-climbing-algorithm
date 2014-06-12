@@ -5,12 +5,17 @@
 // #include <Rinternals.h>
 #include <Rmath.h>
 // #include <Rdefines.h>
-// #include <vector>
+#include <vector>
 // #include <R_ext/Arith.h>
 // #include <R_ext/Utils.h>
 // #include <unordered_map>
-// #include <tr1/unordered_map>
+// #include <boost/lexical_cast.hpp>
+// #include <boost>
+#include <tr1/unordered_map>
 #include <RcppArmadillo.h>
+#include <time.h>
+#include <string>
+#include <sstream>
 using namespace std;
 using namespace std::tr1;
 using namespace Rcpp;
@@ -270,12 +275,15 @@ SEXP MySvalue(SEXP mat) {
 						if (x[i][h][f] < 1 || y[j][h][f] < 1 || z[i][j][h][f] < 1 || v[h][f] < 1)
 							continue;
 						sum[0] += 2.0 * z[i][j][h][f] * log( (z[i][j][h][f] * v[h][f]) / (x[i][h][f] * y[j][h][f]) );
+						// cout << sum[0] << endl;
+						// cout << 2.0 * z[i][j][h][f] * log( (z[i][j][h][f] * v[h][f]) / (x[i][h][f] * y[j][h][f]) ) << endl;
 					}
 				}
 			}
 		}
 
-		int DF = (m-1) * (l-1) * k * (n-1);
+		int DF = (m-1) * (l-1) * k * n;
+		cout << DF << endl;
 		pvalue = pchisq(sum, DF, FALSE);
 		out[0] = pvalue[0];
 		out[1] = sum[0];
@@ -328,6 +336,218 @@ SEXP MySvalue(SEXP mat) {
 		return out;
 	}
 }
+
+string Hash(IntegerVector array) {
+	ostringstream oss("");
+	for (int temp = 2; temp < array.size(); temp++)
+		oss << array[temp];
+	
+	return oss.str();
+}
+
+// [[Rcpp::export]]
+SEXP TheValue(SEXP mat) {
+	IntegerMatrix A(mat);
+	int hDim = A.ncol(), vDim = A.nrow();
+	NumericVector sum(1, 0.0), pvalue(1, 0.0), out(2, 0.0);
+	IntegerVector cardinality(A.ncol());
+
+	for (int i = 0; i < A.ncol(); i++)
+	{
+		cardinality[i] = max(A(_, i));
+	}
+
+	if (hDim == 2) {
+		int l = cardinality[1], m = cardinality[0];
+		double *x = OneD(m), *y = OneD(l), **z = TwoD(m, l);
+
+		for (int i = 0; i < vDim; i++)
+		{
+			x[A(i, 0) - 1]++;
+			y[A(i, 1) - 1]++;
+			z[A(i, 0) - 1][A(i, 1) - 1]++;
+		}
+
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < l; j++)
+			{
+				if (x[i] < 1 || y[j] < 1 || z[i][j] < 1)
+					continue;
+				sum[0] += 2.0 * z[i][j] * log( (z[i][j] * vDim) / (x[i] * y[j]) );
+			}
+		}
+
+		int DF = m * l;
+		pvalue = pchisq(sum, DF, FALSE);
+		out[0] = pvalue[0];
+		out[1] = sum[0];
+
+		return out;
+
+	}  else if (hDim == 3) {
+		int k = cardinality[2], l = cardinality[1], m = cardinality[0];
+		double *v = OneD(k), **x = TwoD(m, k), **y = TwoD(l, k), ***z = ThreeD(m, l, k);
+
+		for (int i = 0; i < vDim; i++)
+		{
+			v[A(i, 2) - 1]++;
+			x[A(i, 0) - 1][A(i, 2) - 1]++;
+			y[A(i, 1) - 1][A(i, 2) - 1]++;
+			z[A(i, 0) - 1][A(i, 1) - 1][A(i, 2) - 1]++;
+		}
+
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < l; j++)
+			{
+				for (int h = 0; h < k; h++)
+				{
+					if (x[i][h] < 1 || y[j][h] < 1 || z[i][j][h] < 1 || v[h] < 1)
+						continue;
+					sum[0] += 2.0 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) );
+				}
+			}
+		}
+
+		int DF = m * l * (k + 1);
+		pvalue = pchisq(sum, DF, FALSE);
+		out[0] = pvalue[0];
+		out[1] = sum[0];
+
+		return out;
+
+	} else if (hDim > 3) {
+		unordered_map<string, int> Count;
+		unordered_map<int, string> ReHash;
+		IntegerVector tmp;
+		string key;
+		int n = 0;
+
+		for (int i = 0; i < vDim; i++)
+		{
+			tmp = A(i, _);
+			key = Hash(tmp);
+			if (Count[key] == 0) {
+				Count[key] = n;
+				n++;
+			}
+		}
+
+		int k = Count.size(), l = cardinality[1], m = cardinality[0];
+		double *v = OneD(k), **x = TwoD(m, k), **y = TwoD(l, k), ***z = ThreeD(m, l, k);
+
+		for (int i = 0; i < vDim; i++)
+		{
+			tmp = A(i, _);
+			key = Hash(tmp);
+			v[Count[key]]++;
+			x[A(i, 0) - 1][Count[key]]++;
+			y[A(i, 1) - 1][Count[key]]++;
+			z[A(i, 0) - 1][A(i, 1) - 1][Count[key]]++;
+		}
+
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < l; j++)
+			{
+				for (int h = 0; h < k; h++)
+				{
+					if (x[i][h] < 1 || y[j][h] < 1 || z[i][j][h] < 1 || v[h] < 1)
+						continue;
+					sum[0] += 2.0 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) );
+					// cout << sum[0] << endl;
+					// cout << 2.0 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) ) << endl;
+					// cout << "2.0 * " << z[i][j][h] << " * log( " << z[i][j][h] << " * " << v[h] << " / " << x[i][h] " * " << y[j][h] << " ) = " << endl;// << 2.0 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) ) << endl;
+				}
+			}
+		}
+
+		int DF = m * l;
+		for (int i = 2; i < cardinality.size(); i++)
+		{
+			DF *= (cardinality[i] + 1);
+		}
+		cout << DF << endl;
+		pvalue = pchisq(sum, DF, FALSE);
+		out[0] = pvalue[0];
+		out[1] = sum[0];
+
+		return out;
+
+	}else {
+		out[0] = 1.0;
+		out[1] = 1.0;
+
+		return out;
+	}
+}
+
+void PrintLine(NumericVector A) {
+	for (int i = 0; i < A.size(); i++)
+	{
+		cout << A[i] << " ";
+	}
+}
+
+string int_array_to_string(NumericVector array) { //  int int_array[], int size_of_array){
+	ostringstream oss("");
+	for (int temp = 0; temp < array.size(); temp++)
+		oss << array[temp];
+	
+	return oss.str();
+}
+
+// [[Rcpp::export]]
+IntegerMatrix Which(SEXP x) {
+	srand(time(NULL));
+	NumericMatrix A(x);
+	NumericVector u;
+	string key;
+	unordered_map<string, int> Map;
+
+	unordered_map<int, string> Uni;
+	int n = Map.size(), k = 0;
+
+	for (int i = 0; i < A.nrow(); i++)
+	{
+		u = A(i, _);
+		key = int_array_to_string(u);
+		Map[key] = rand()%10;
+		if (Map.size() != n) {
+			Uni[k] = key;
+			n++;
+			k++;
+		}
+	}
+
+	IntegerMatrix B(Map.size(), A.ncol());
+
+	for (int i = 0; i < Map.size(); i++)
+	{
+		for (int j = 0; j < A.ncol(); j++)
+		{
+			B(i, j) = Uni[i][j] - '0';
+		}
+	}
+
+	return B;
+}
+
+// // [[Rcpp::export]]
+// int Which(SEXP x, SEXP y) {
+// 	int out = 0;
+// 	NumericVector A(x);
+// 	double *B = REAL(y);
+
+// 	for (int i = 0; i < A.size(); i++)
+// 	{
+// 		if (A[i] == *B)
+// 			out = i;
+// 	}
+
+// 	return out;
+// }
 
 // [[Rcpp::export]]
 int Df(SEXP x) {

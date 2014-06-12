@@ -24,8 +24,12 @@ require("rbenchmark")
 # require("sets")
 sourceCpp("newMMPC.cpp")
 source("mmhc_test.R")
+Sys.setenv("PKG_CXXFLAGS"="-fopenmp")
+Sys.setenv("PKG_LIBS"="-fopenmp")
 
 MatrixT <<- t(Matrix)
+dimAdjMat <- dim(Matrix)[2]
+AdjMatrix <<- matrix(0, 5, 5)
 
 # Function MaxMinHeuristic which takes:
 # - the target variable T for whose children and parents we are seeking for.
@@ -107,6 +111,7 @@ ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 	maxNumberOfVariables <- 1:dim(Matrix)[2] # iteration array...
 	maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == T)] # ...iterate over all values except the target (trivial case)
 	CPCset <- MaxMinHeuristic(T, NULL, Matrix, maxNumberOfVariables) # the first CPC set where we start with the empty set
+	print(CPCset)
 	CPC <- UpdateCPC(CPC, as.integer(CPCset$CPC[1]))
 	crossOuts <- c(as.integer(CPCset$accepted), CPC[[length(CPC)]]) # sets the variables where we do not iterate over again because they where accepted or rejected #!!!!!!BEFOR CPC
 	
@@ -335,8 +340,8 @@ Scoring <- function(PC) {
 # aj <- graph.adjacency(mat)
 # plot(aj)
 # mat
-tmp <- Example(1000, char=FALSE)
-bench <- benchmark(MMPC(Matrix), mmpc(tmp), replications=1, columns = c("test", "elapsed", "relative"))
+# tmp <- Example(1000, char=FALSE)
+# bench <- benchmark(MMPC(Matrix), mmpc(tmp), replications=1, columns = c("test", "elapsed", "relative"))
 
 # bench <- benchmark(MaxMinHeuristic(1, 4, Matrix, c(2,5)), ForwardPhase(1, Matrix), BackwardPhase(1, 4), columns = c(1,2,3), replications = 5)
 # vec <- Matrix[1,c(1,2,3)]
@@ -345,6 +350,3 @@ bench <- benchmark(MMPC(Matrix), mmpc(tmp), replications=1, columns = c("test", 
 # 	if(identical(vec, Matrix[i,c(1,2,3)]))
 # 		cnt <- cnt + 1
 # }
-
-Sys.setenv("PKG_CXXFLAGS"="-fopenmp")
-Sys.setenv("PKG_LIBS"="-fopenmp")
