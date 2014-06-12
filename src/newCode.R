@@ -111,7 +111,6 @@ ForwardPhase <- function(T, Matrix) { # FORWARDPHASE
 	maxNumberOfVariables <- 1:dim(Matrix)[2] # iteration array...
 	maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == T)] # ...iterate over all values except the target (trivial case)
 	CPCset <- MaxMinHeuristic(T, NULL, Matrix, maxNumberOfVariables) # the first CPC set where we start with the empty set
-	print(CPCset)
 	CPC <- UpdateCPC(CPC, as.integer(CPCset$CPC[1]))
 	crossOuts <- c(as.integer(CPCset$accepted), CPC[[length(CPC)]]) # sets the variables where we do not iterate over again because they where accepted or rejected #!!!!!!BEFOR CPC
 	

@@ -283,7 +283,7 @@ SEXP MySvalue(SEXP mat) {
 		}
 
 		int DF = (m-1) * (l-1) * k * n;
-		cout << DF << endl;
+		// cout << DF << endl;
 		pvalue = pchisq(sum, DF, FALSE);
 		out[0] = pvalue[0];
 		out[1] = sum[0];
@@ -468,7 +468,7 @@ SEXP TheValue(SEXP mat) {
 		{
 			DF *= (cardinality[i] + 1);
 		}
-		cout << DF << endl;
+		// cout << DF << endl;
 		pvalue = pchisq(sum, DF, FALSE);
 		out[0] = pvalue[0];
 		out[1] = sum[0];
