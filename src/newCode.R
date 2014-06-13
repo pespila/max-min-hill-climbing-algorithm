@@ -27,7 +27,7 @@ sourceCpp("newMMPC.cpp")
 source("mmhc_test.R")
 Sys.setenv("PKG_CXXFLAGS"="-fopenmp")
 Sys.setenv("PKG_LIBS"="-fopenmp")
-
+tmp <<- Example(1000, char=FALSE)
 # MatrixT <<- t(Matrixy)
 
 # Function MaxMinHeuristic which takes:
@@ -317,15 +317,15 @@ MMPC <- function(mat) { # MMPC
 
 	} # FOR
 
-	# AdjMat <- matrix(0, dim(mat)[2], dim(mat)[2])
-	# for (i in 1:length(PC)) {
-	# 	for (element in PC[[i]]) {
-	# 		AdjMat[i, element] <- 1
-	# 	}
-	# }
-	# AdjMat <- graph.adjacency(AdjMat)
+	AdjMat <- matrix(0, dim(mat)[2], dim(mat)[2])
+	for (i in 1:length(PC)) {
+		for (element in PC[[i]]) {
+			AdjMat[i, element] <- 1
+		}
+	}
+	AdjMat <- graph.adjacency(AdjMat)
 
-	return (PC)
+	return (AdjMat)
 } # MMPC
 
 getR <- function(vec) {
@@ -342,8 +342,11 @@ getQ <- function(mat, pc) {
 	# 	q <- q * getR(mat[, x])
 	# }
 	# return (q)
-	q <- dim(unique(mat))[1]
-	return (q)
+	if (length(pc) == 1) {
+		return (length(unique(mat[, pc])))
+	} else {
+		return (dim(unique(mat[, pc]))[1])
+	}
 }
 
 getNhy <- function(mat, std = TRUE) {
@@ -366,18 +369,20 @@ getNijk <- function(mat, pc, wij, Xi, j, k) {
 	} else {
 		count <- 0
 		K <- which(mat[, Xi] == k)
-		for (i in K) {
-			tmp <- mat[i, pc]
-			if (identical(tmp, wij))
-				count <- count + 1
-		}
+		L <- which(mat[, pc] == wij)
+		count <- length(which(K == L))
+		# for (i in K) {
+		# 	tmp <- mat[i, pc]
+		# 	if (identical(tmp, wij))
+		# 		count <- count + 1
+		# }
 		return (count)
 	}
 }
 
-getNij <- function(mat, pc, wij, Xi, j) {
+getNij <- function(mat, pc, wij, Xi, j, r) {
 	sum <- 0
-	for (k in 1:getR(mat[, Xi])) {
+	for (k in 1:r) {
 		sum <- sum + getNijk(mat, pc, wij, Xi, j, k)
 	}
 	return (sum)
@@ -389,20 +394,93 @@ getW <- function(mat, pc) {
 
 Score <- function(mat, PC) {
 	n <- getDim(mat)
+	adjMat <- matrix(0, n, n)
+	nijk <- 0
+	nij <- 0
+
 	for (i in 1:n) {
-		q <- getQ(mat, PC[[i]])
-		r <- getR(mat[, PC[[i]]])
-		nhy <- getNhy(mat)
-		wi <- getW(mat, PC[[i]])
-		x <- nhy/q
-		y <- nhy/(r*q)
-		for (j in 1:q) {
-			#Some stuff...+
-			for (k in 1:r) {
-				nijk <- getNijk(mat, PC[[i]], wi[j], i, j, k)
+		iSum <- 0
+		pc <- PC[[i]]
+		if (length(pc) == 0)
+			next
+		for (X in pc) {
+			q <- getQ(mat, X)
+			r <- getR(mat[, i])
+			nhy <- getNhy(mat)
+			wi <- getW(mat, X)
+			x <- nhy/q
+			y <- nhy/(r*q)
+			jSum <- 0
+			for (j in 1:q) {
+				nij <- getNij(mat, X, wi[j], i, j, r)
+				kSum <- 0
+				for (k in 1:r) {
+					nijk <- getNijk(mat, X, wi[j], i, j, k)
+					kSum <- kSum + log ( gamma ( (nijk/10) + y ) / gamma ( y ) )
+				}
+				jSum <- jSum + log ( gamma ( x ) / gamma ( (nij/10) + x ) ) + kSum
+			}
+			adjMat[i, X] <- jSum
+			iSum <- iSum + jSum
+		}
+	}
+
+	for (i in 1:n) {
+		for (j in i:n) {
+			if (adjMat[i, j] == 0)
+				next
+			if (adjMat[i, j] >= adjMat[j, i]) {
+				adjMat[i, j] <- 1
+				adjMat[j, i] <- 0
+			} else {
+				adjMat[j, i] <- 1
+				adjMat[i, j] <- 0
 			}
 		}
 	}
+
+	adjMat <- graph.adjacency(adjMat)
+
+	return (adjMat)
+
+
+	# n <- getDim(mat)
+	# adjMat <- matrix(0, n, n)
+	# nijk <- 0
+	# nij <- 0
+	# iSum <- 0
+	# for (i in 1:n) {
+	# 	pc <- PC[[i]]
+	# 	if (length(pc) == 0)
+	# 		next
+	# 	q <- getQ(mat, pc)
+	# 	r <- getR(mat[, i])
+	# 	nhy <- getNhy(mat)
+	# 	wi <- getW(mat, pc)
+	# 	x <- nhy/q
+	# 	y <- nhy/(r*q)
+	# 	# print(c(q, r, nhy, x, y))
+	# 	jSum <- 0
+	# 	for (j in 1:q) {
+	# 		if (length(pc) == 1) {
+	# 			nij <- getNij(mat, pc, wi[j], i, j)
+	# 		} else {
+	# 			nij <- getNij(mat, pc, wi[j,], i, j)
+	# 		}
+	# 		kSum <- 0
+	# 		for (k in 1:r) {
+	# 			if (length(pc) == 1) {
+	# 				nijk <- getNijk(mat, pc, wi[j], i, j, k)
+	# 			} else {
+	# 				nijk <- getNijk(mat, pc, wi[j,], i, j, k)
+	# 			}
+	# 			# print(nijk)
+	# 			kSum <- kSum + log ( gamma ( (nijk/10) + y ) / gamma ( y ) )
+	# 		}
+	# 		jSum <- jSum + log ( gamma ( x ) / gamma ( (nij/10) + x ) ) + kSum
+	# 	}
+	# 	iSum <- iSum + jSum
+	# }
 }
 
 # dimAdjMat <- dim(Matrixy)[2]
@@ -411,7 +489,7 @@ Score <- function(mat, PC) {
 # aj <- graph.adjacency(mat)
 # plot(aj)
 # mat
-tmp <<- Example(1000, char=FALSE)
+
 # bench <- benchmark(MMPC(Matrix), mmpc(tmp), replications=1, columns = c("test", "elapsed", "relative"))
 
 # bench <- benchmark(MaxMinHeuristic(1, 4, Matrix, c(2,5)), ForwardPhase(1, Matrix), BackwardPhase(1, 4), columns = c(1,2,3), replications = 5)
@@ -421,3 +499,17 @@ tmp <<- Example(1000, char=FALSE)
 # 	if(identical(vec, Matrix[i,c(1,2,3)]))
 # 		cnt <- cnt + 1
 # }
+
+Test <- function() {
+	# data(learning.test)
+	dev.new()
+	plot(mmpc(tmp))
+	dev.new()
+	plot(mmhc(tmp))
+	myMat <- data.matrix(tmp)
+	PC <- MMPC(myMat)
+	dev.new()
+	plot(PC)
+	dev.new()
+	plot(Score(myMat, PC))
+}
