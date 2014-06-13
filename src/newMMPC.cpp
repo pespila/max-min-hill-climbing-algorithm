@@ -410,7 +410,7 @@ SEXP MySvalue(SEXP mat) {
 }
 
 // [[Rcpp::export]]
-SEXP MySvalue(SEXP mat) {
+SEXP Configuration(SEXP mat) {
 	IntegerMatrix A(mat);
 	int hDim = A.ncol(), vDim = A.nrow();
 	NumericVector sum(1, 0.0), pvalue(1, 0.0), out(2, 0.0);

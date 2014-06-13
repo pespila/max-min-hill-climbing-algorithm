@@ -332,15 +332,17 @@ getR <- function(vec) {
 	return (length(unique(vec)))
 }
 
-getN <- function(mat) {
+getDim <- function(mat) {
 	return (dim(mat)[2])
 }
 
 getQ <- function(mat, pc) {
-	q <- 1
-	for (x in pc) {
-		q <- q * getR(mat[, x])
-	}
+	# q <- 1
+	# for (x in pc) {
+	# 	q <- q * getR(mat[, x])
+	# }
+	# return (q)
+	q <- dim(unique(mat))[1]
 	return (q)
 }
 
@@ -348,19 +350,59 @@ getNhy <- function(mat, std = TRUE) {
 	if (std) {
 		return (1)
 	} else {
-		hDim <- 1:getN(mat)
+		hDim <- 1:getDim(mat)
 		avNoOfValPerVar <- 0
 		for (i in hDim) {
 			avNoOfValPerVar <- avNoOfValPerVar + getR(mat[, i])
 		}
-		avNoOfValPerVar <- avNoOfValPerVar/getN(mat)
+		avNoOfValPerVar <- avNoOfValPerVar/getDim(mat)
 		return (avNoOfValPerVar)
 	}
 }
 
+getNijk <- function(mat, pc, wij, Xi, j, k) {
+	if (length(pc) == 0) {
+		return (length(which(mat[, Xi] == k)))
+	} else {
+		count <- 0
+		K <- which(mat[, Xi] == k)
+		for (i in K) {
+			tmp <- mat[i, pc]
+			if (identical(tmp, wij))
+				count <- count + 1
+		}
+		return (count)
+	}
+}
+
+getNij <- function(mat, pc, wij, Xi, j) {
+	sum <- 0
+	for (k in 1:getR(mat[, Xi])) {
+		sum <- sum + getNijk(mat, pc, wij, Xi, j, k)
+	}
+	return (sum)
+}
+
 getW <- function(mat, pc) {
-	q <- getQ(mat, pc)
-	
+	return (unique(mat[, pc]))
+}
+
+Score <- function(mat, PC) {
+	n <- getDim(mat)
+	for (i in 1:n) {
+		q <- getQ(mat, PC[[i]])
+		r <- getR(mat[, PC[[i]]])
+		nhy <- getNhy(mat)
+		wi <- getW(mat, PC[[i]])
+		x <- nhy/q
+		y <- nhy/(r*q)
+		for (j in 1:q) {
+			#Some stuff...+
+			for (k in 1:r) {
+				nijk <- getNijk(mat, PC[[i]], wi[j], i, j, k)
+			}
+		}
+	}
 }
 
 # dimAdjMat <- dim(Matrixy)[2]
