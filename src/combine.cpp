@@ -34,14 +34,17 @@ int main(void) {
 	out = int_array_to_string(x);
 	
 
-	vector<int> y(10);
-	for (int i = 0; i < y.size(); i++)
-	{
-		y[i] = out[i] - '0';
-		cout << y[i] << endl;
-	}
+	// vector<int> y(10);
+	// for (int i = 0; i < y.size(); i++)
+	// {
+	// 	y[i] = out[i] - '0';
+	// 	cout << y[i] << endl;
+	// }
 	
 	unordered_map<string, int> Map;
-	Map[out] = 6;
+	cout << Map[out] << endl;
+	Map[out]++;
+	Map[out]++;
+	cout << Map[out] << endl;
 	return 0;
 }

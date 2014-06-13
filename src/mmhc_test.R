@@ -114,4 +114,4 @@ alpha <<- 0.05
 
 # Allocating the example of the book. Make it global and allocate it as a matrix for testing
 # purpose. Later on it should be a data frame.
-Matrix <<- as.matrix(Example(1000, char = FALSE))
+Matrixy <<- as.matrix(Example(1000, char = FALSE))
