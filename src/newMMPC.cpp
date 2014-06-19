@@ -83,6 +83,17 @@ void Parallel() {
 }
 
 // [[Rcpp::export]]
+SEXP initEmptyList(SEXP n) {
+	int *m = INTEGER(n);
+	List PC;
+
+	for (int i = 0; i < *m; i++)
+		PC.push_back(R_NilValue);
+
+	return PC;
+}
+
+// [[Rcpp::export]]
 SEXP UpdateCPC(SEXP x, int selected = 0) {
 	NumericVector tmp;
 	List cpc(x);

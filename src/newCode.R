@@ -28,6 +28,7 @@ source("mmhc_test.R")
 Sys.setenv("PKG_CXXFLAGS"="-fopenmp")
 Sys.setenv("PKG_LIBS"="-fopenmp")
 tmp <<- Example(1000, char=FALSE)
+options(warn=-1)
 # MatrixT <<- t(Matrixy)
 
 # Function MaxMinHeuristic which takes:
@@ -323,7 +324,7 @@ MMPC <- function(mat) { # MMPC
 			AdjMat[i, element] <- 1
 		}
 	}
-	AdjMat <- graph.adjacency(AdjMat)
+	# AdjMat <- graph.adjacency(AdjMat)
 
 	return (AdjMat)
 } # MMPC
@@ -336,20 +337,17 @@ getDim <- function(mat) {
 	return (dim(mat)[2])
 }
 
-getQ <- function(mat, pc) {
-	# q <- 1
-	# for (x in pc) {
-	# 	q <- q * getR(mat[, x])
-	# }
-	# return (q)
-	if (length(pc) == 1) {
+getQ <- function(mat, pc = NULL) {
+	if (length(pc) == 0) {
+		return (1)
+	} else if (length(pc) == 1) {
 		return (length(unique(mat[, pc])))
 	} else {
 		return (dim(unique(mat[, pc]))[1])
 	}
 }
 
-getNhy <- function(mat, std = TRUE) {
+getEta <- function(mat, std = TRUE) {
 	if (std) {
 		return (1)
 	} else {
@@ -392,7 +390,110 @@ getW <- function(mat, pc) {
 	return (unique(mat[, pc]))
 }
 
+nuScore <- function(mat, PC) {
+	scores <- c()
+	n <- getDim(mat)
+	nijk <- 0
+	nij <- 0
+	iSum <- 0
+
+	for (i in 1:n) {
+		
+		pc <- PC[[i]]
+		q <- getQ(mat, pc)
+		r <- getR(mat[, i])
+		eta <- getEta(mat)
+		wi <- getW(mat, pc)
+		x <- eta / q
+		y <- eta / ( r * q )
+		jSum <- 0
+
+		for (j in 1:q) {
+
+			nij <- getNij(mat, pc, wi[j], i, j, r)
+			kSum <- 0
+
+			for (k in 1:r) {
+
+				nijk <- getNijk(mat, pc, wi[j], i, j, k)
+				kSum <- kSum + lgamma ( nijk + y ) - lgamma ( y )
+
+			}
+
+			jSum <- jSum + lgamma ( x ) - lgamma ( nij + x ) + kSum
+
+			# print(jSum)
+		}
+
+		scores[i] <- jSum
+		# iSum <- iSum + jSum
+
+	}
+
+	return (scores)
+}
+
+Scoring <- function(mat, PC) {
+	n <- dim(PC)[1]
+	scoreList <- initEmptyList(n)
+	noChange <- 0
+	scores <- nuScore(mat, scoreList)
+
+
+	repeat {
+		if (noChange == 5)
+			break
+
+		
+	}
+
+
+	sampling <- sample(1:5, 2)
+	scoreList[[sampling[1]]] <- sampling[2]
+
+	scoreMatrix <- matrix(0, n, n)
+
+	for (i in 1:n) {
+		for (j in 1:n) {
+			if (PC[i, j] == 1) {
+				scoreList[[i]] <- c(scoreList[[i]], j)
+				edge <- nuScore(mat, scoreList)
+				# scoreList[[j]] <- c(scoreList[[j]], i)
+				# reverse <- nuScore(mat, scoreList)
+				if (edge > score) {
+					scoreMatrix[i, j] <- 1
+					score <- edge
+				} else {
+					scoreList[[i]] <- scoreList[[i]][!(which(scoreList[[i]] == j))]
+				}
+				print(scoreList)
+
+				# if (reverse > add) {
+				# 	PC[i, j] <- 2
+				# 	tmpScoreList <- scoreList
+				# } else if (add > reverse) {
+				# 	PC[j, i] <- 0
+				# 	scoreList <- tmpScoreList
+				# }
+			}
+		}
+	}
+
+	# for (i in 1:n) {
+	# 	for (j in 1:5) {
+	# 		if (PC[i, j] == 2) {
+	# 			PC[i, j] <- 1
+	# 		}
+	# 	}
+	# }
+	# scoreMatrix <- graph.adjacency(scoreMatrix)
+
+	return (scoreMatrix)
+
+}
+
 Score <- function(mat, PC) {
+	scores <- c()
 	n <- getDim(mat)
 	adjMat <- matrix(0, n, n)
 	nijk <- 0
@@ -416,12 +517,15 @@ Score <- function(mat, PC) {
 				kSum <- 0
 				for (k in 1:r) {
 					nijk <- getNijk(mat, X, wi[j], i, j, k)
-					kSum <- kSum + log ( gamma ( (nijk/10) + y ) / gamma ( y ) )
+					# kSum <- kSum + log ( gamma ( nijk + y ) / gamma ( y ) )
+					kSum <- kSum + lgamma ( nijk + y ) - lgamma ( y )
 				}
-				jSum <- jSum + log ( gamma ( x ) / gamma ( (nij/10) + x ) ) + kSum
+				# jSum <- jSum + log ( gamma ( x ) / gamma ( nij + x ) ) + kSum
+				jSum <- jSum + lgamma ( x ) - lgamma ( nij + x ) + kSum
 			}
-			adjMat[i, X] <- jSum
-			iSum <- iSum + jSum
+			# adjMat[i, X] <- jSum
+			scores[i] <- jSum
+			# iSum <- iSum + jSum
 		}
 	}
 
