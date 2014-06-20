@@ -27,7 +27,7 @@ sourceCpp("newMMPC.cpp")
 source("mmhc_test.R")
 Sys.setenv("PKG_CXXFLAGS"="-fopenmp")
 Sys.setenv("PKG_LIBS"="-fopenmp")
-tmp <<- Example(1000, char=FALSE)
+
 options(warn=-1)
 # MatrixT <<- t(Matrixy)
 
@@ -361,27 +361,26 @@ getEta <- function(mat, std = TRUE) {
 	}
 }
 
-getNijk <- function(mat, pc, wij, Xi, j, k) {
+getNijk <- function(mat, pc, wij, Xi, k) {
 	if (length(pc) == 0) {
+		# return (1)
 		return (length(which(mat[, Xi] == k)))
 	} else {
 		count <- 0
 		K <- which(mat[, Xi] == k)
-		L <- which(mat[, pc] == wij)
-		count <- length(which(K == L))
-		# for (i in K) {
-		# 	tmp <- mat[i, pc]
-		# 	if (identical(tmp, wij))
-		# 		count <- count + 1
-		# }
+		for (i in K) {
+			if (identical(as.vector(mat[i, pc]), as.vector(wij))) {
+				count <- count + 1
+			}
+		}
 		return (count)
 	}
 }
 
-getNij <- function(mat, pc, wij, Xi, j, r) {
+getNij <- function(mat, pc, wij, Xi, r) {
 	sum <- 0
 	for (k in 1:r) {
-		sum <- sum + getNijk(mat, pc, wij, Xi, j, k)
+		sum <- sum + getNijk(mat, pc, wij, Xi, k)
 	}
 	return (sum)
 }
@@ -390,19 +389,83 @@ getW <- function(mat, pc) {
 	return (unique(mat[, pc]))
 }
 
-nuScore <- function(mat, PC) {
-	scores <- c()
+addEdge <- function(mat, PC, row, col, n, currentScores) {
+	PC[row, col] <- 1
+	newScores <- currentScores
+	newScores[row] <- nuScore(mat, PC, row)
+
+	if (sum(newScores) >= sum(currentScores)) {
+		return (list(TRUE, newScores))
+	} else {
+		return (list(FALSE, currentScores))
+	}
+}
+
+reverseEdge <- function(mat, PC, row, col, n, currentScores) {
+	PC[row, col] <- 0
+	PC[col, row] <- 1
+	newScores <- currentScores
+	newScores[row] <- nuScore(mat, PC, row)
+	newScores[col] <- nuScore(mat, PC, col)
+
+	if (sum(newScores) >= sum(currentScores)) {
+		return (list(TRUE, newScores))
+	} else {
+		return (list(FALSE, currentScores))
+	}
+}
+
+deleteEdge <- function(mat, PC, row, col, n, currentScores) {
+	PC[row, col] <- 0
+	newScores <- currentScores
+	newScores[row] <- nuScore(mat, PC, row)
+
+	if (sum(newScores) > sum(currentScores)) {
+		return (list(TRUE, newScores))
+	} else {
+		return (list(FALSE, currentScores))
+	}
+}
+
+avoidCollider <- function(mat, PC, row, col, n, currentScores) {
+	leftNewScores <- currentScores
+	rightNewScores <- currentScores
+	
+	temp <- which(PC[, col] == 1)
+
+	if (length(temp) <= 1) {
+		return (list(0, currentScores))
+	} else {
+		temp <- temp[!temp == row]
+		PC[row, col] <- 0
+		leftNewScores[row] <- nuScore(mat, PC, row)
+
+		PC[row, col] <- 1
+		PC[temp[1], col] <- 0
+		rightNewScores[temp[1]] <- nuScore(mat, PC, temp[1])
+
+		if (sum(leftNewScores) > sum(rightNewScores)) {
+			return (list(1, leftNewScores))
+		} else {
+			return (list(2, rightNewScores))
+		}
+	}
+	
+}
+
+nuScore <- function(mat, PC, i) {
 	n <- getDim(mat)
 	nijk <- 0
 	nij <- 0
 	iSum <- 0
 
-	for (i in 1:n) {
+	# for (i in 1:n) {
 		
-		pc <- PC[[i]]
+		# pc <- PC[[i]]
+		pc <- which(PC[i, ] != 0)
 		q <- getQ(mat, pc)
 		r <- getR(mat[, i])
-		eta <- getEta(mat)
+		eta <- getEta(mat, FALSE)
 		wi <- getW(mat, pc)
 		x <- eta / q
 		y <- eta / ( r * q )
@@ -410,13 +473,23 @@ nuScore <- function(mat, PC) {
 
 		for (j in 1:q) {
 
-			nij <- getNij(mat, pc, wi[j], i, j, r)
+			# print(wi[j,])
+			if (length(pc) <= 1) {
+				nij <- getNij(mat, pc, wi[j], i, r)
+			} else {
+				nij <- getNij(mat, pc, wi[j, ], i, r)
+			}
 			kSum <- 0
 
 			for (k in 1:r) {
 
-				nijk <- getNijk(mat, pc, wi[j], i, j, k)
+				if (length(pc) <= 1) {
+					nijk <- getNijk(mat, pc, wi[j], i, k)
+				} else {
+					nijk <- getNijk(mat, pc, wi[j, ], i, k)
+				}
 				kSum <- kSum + lgamma ( nijk + y ) - lgamma ( y )
+				# jSum <- jSum + lgamma ( x ) - lgamma ( nijk + x ) + lgamma ( nijk + y ) - lgamma ( y )
 
 			}
 
@@ -425,172 +498,182 @@ nuScore <- function(mat, PC) {
 			# print(jSum)
 		}
 
-		scores[i] <- jSum
+		score <- jSum
 		# iSum <- iSum + jSum
 
-	}
+	# }
 
-	return (sum(scores))
+	return (score)
 }
 
 Scoring <- function(mat, PC) {
 	n <- dim(PC)[1]
-	scoreList <- initEmptyList(n)
-	tmpScoreList <- scoreList
+	currentScores <- c()
+	scoringMatrix <- matrix(0, n, n)
 	noChange <- 0
-	scores <- nuScore(mat, scoreList)
+	test <- 1
 
+	for (i in 1:n) {
+		currentScores[i] <- nuScore(mat, scoringMatrix, i)
+	}
 
 	repeat {
-		if (noChange == 40)
+		if (noChange == 2*n)
 			break
 
-		sampling <- sample(1:5, 2)
+		rand <- sample(1:5, 2)
 
-		if (!(sampling[2] %in% tmpScoreList[[sampling[1]]])) {
-			tmpScoreList[[sampling[1]]] <- c(tmpScoreList[[sampling[1]]], sampling[2])
-		} else {
-			next
-		}
+		if(PC[rand[1], rand[2]] == 1) {
+			# print(sum(currentScores))
 
-		nuScores <- nuScore(mat, tmpScoreList)
+			if (scoringMatrix[rand[1], rand[2]] == 0 && scoringMatrix[rand[2], rand[1]] == 0) {
 
-		if (nuScores > scores && PC[sampling[1], sampling[2]] == 1) {
-			scoreList <- tmpScoreList
-			noChange <- 0
-			scores <- nuScores
-		} else {
-			tmpScoreList <- scoreList
-			noChange <- noChange + 1
-		}
-	}
+				added <- addEdge(mat, scoringMatrix, rand[1], rand[2], n, currentScores)
 
-	return (scoreList)
+				if (added[[1]]) {
 
-}
-
-Score <- function(mat, PC) {
-	scores <- c()
-	n <- getDim(mat)
-	adjMat <- matrix(0, n, n)
-	nijk <- 0
-	nij <- 0
-
-	for (i in 1:n) {
-		iSum <- 0
-		pc <- PC[[i]]
-		if (length(pc) == 0)
-			next
-		for (X in pc) {
-			q <- getQ(mat, X)
-			r <- getR(mat[, i])
-			nhy <- getNhy(mat)
-			wi <- getW(mat, X)
-			x <- nhy/q
-			y <- nhy/(r*q)
-			jSum <- 0
-			for (j in 1:q) {
-				nij <- getNij(mat, X, wi[j], i, j, r)
-				kSum <- 0
-				for (k in 1:r) {
-					nijk <- getNijk(mat, X, wi[j], i, j, k)
-					# kSum <- kSum + log ( gamma ( nijk + y ) / gamma ( y ) )
-					kSum <- kSum + lgamma ( nijk + y ) - lgamma ( y )
+					scoringMatrix[rand[1], rand[2]] <- 1
+					currentScores <- added[[2]]
+					noChange <- 0
+				
+				} else {
+					noChange <- noChange + 1
 				}
-				# jSum <- jSum + log ( gamma ( x ) / gamma ( nij + x ) ) + kSum
-				jSum <- jSum + lgamma ( x ) - lgamma ( nij + x ) + kSum
+				
+			} else if (scoringMatrix[rand[1], rand[2]] == 1 || scoringMatrix[rand[2], rand[1]] == 1) {
+
+				choose <- sample(c(0, 1), 1, prob = c(0.3, 0.7))
+
+				if (choose) {
+
+					reversed <- list()
+
+					if (scoringMatrix[rand[1], rand[2]] == 1) {
+
+						reversed <- reverseEdge(mat, scoringMatrix, rand[1], rand[2], n, currentScores)
+
+						if (reversed[[1]]) {
+
+							scoringMatrix[rand[1], rand[2]] <- 0
+							scoringMatrix[rand[2], rand[1]] <- 1
+							currentScores <- reversed[[2]]
+							noChange <- 0
+
+						} else {
+							noChange <- noChange + 1
+						}
+
+					} else {
+
+						reversed <- reverseEdge(mat, scoringMatrix, rand[2], rand[1], n, currentScores)
+
+						if (reversed[[1]]) {
+
+							scoringMatrix[rand[2], rand[1]] <- 0
+							scoringMatrix[rand[1], rand[2]] <- 1
+							currentScores <- reversed[[2]]
+							noChange <- 0
+
+						} else {
+							noChange <- noChange + 1
+						}
+
+					}
+					
+				} else {
+
+					deleted <- list()
+
+					if (scoringMatrix[rand[1], rand[2]] == 1) {
+
+						deleted <- deleteEdge(mat, scoringMatrix, rand[1], rand[2], n, currentScores)
+
+						if (deleted[[1]]) {
+
+							scoringMatrix[rand[1], rand[2]] <- 0
+							currentScores <- deleted[[2]]
+							noChange <- 0
+
+						} else {
+							noChange <- noChange + 1
+						}
+
+					} else {
+
+						deleted <- deleteEdge(mat, scoringMatrix, rand[2], rand[1], n, currentScores)
+
+						if (deleted[[1]]) {
+
+							scoringMatrix[rand[2], rand[1]] <- 0
+							currentScores <- deleted[[2]]
+							noChange <- 0
+
+						} else {
+							noChange <- noChange + 1
+						}
+
+					}
+
+				}
+
 			}
-			# adjMat[i, X] <- jSum
-			scores[i] <- jSum
-			# iSum <- iSum + jSum
+
+			# collider <- avoidCollider(mat, scoringMatrix, rand[1], rand[2], n, currentScores)
+
+			# if (collider[[1]] == 1) {
+
+			# 	scoringMatrix[rand[1], rand[2]] <- 0
+			# 	currentScores <- collider[[2]]
+
+			# } else if (collider[[1]] == 2) {
+
+			# 	temp <- which(scoringMatrix[, rand[2]] == 1)[!temp == rand[1]]
+			# 	scoringMatrix[temp, rand[2]] <- 0
+			# 	currentScores <- collider[[2]]
+
+			# }
+
 		}
+
 	}
 
-	for (i in 1:n) {
-		for (j in i:n) {
-			if (adjMat[i, j] == 0)
-				next
-			if (adjMat[i, j] >= adjMat[j, i]) {
-				adjMat[i, j] <- 1
-				adjMat[j, i] <- 0
-			} else {
-				adjMat[j, i] <- 1
-				adjMat[i, j] <- 0
-			}
-		}
-	}
+	print(sum(currentScores))
 
-	adjMat <- graph.adjacency(adjMat)
+	scoringMatrix <- graph.adjacency(scoringMatrix)
 
-	return (adjMat)
+	return (scoringMatrix)
 
-
-	# n <- getDim(mat)
-	# adjMat <- matrix(0, n, n)
-	# nijk <- 0
-	# nij <- 0
-	# iSum <- 0
-	# for (i in 1:n) {
-	# 	pc <- PC[[i]]
-	# 	if (length(pc) == 0)
-	# 		next
-	# 	q <- getQ(mat, pc)
-	# 	r <- getR(mat[, i])
-	# 	nhy <- getNhy(mat)
-	# 	wi <- getW(mat, pc)
-	# 	x <- nhy/q
-	# 	y <- nhy/(r*q)
-	# 	# print(c(q, r, nhy, x, y))
-	# 	jSum <- 0
-	# 	for (j in 1:q) {
-	# 		if (length(pc) == 1) {
-	# 			nij <- getNij(mat, pc, wi[j], i, j)
-	# 		} else {
-	# 			nij <- getNij(mat, pc, wi[j,], i, j)
-	# 		}
-	# 		kSum <- 0
-	# 		for (k in 1:r) {
-	# 			if (length(pc) == 1) {
-	# 				nijk <- getNijk(mat, pc, wi[j], i, j, k)
-	# 			} else {
-	# 				nijk <- getNijk(mat, pc, wi[j,], i, j, k)
-	# 			}
-	# 			# print(nijk)
-	# 			kSum <- kSum + log ( gamma ( (nijk/10) + y ) / gamma ( y ) )
-	# 		}
-	# 		jSum <- jSum + log ( gamma ( x ) / gamma ( (nij/10) + x ) ) + kSum
-	# 	}
-	# 	iSum <- iSum + jSum
-	# }
 }
 
-# dimAdjMat <- dim(Matrixy)[2]
-# AdjMatrix <<- matrix(0, 5, 5)
+Test <- function(func) {
+	if (func == 1) {
+		PC <- MMPC(Matrixy)
+		AM <- Scoring(Matrixy, PC)
+		old.par <- par(mfrow = c(1, 2))
+		plot(AM, main = "My Function")
+		plot(mmhc(tmp), main = "bnlearn")
+		par(old.par)
+	}
+	if (func == 2) {
+		data(learning.test)
+		Mat <- data.matrix(learning.test)
+		PC <- MMPC(Mat)
+		AM <- Scoring(Mat, PC)
+		old.par <- par(mfrow = c(1, 2))
+		plot(AM, main = "My Function")
+		plot(mmhc(learning.test), main = "bnlearn")
+		par(old.par)
+	}
 
-# aj <- graph.adjacency(mat)
-# plot(aj)
-# mat
+}
+
+dofunc <- function(mat, y) {
+	summy <- c()
+	for (i in 1:5) {
+		summy[i] <- nuScore(mat, y, i)
+	}
+
+	return (sum(summy))
+}
 
 # bench <- benchmark(MMPC(Matrix), mmpc(tmp), replications=1, columns = c("test", "elapsed", "relative"))
-
-# bench <- benchmark(MaxMinHeuristic(1, 4, Matrix, c(2,5)), ForwardPhase(1, Matrix), BackwardPhase(1, 4), columns = c(1,2,3), replications = 5)
-# vec <- Matrix[1,c(1,2,3)]
-# cnt <- 0
-# for (i in 1:dim(Matrix[,c(1,2,3)])[1]) {
-# 	if(identical(vec, Matrix[i,c(1,2,3)]))
-# 		cnt <- cnt + 1
-# }
-
-Test <- function() {
-	# data(learning.test)
-	dev.new()
-	plot(mmpc(tmp))
-	dev.new()
-	plot(mmhc(tmp))
-	myMat <- data.matrix(tmp)
-	PC <- MMPC(myMat)
-	dev.new()
-	plot(PC)
-	dev.new()
-	plot(Score(myMat, PC))
-}
