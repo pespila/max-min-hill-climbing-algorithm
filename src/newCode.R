@@ -430,65 +430,42 @@ nuScore <- function(mat, PC) {
 
 	}
 
-	return (scores)
+	return (sum(scores))
 }
 
 Scoring <- function(mat, PC) {
 	n <- dim(PC)[1]
 	scoreList <- initEmptyList(n)
+	tmpScoreList <- scoreList
 	noChange <- 0
 	scores <- nuScore(mat, scoreList)
 
 
 	repeat {
-		if (noChange == 5)
+		if (noChange == 40)
 			break
 
-		
-	}
+		sampling <- sample(1:5, 2)
 
+		if (!(sampling[2] %in% tmpScoreList[[sampling[1]]])) {
+			tmpScoreList[[sampling[1]]] <- c(tmpScoreList[[sampling[1]]], sampling[2])
+		} else {
+			next
+		}
 
-	sampling <- sample(1:5, 2)
-	scoreList[[sampling[1]]] <- sampling[2]
+		nuScores <- nuScore(mat, tmpScoreList)
 
-	scoreMatrix <- matrix(0, n, n)
-
-	for (i in 1:n) {
-		for (j in 1:n) {
-			if (PC[i, j] == 1) {
-				scoreList[[i]] <- c(scoreList[[i]], j)
-				edge <- nuScore(mat, scoreList)
-				# scoreList[[j]] <- c(scoreList[[j]], i)
-				# reverse <- nuScore(mat, scoreList)
-				if (edge > score) {
-					scoreMatrix[i, j] <- 1
-					score <- edge
-				} else {
-					scoreList[[i]] <- scoreList[[i]][!(which(scoreList[[i]] == j))]
-				}
-				print(scoreList)
-
-				# if (reverse > add) {
-				# 	PC[i, j] <- 2
-				# 	tmpScoreList <- scoreList
-				# } else if (add > reverse) {
-				# 	PC[j, i] <- 0
-				# 	scoreList <- tmpScoreList
-				# }
-			}
+		if (nuScores > scores && PC[sampling[1], sampling[2]] == 1) {
+			scoreList <- tmpScoreList
+			noChange <- 0
+			scores <- nuScores
+		} else {
+			tmpScoreList <- scoreList
+			noChange <- noChange + 1
 		}
 	}
 
-	# for (i in 1:n) {
-	# 	for (j in 1:5) {
-	# 		if (PC[i, j] == 2) {
-	# 			PC[i, j] <- 1
-	# 		}
-	# 	}
-	# }
-	# scoreMatrix <- graph.adjacency(scoreMatrix)
-
-	return (scoreMatrix)
+	return (scoreList)
 
 }
 
