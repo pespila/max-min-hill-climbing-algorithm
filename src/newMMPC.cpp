@@ -94,6 +94,18 @@ SEXP initEmptyList(SEXP n) {
 }
 
 // [[Rcpp::export]]
+int getR(SEXP x) {
+	IntegerVector f(x);
+	unordered_map<int, int> Map;
+
+	for (IntegerVector::iterator it = f.begin(); it != f.end(); it++) {
+		Map[*it] = 1;
+	}
+
+	return Map.size();
+}
+
+// [[Rcpp::export]]
 SEXP UpdateCPC(SEXP x, int selected = 0) {
 	NumericVector tmp;
 	List cpc(x);
@@ -752,6 +764,18 @@ SEXP TheValue(SEXP mat) {
 
 		return out;
 	}
+}
+
+// [[Rcpp::export]]
+SEXP ToCrossOutC(SEXP x, SEXP y) {
+	IntegerVector A(x), B(y), C;
+
+	for (IntegerVector::iterator it = A.begin() ; it != A.end(); it++) {
+		if (!(find(B.begin(), B.end(), *it) != B.end())) {
+			C.push_back(*it);
+		}
+	}
+	return C;
 }
 
 void PrintLine(NumericVector A) {

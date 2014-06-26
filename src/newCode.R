@@ -31,6 +31,10 @@ Sys.setenv("PKG_LIBS"="-fopenmp")
 options(warn=-1)
 # MatrixT <<- t(Matrixy)
 
+# ToCrossOutR <- function(vec, out) {
+# 	vec <- vec[!(vec == out)]
+# 	return (vec)
+# }
 # Function MaxMinHeuristic which takes:
 # - the target variable T for whose children and parents we are seeking for.
 # - the current set of children and parents CPC
@@ -329,41 +333,39 @@ MMPC <- function(mat) { # MMPC
 	return (AdjMat)
 } # MMPC
 
-getR <- function(vec) {
-	return (length(unique(vec)))
-}
-
-getDim <- function(mat) {
-	return (dim(mat)[2])
-}
+# getR <- function(vec) {
+# 	return (length(unique(vec)))
+# }
 
 getQ <- function(mat, pc = NULL) {
-	if (length(pc) == 0) {
-		return (1)
-	} else if (length(pc) == 1) {
-		return (length(unique(mat[, pc])))
-	} else {
-		return (dim(unique(mat[, pc]))[1])
+	out <- 1
+	
+	for (i in pc) {
+		out <- out * getR(mat[, i])
 	}
+
+	return (out)
 }
 
 getEta <- function(mat, std = TRUE) {
 	if (std) {
 		return (1)
 	} else {
-		hDim <- 1:getDim(mat)
 		avNoOfValPerVar <- 0
-		for (i in hDim) {
+
+		for (i in 1:dim(mat)[2]) {
 			avNoOfValPerVar <- avNoOfValPerVar + getR(mat[, i])
+		
 		}
-		avNoOfValPerVar <- avNoOfValPerVar/getDim(mat)
+		
+		avNoOfValPerVar <- avNoOfValPerVar/dim(mat)[2]
+		
 		return (avNoOfValPerVar)
 	}
 }
 
 getNijk <- function(mat, pc, wij, Xi, k) {
 	if (length(pc) == 0) {
-		# return (1)
 		return (length(which(mat[, Xi] == k)))
 	} else {
 		count <- 0
@@ -427,34 +429,8 @@ deleteEdge <- function(mat, PC, row, col, n, currentScores) {
 	}
 }
 
-avoidCollider <- function(mat, PC, row, col, n, currentScores) {
-	leftNewScores <- currentScores
-	rightNewScores <- currentScores
-	
-	temp <- which(PC[, col] == 1)
-
-	if (length(temp) <= 1) {
-		return (list(0, currentScores))
-	} else {
-		temp <- temp[!temp == row]
-		PC[row, col] <- 0
-		leftNewScores[row] <- nuScore(mat, PC, row)
-
-		PC[row, col] <- 1
-		PC[temp[1], col] <- 0
-		rightNewScores[temp[1]] <- nuScore(mat, PC, temp[1])
-
-		if (sum(leftNewScores) > sum(rightNewScores)) {
-			return (list(1, leftNewScores))
-		} else {
-			return (list(2, rightNewScores))
-		}
-	}
-	
-}
-
 nuScore <- function(mat, PC, i) {
-	n <- getDim(mat)
+	n <- dim(mat)[2]
 	nijk <- 0
 	nij <- 0
 	iSum <- 0
@@ -518,7 +494,7 @@ Scoring <- function(mat, PC) {
 	}
 
 	repeat {
-		if (noChange == 2*n)
+		if (noChange == 10)
 			break
 
 		rand <- sample(1:5, 2)
@@ -618,31 +594,24 @@ Scoring <- function(mat, PC) {
 
 			}
 
-			# collider <- avoidCollider(mat, scoringMatrix, rand[1], rand[2], n, currentScores)
-
-			# if (collider[[1]] == 1) {
-
-			# 	scoringMatrix[rand[1], rand[2]] <- 0
-			# 	currentScores <- collider[[2]]
-
-			# } else if (collider[[1]] == 2) {
-
-			# 	temp <- which(scoringMatrix[, rand[2]] == 1)[!temp == rand[1]]
-			# 	scoringMatrix[temp, rand[2]] <- 0
-			# 	currentScores <- collider[[2]]
-
-			# }
-
 		}
 
 	}
 
-	print(sum(currentScores))
+	# print(sum(currentScores))
 
 	scoringMatrix <- graph.adjacency(scoringMatrix)
 
 	return (scoringMatrix)
 
+}
+
+MMHC <- function(mat) {
+	mat <- data.matrix(mat)
+	PC <- MMPC(mat)
+	adjMat <- Scoring(mat, PC)
+
+	return (adjMat)
 }
 
 Test <- function(func) {
