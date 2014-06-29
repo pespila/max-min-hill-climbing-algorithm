@@ -1,0 +1,58 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta content="text/html; charset=ISO-8859-1"
+ http-equiv="content-type">
+  <title>Bene - demo</title>
+</head>
+<body>
+<h1> Bene </h1>
+
+<p>This is the demo for Bene, a 
+<a href="http://www.cs.helsinki.fi/u/tsilande/sw/bene/">software</a>
+that finds a
+best Bayesian network for the given data.
+
+To define the "best", you can choose different scores by filling the
+Score-field:
+<ul>
+<li>BDe-score: insert a positive real number for ESS-hyperparameter</li>
+<li>BIC-score: insert text BIC</li>
+<li>AIC-score: insert text AIC</li>
+<li>NML-score: for factored NML, insert text NML</li>
+<li>LOO-score: for leave one out score, insert a positive real number for ESS-hyperparameter suffixed with a letter L</li>
+</ul>
+</p>
+<form action="/cgi-bin/bestnet.cgi" method="POST">
+<p>
+Score:<br />
+<input name="ess" id="ess" type="input" value="1.0">
+</p>
+
+<p>
+Data (at most 15 columns (variables) and 1000 rows):<br />
+<textarea id="data" name="data" cols="40" rows="24">
+1 0 1 1
+0 0 1 1
+2 0 2 0
+0 1 0 1
+</textarea>
+</p>
+<p>After submitting the data, you are shown the picture of a best
+network. Enjoy!</p>
+</p>
+<p>
+<input type="submit" value="Show best net!">
+(be patient, it may take couple of minutes for many variables)
+</p>
+The data matrix has to contain integers between 0 and 127.  For each
+column, the the maximum number X in that column is detected, and the
+possible values of the variable corresponding to that column are taken
+to be 0,1,...,X, even if not all these values appear in the column.
+</p>
+
+
+</form>
+
+</body>
+</html>

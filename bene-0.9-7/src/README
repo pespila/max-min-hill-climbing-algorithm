@@ -1,0 +1,63 @@
+This directory contains the in-memory implementation of the program.
+The memory consumption also limit the size of the problem solvable
+with this implementation. 
+
+MEMORY
+------
+
+Here are the memory requirements of the programs (additional odd bytes
+so are required too for code and filenames etc.): 
+
+score_t is either float (4 bytes) or double (8
+bytes) and varset_t is ususally 4 bytes (allowing max 32 variables).
+
+get_local_scores     : nothing much
+split_local_scores   : nothing much
+reverse_local_scores : 2^(n-1)*score_t
+get_best_parents     : 2^(n-1)*(score_t + varset_t)
+get_best_net         : 2^n(char + score_t)
+
+so it seems that get_best parents is the bottleneck. 
+For score_t=float 2^(n+2) bytes are required.
+
+DISK
+----
+
+get_local_scores     : writes n*2^(n-1)*score_t
+split_local_scores   : splits that to n parts
+reverse_local_scores : reverses splits
+get_best_parents     : for each split 2^(n-1)*(score_t + varset_t) -> bss, bps
+get_best_net         : needs bss and bps form the get_best_parents - writes 0
+
+since original res and its splits are not needed, one needs
+n*2^(n-1)(score_t + score_t + varset_t) i.e. 12*n*2^(n-1).
+
+
+USING MANY COMPUTERS
+--------------------
+
+It is possible to split the local score calculation to T subtasks,
+where T is some power of 2. get_local_scores takes an argument T and
+the index of the subtask (0,1, ..., T-1). For a data having n
+variables, the task t outputs 2^X*(b(t,T) + X/2) scores, where X is
+n-log2(T) and b(t,T) is a number of zero bits in log2(T) long binary
+representation of t.  For example if n=5 and we divide the task in T=8
+subtasks, we get X=5-3=2 and the task 3 (011) yields b(3,8)=1, thus
+the output has 2^2*(1+2/2) = 4*2 = 8 scores.
+
+
+Consulting he usage:
+ 
+ Usage: get_local_scores vdfile datfile (ess|BIC) nof_tasks task_index resfile
+
+tells us that doing the whole task in one run is accomplished by 
+
+  get_local_scores vdfile datfile (ess|BIC) 1 0 resfile
+
+while splitting it in 4 subtasks would require
+
+  get_local_scores vdfile datfile (ess|BIC) 4 0 resfile_00
+  get_local_scores vdfile datfile (ess|BIC) 4 1 resfile_01
+  get_local_scores vdfile datfile (ess|BIC) 4 2 resfile_02
+  get_local_scores vdfile datfile (ess|BIC) 4 3 resfile_03
+  cat resfile_0? > resfile
