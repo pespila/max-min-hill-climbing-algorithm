@@ -22,7 +22,8 @@ require("RcppArmadillo")
 require("bnlearn")
 require("rbenchmark")
 require("igraph")
-sourceCpp("./../src/mmhc.cpp")
+# sourceCpp("./../src/mmhc.cpp")
+sourceCpp("./../src/score.cpp")
 source("mmhc_test.R")
 Sys.setenv("PKG_CXXFLAGS"="-fopenmp")
 Sys.setenv("PKG_LIBS"="-fopenmp")
@@ -448,7 +449,7 @@ reverseEdge <- function(mat, PC, row, col, currentScores) {
 	newScores[row] <- getScore(mat, PC, row)
 	newScores[col] <- getScore(mat, PC, col)
 
-	if (sum(newScores) > sum(currentScores)) {
+	if (sum(newScores) >= sum(currentScores)) {
 		return (list(TRUE, newScores))
 	} else {
 		return (list(FALSE, currentScores))
@@ -562,105 +563,6 @@ ScoreMeNow <- function(mat, PC) {
 		}
 	}
 
-	print(sum(score))
-	return (scoreMatrix)
-}
-
-FinalScore <- function(mat, PC) {
-	n <- dim(PC)[1]
-	scoreMatrix <- matrix(0, n, n)
-	score <- c()
-	highestScore <- 0
-
-	for (i in 1:n) {
-		score[i] <- getScore(mat, scoreMatrix, i)
-	}
-
-	repeat {
-
-		if (sum(score) == highestScore) {
-			break
-		}
-
-		highestScore <- sum(score)
-
-		for (j in 1:n) {
-			for (i in 1:n) {
-				
-				if (PC[i, j] == 1) {
-
-					choose <- sample(c(0, 1), 1, prob = c(0.5, 0.5))
-
-					if (choose) {
-						
-						if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 0) {
-							reverse <- reverseEdge(mat, scoreMatrix, i, j, score)
-							if (reverse[[1]]) {
-								scoreMatrix[i, j] <- 0
-								scoreMatrix[j, i] <- 1
-								score <- reverse[[2]]
-							}
-						} else if (scoreMatrix[j, i] == 1 && scoreMatrix[i, j] == 0) {
-							reverse <- reverseEdge(mat, scoreMatrix, j, i, score)
-							if (reverse[[1]]) {
-								scoreMatrix[i, j] <- 1
-								scoreMatrix[j, i] <- 0
-								score <- reverse[[2]]
-							}
-						} else if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 1) {
-							del1 <- deleteEdge(mat, scoreMatrix, i, j, score)
-							del2 <- deleteEdge(mat, scoreMatrix, j, i, score)
-
-							if (del1 > del2) {
-								scoreMatrix[i, j] <- 0
-							} else {
-								scoreMatrix[j, i] <- 0
-							}
-						} else {
-							add <- addEdge(mat, scoreMatrix, i, j, score)
-							if (add[[1]]) {
-								scoreMatrix[i, j] <- 1
-								score <- add[[2]]
-							}
-						}
-
-					} else {
-						
-						if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 0) {
-							delete <- deleteEdge(mat, scoreMatrix, i, j, score)
-							if (delete[[1]]) {
-								scoreMatrix[i, j] <- 0
-								score <- delete[[2]]
-							}
-						} else if (scoreMatrix[j, i] == 1 && scoreMatrix[i, j] == 0) {
-							delete <- deleteEdge(mat, scoreMatrix, j, i, score)
-							if (delete[[1]]) {
-								scoreMatrix[j, i] <- 0
-								score <- delete[[2]]
-							}
-						} else if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 1) {
-							del1 <- deleteEdge(mat, scoreMatrix, i, j, score)
-							del2 <- deleteEdge(mat, scoreMatrix, j, i, score)
-
-							if (del1 > del2) {
-								scoreMatrix[i, j] <- 0
-							} else {
-								scoreMatrix[j, i] <- 0
-							}
-						} else {
-							add <- addEdge(mat, scoreMatrix, i, j, score)
-							if (add[[1]]) {
-								scoreMatrix[i, j] <- 1
-								score <- add[[2]]
-							}
-						}
-
-					}
-				}
-			}
-		}
-	}
-
 	# print(sum(score))
 	return (scoreMatrix)
 }
@@ -676,13 +578,34 @@ MMHC <- function(df) {
 	return (adjMat)
 }
 
-TestScore <- function(mat, pc) {
-	test <- c()
-	for (i in 1:dim(mat)[2]) {
-		test[i] <- getScore(mat, pc, i)
+PlotRuntime <- function(reps) {
+
+	i <- 1
+	plotter <- list()
+	plotter$size <- c(100, 200, 300, 500, 700, 1000, 1500, 2000, 3000, 4000, 5000)#, 7500, 10000)
+	plotter$timeBN <- c()
+	plotter$timeMine <- c()
+	plotter$relative <- c()
+
+	for (t in plotter$size) {
+		df <- data.matrix(Example(t, char = FALSE))
+		bench1 <- benchmark(mmpc(df), replications = reps, columns = c("elapsed"))
+		bench2 <- benchmark(MMPC(df), replications = reps, columns = c("elapsed"))
+		plotter$timeBN[i] <- bench1[1]
+		plotter$timeMine[i] <- bench2[1]
+		plotter$relative[i] <- bench2[1]/bench1[1]
+		i <- i + 1
 	}
 
-	return (sum(test))
+	plot(plotter$size, plotter$timeMine, type = "l", col= "red")
+	lines(plotter$size, plotter$timeBN, col="green")
+	lines(plotter$size, plotter$relative, col="blue")
+
+	return (plotter)
 }
 
-# bench <- benchmark(MMPC(Matrix), mmpc(tmp), replications=1, columns = c("test", "elapsed", "relative"))
+PlotSeperate <- function(plotter) {
+	plot(plotter[[1]], plotter[[3]], type = "l", col= "red", xlab = "observed data", ylab = "seconds")
+	lines(plotter[[1]], plotter[[2]], col="green")
+	# lines(plotter[[1]], plotter[[4]], col="blue")	
+}
