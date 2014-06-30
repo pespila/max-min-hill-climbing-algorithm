@@ -22,7 +22,7 @@ require("RcppArmadillo")
 require("bnlearn")
 require("rbenchmark")
 require("igraph")
-# sourceCpp("./../src/mmhc.cpp")
+sourceCpp("./../src/mmhc.cpp")
 sourceCpp("./../src/score.cpp")
 source("mmhc_test.R")
 Sys.setenv("PKG_CXXFLAGS"="-fopenmp")
@@ -329,14 +329,30 @@ MMPC <- function(mat) { # MMPC
 		}
 	}
 	# AdjMat <- graph.adjacency(AdjMat)
-
-	return (AdjMat)
+	return (PC)
+	# return (AdjMat)
 } # MMPC
+
+# nuScore <- function(mat, PC, i) {
+# 	eta <- 1
+# 	n <- dim(mat)[2]
+# 	qSet <- c()
+
+
+
+# 	for (j in 1:n) {
+# 		rSet[i] <- getR(mat[, j])
+# 	}
+# double ScoreNodeWithNoneParents(SEXP column, SEXP N, SEXP R, SEXP Eta) {
+# double ScoreNodeWithOneParent(SEXP Xi, SEXP Pa, SEXP N, SEXP R, SEXP Q, SEXP Eta) {
+# double ScoreNodeWithMoreParents(SEXP Xi, SEXP Pa, SEXP N, SEXP R, SEXP Q, SEXP Eta) {
+# }
 
 getScore <- function(mat, PC, i) {
 	n <- dim(mat)[2]
 	nijk <- 0
 	nij <- 0
+
 
 	jSum <- c()
 	kSum <- c()
@@ -347,6 +363,11 @@ getScore <- function(mat, PC, i) {
 	wi <- getW(mat, pc)
 	x <- eta / q
 	y <- eta / ( r * q )
+	if (length(pc) <= 1) {
+		q <- length(wi)
+	} else {
+		q <- dim(wi)[1]
+	}
 
 	for (j in 1:q) {
 
@@ -364,7 +385,6 @@ getScore <- function(mat, PC, i) {
 				nijk <- getNijk(mat, pc, wi[j, ], i, k)
 			}
 
-
 			kSum[k] <- lgamma ( nijk + y ) - lgamma ( y )
 
 		}
@@ -375,6 +395,7 @@ getScore <- function(mat, PC, i) {
 
 	return (sum(jSum))
 }
+
 
 getQ <- function(mat, pc = NULL) {
 	out <- 1
@@ -608,4 +629,12 @@ PlotSeperate <- function(plotter) {
 	plot(plotter[[1]], plotter[[3]], type = "l", col= "red", xlab = "observed data", ylab = "seconds")
 	lines(plotter[[1]], plotter[[2]], col="green")
 	# lines(plotter[[1]], plotter[[4]], col="blue")	
+}
+
+Test <- function(mat, pc) {
+	score <- c()
+	for (i in 1:5) {
+		score[i] <- getScore(mat, pc, i)
+	}
+	return (sum(score))
 }

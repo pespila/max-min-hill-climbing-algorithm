@@ -25,7 +25,18 @@ using namespace arma;
 // 	return 0;
 // }
 
-string int_array_to_string(NumericVector array) { //  int int_array[], int size_of_array){
+// [[Rcpp::export]]
+int getR(NumericVector& f) {
+	unordered_map<int, int> Map;
+
+	for (NumericVector::iterator it = f.begin(); it != f.end(); it++) {
+		Map[*it] = 1;
+	}
+
+	return Map.size();
+}
+
+string int_array_to_string(NumericVector& array) { //  int int_array[], int size_of_array){
 	ostringstream oss("");
 	for (int temp = 0; temp < array.size(); temp++)
 		oss << array[temp];
@@ -33,21 +44,61 @@ string int_array_to_string(NumericVector array) { //  int int_array[], int size_
 	return oss.str();
 }
 
+//Faster!!!!!!!!!!!!!!!!!!!
+// // [[Rcpp::export]]
+// void PrintC(SEXP x, SEXP N, SEXP M) {
+// 	double *A = REAL(x);
+// 	int *n = INTEGER(N), *m = INTEGER(M);
+
+// 	for (int i = 0; i < *m; i++)
+// 	{
+// 		for (int j = 0; j < *n; j++)
+// 		{
+// 			// cout << A[i + j * (*m)] << " ";
+// 			A[i + j * (*m)] = sqrt(2);
+// 		}
+// 		// cout << endl;
+// 	}
+// }
+
+// // [[Rcpp::export]]
+// void PrintCpp(SEXP x, SEXP N, SEXP M) {
+// 	double *A = REAL(x);
+// 	int *n = INTEGER(N), *m = INTEGER(M);
+
+// 	for (int i = 0; i < *n; i++)
+// 	{
+// 		for (int j = 0; j < *m; j++)
+// 		{
+// 			// cout << A[i + j * (*n)] << " ";
+// 			A[i + j * (*n)] = sqrt(2);
+// 		}
+// 		// cout << endl;
+// 	}
+// }
+
 // [[Rcpp::export]]
-unordered_map<string, int> Unique(SEXP x) {
+unordered_map<int, string> UniqueMap(SEXP x) {
 	NumericMatrix A(x);
 	NumericVector u;
 	string key;
 	unordered_map<string, int> Map;
+	unordered_map<int, string> Uni;
+	int n = Map.size(), k = 0;
 
 	for (int i = 0; i < A.nrow(); i++)
 	{
 		u = A(i, _);
 		key = int_array_to_string(u);
 		Map[key] = 1;
+		if (Map.size() != n) {
+			Uni[k] = key;
+			n++;
+			k++;
+		}
 	}
 
-	return Map;
+	return Uni;
 }
 
 int getSingleN_ijk(double *vec, int dim, int k) {
@@ -62,7 +113,7 @@ int getSingleN_ijk(double *vec, int dim, int k) {
 	return count;
 }
 
-int getCombiN_ijk(double *vec, double *parentVec, int dim, int j, int k) {
+int getVecN_ijk(double *vec, double *parentVec, int dim, int j, int k) {
 	int count = 0;
 
 	for (int i = 0; i < dim; i++)
@@ -74,15 +125,29 @@ int getCombiN_ijk(double *vec, double *parentVec, int dim, int j, int k) {
 	return count;
 }
 
+int getMapN_ijk(double *vec, NumericMatrix& parentMatrix, unordered_map<int, string> parentMap, int dim, int j, int k) {
+	int count = 0;
+	NumericVector u;
+
+	for (int i = 0; i < dim; i++)
+	{
+		u = parentMatrix(i, _);
+		if (vec[i] == k && parentMap[j-1] == int_array_to_string(u))
+			count++;
+	}
+
+	return count;
+}
+
 // [[Rcpp::export]]
-double ScoreNodeWithNoneParent(SEXP column, SEXP N, SEXP R, SEXP Eta) {
-	int *n = INTEGER(N), *r = INTEGER(R), dim = XLENGTH(column);
-	double *vec = REAL(column), *eta = REAL(Eta);
-	double gammaJ = *eta / 1.0, gammaK = *eta / (1.0 * (*r));
+double ScoreNodeWithNoneParents(SEXP column, SEXP N, int r, double eta) {
+	int *n = INTEGER(N), dim = XLENGTH(column);
+	double *vec = REAL(column);
+	double gammaJ = eta / 1.0, gammaK = eta / (1.0 * r);
 	double rScore = 0.0, qScore = 0.0;
 	int n_ijk = 0, n_ij = 0;
 
-	for (int k = 1; k <= *r; k++)
+	for (int k = 1; k <= r; k++)
 	{
 		n_ijk = getSingleN_ijk(vec, dim, k);
 		n_ij += n_ijk;
@@ -96,29 +161,27 @@ double ScoreNodeWithNoneParent(SEXP column, SEXP N, SEXP R, SEXP Eta) {
 }
 
 // [[Rcpp::export]]
-double ScoreNodeWithOneParent(SEXP Xi, SEXP Pa, SEXP N, SEXP R, SEXP Q, SEXP Eta) {
-	int *n = INTEGER(N), *r = INTEGER(R), *q = INTEGER(Q), dim = XLENGTH(Xi);
-	double *vec = REAL(Xi), *eta = REAL(Eta);
-	NumericMatrix Parent(Pa);
-	unordered_map<string, int> Map = Unique(Parent);
-	double gammaJ = *eta / (*q), gammaK = *eta / ((*q) * (*r));
+double ScoreNodeWithOneParent(SEXP Xi, SEXP Pa, SEXP N, int r, int q, double eta) {
+	int *n = INTEGER(N), dim = XLENGTH(Xi);
+	double *vec = REAL(Xi), *parentVec = REAL(Pa);
+	double gammaJ = eta / q, gammaK = eta / (q * r);
 	double rScore = 0.0, qScore = 0.0;
 	int n_ij, n_ijk = 0;
 
 
-	for (int j = 1; j <= *q; j++)
+	for (int j = 1; j <= q; j++)
 	{
 		n_ij = 0;
 		rScore = 0.0;
 
-		for (int i = 1; i <= *r; i++)
+		for (int k = 1; k <= r; k++)
 		{
-			n_ij += getCombiN_ijk(vec, parentVec, dim, j, i);
+			n_ij += getVecN_ijk(vec, parentVec, dim, j, k);
 		}
 
-		for (int k = 1; k <= *r; k++)
+		for (int k = 1; k <= r; k++)
 		{
-			n_ijk = getCombiN_ijk(vec, parentVec, dim, j, k);
+			n_ijk = getVecN_ijk(vec, parentVec, dim, j, k);
 			rScore += lgamma( n_ijk + gammaK ) - lgamma( gammaK );
 		}
 
@@ -130,9 +193,11 @@ double ScoreNodeWithOneParent(SEXP Xi, SEXP Pa, SEXP N, SEXP R, SEXP Q, SEXP Eta
 }
 
 // [[Rcpp::export]]
-double ScoreNodeWithMultipleParent(SEXP Xi, SEXP Pa, SEXP N, SEXP R, SEXP Q, SEXP Eta, SEXP row, SEXP col) {
+double ScoreNodeWithMoreParents(SEXP Xi, SEXP Pa, SEXP N, SEXP R, SEXP Q, SEXP Eta) {
 	int *n = INTEGER(N), *r = INTEGER(R), *q = INTEGER(Q), dim = XLENGTH(Xi);
-	double *vec = REAL(Xi), *eta = REAL(Eta), *parentVec = REAL(Pa);
+	double *vec = REAL(Xi), *eta = REAL(Eta);
+	NumericMatrix Parent(Pa);
+	unordered_map<int, string> parentMap = UniqueMap(Parent);
 	double gammaJ = *eta / (*q), gammaK = *eta / ((*q) * (*r));
 	double rScore = 0.0, qScore = 0.0;
 	int n_ij, n_ijk = 0;
@@ -142,14 +207,14 @@ double ScoreNodeWithMultipleParent(SEXP Xi, SEXP Pa, SEXP N, SEXP R, SEXP Q, SEX
 		n_ij = 0;
 		rScore = 0.0;
 
-		for (int i = 1; i <= *r; i++)
+		for (int k = 1; k <= *r; k++)
 		{
-			n_ij += getCombiN_ijk(vec, parentVec, dim, j, i);
+			n_ij += getMapN_ijk(vec, Parent, parentMap, dim, j, k);
 		}
 
 		for (int k = 1; k <= *r; k++)
 		{
-			n_ijk = getCombiN_ijk(vec, parentVec, dim, j, k);
+			n_ijk = getMapN_ijk(vec, Parent, parentMap, dim, j, k);
 			rScore += lgamma( n_ijk + gammaK ) - lgamma( gammaK );
 		}
 
@@ -160,19 +225,52 @@ double ScoreNodeWithMultipleParent(SEXP Xi, SEXP Pa, SEXP N, SEXP R, SEXP Q, SEX
 	return qScore;
 }
 
-// // [[Rcpp::export]]
-// double BDeu() {
-// 	unordered_map<int, int> Node;
-// 	double currentScore = highestScore = 0.0;
-// 	int n;
+NumericVector InitScore(NumericMatrix& A, SEXP N, NumericVector& R, double eta) {
+	int *n = INTEGER(N);
+	NumericVector g, score(*n);
 
-// 	for (int i = 0; i < n; i++)
-// 		currentScore += (-1.0 * ScoreEmptyGraph(Mat(i, _), n, r, eta));
+	for (int i = 0; i < *n; i++) {
+		g = A(_, i);
+		score[i] = ScoreNodeWithNoneParents(g, N, R[i], eta);
+	}
+
+	return score;
+}
+
+// [[Rcpp::export]]
+SEXP BDeu(SEXP x, SEXP y, SEXP z, SEXP N) {
+	NumericVector g, f, R(y), scores;
+	unordered_map<int, int> Node;
+	int *n= INTEGER(N), q;
+	NumericMatrix A(x), AdjMat(*n, *n);
+	double addScore, reverseScore, eta = 1.0;
+	List PC(z);
+
+	scores = InitScore(A, N, R, eta);
+
+	for (int i = 0; i < PC.size(); i++)
+	{
+		NumericVector pc = as<NumericVector>(PC[i]);
+		if (pc.size() == 1) {
+			q = R[pc[0] - 1];
+			g = A(_, i);
+			f = A(_, (pc[0]-1));
+			addScore = ScoreNodeWithOneParent(g, f, N, R[i], q, eta);
+			g = A(_, (pc[0]-1));
+			f = A(_, i);
+			reverseScore = ScoreNodeWithOneParent(g, f, N, R[i], q, eta);
+			if (addScore > scores[i]) {
+				scores[i] = addScore;
+				AdjMat(i, (pc[0]-1)) = 1;
+			}
+		}
+	}
 	
-// 	while (highestScore < currentScore) {
+	// while (highestScore < currentScore) {
 
-// 		highestScore = currentScore;
+	// 	highestScore = currentScore;
 
 
-// 	}
-// }
+	// }
+	return AdjMat;
+}
