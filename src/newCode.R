@@ -429,86 +429,134 @@ ScoreMeNow <- function(mat, PC) {
 	n <- dim(PC)[1]
 	scoreMatrix <- matrix(0, n, n)
 	score <- c()
+	highestScore <- 0
 
 	for (i in 1:n) {
 		score[i] <- nuScore(mat, scoreMatrix, i)
 	}
 
-	for (i in 1:n) {
-		for (j in 1:n) {
-			
-			if (PC[i, j] == 1) {
+	repeat {
 
-				choose <- sample(c(0, 1), 1, prob = c(0.5, 0.5))
+		if (sum(score) == highestScore) {
+			break
+		}
 
-				if (choose) {
-					
-					if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 0) {
-						reverse <- reverseEdge(mat, scoreMatrix, i, j, score)
-						if (reverse[[1]]) {
-							scoreMatrix[i, j] <- 0
-							scoreMatrix[j, i] <- 1
-							score <- reverse[[2]]
-						}
-					} else if (scoreMatrix[j, i] == 1 && scoreMatrix[i, j] == 0) {
-						reverse <- reverseEdge(mat, scoreMatrix, j, i, score)
-						if (reverse[[1]]) {
-							scoreMatrix[i, j] <- 1
-							scoreMatrix[j, i] <- 0
-							score <- reverse[[2]]
-						}
-					} else if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 1) {
-						del1 <- deleteEdge(mat, scoreMatrix, i, j, score)
-						del2 <- deleteEdge(mat, scoreMatrix, j, i, score)
+		highestScore <- sum(score)
 
-						if (del1 > del2) {
-							scoreMatrix[i, j] <- 0
+		for (i in 1:n) {
+			for (j in 1:n) {
+				
+				if (PC[i, j] == 1) {
+
+					choose <- sample(c(0, 1), 1, prob = c(0.5, 0.5))
+
+					if (choose) {
+						
+						if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 0) {
+							reverse <- reverseEdge(mat, scoreMatrix, i, j, score)
+							if (reverse[[1]]) {
+								scoreMatrix[i, j] <- 0
+								scoreMatrix[j, i] <- 1
+								score <- reverse[[2]]
+							}
+						} else if (scoreMatrix[j, i] == 1 && scoreMatrix[i, j] == 0) {
+							reverse <- reverseEdge(mat, scoreMatrix, j, i, score)
+							if (reverse[[1]]) {
+								scoreMatrix[i, j] <- 1
+								scoreMatrix[j, i] <- 0
+								score <- reverse[[2]]
+							}
+						} else if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 1) {
+							del1 <- deleteEdge(mat, scoreMatrix, i, j, score)
+							del2 <- deleteEdge(mat, scoreMatrix, j, i, score)
+
+							if (del1 > del2) {
+								scoreMatrix[i, j] <- 0
+							} else {
+								scoreMatrix[j, i] <- 0
+							}
 						} else {
-							scoreMatrix[j, i] <- 0
+							add <- addEdge(mat, scoreMatrix, i, j, score)
+							if (add[[1]]) {
+								scoreMatrix[i, j] <- 1
+								score <- add[[2]]
+							}
 						}
+
 					} else {
-						add <- addEdge(mat, scoreMatrix, i, j, score)
-						if (add[[1]]) {
-							scoreMatrix[i, j] <- 1
-							score <- add[[2]]
-						}
-					}
+						
+						if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 0) {
+							delete <- deleteEdge(mat, scoreMatrix, i, j, score)
+							if (delete[[1]]) {
+								scoreMatrix[i, j] <- 0
+								score <- delete[[2]]
+							}
+						} else if (scoreMatrix[j, i] == 1 && scoreMatrix[i, j] == 0) {
+							delete <- deleteEdge(mat, scoreMatrix, j, i, score)
+							if (delete[[1]]) {
+								scoreMatrix[j, i] <- 0
+								score <- delete[[2]]
+							}
+						} else if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 1) {
+							del1 <- deleteEdge(mat, scoreMatrix, i, j, score)
+							del2 <- deleteEdge(mat, scoreMatrix, j, i, score)
 
-				} else {
-					
-					if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 0) {
-						delete <- deleteEdge(mat, scoreMatrix, i, j, score)
-						if (delete[[1]]) {
-							scoreMatrix[i, j] <- 0
-							score <- delete[[2]]
-						}
-					} else if (scoreMatrix[j, i] == 1 && scoreMatrix[i, j] == 0) {
-						delete <- deleteEdge(mat, scoreMatrix, j, i, score)
-						if (delete[[1]]) {
-							scoreMatrix[j, i] <- 0
-							score <- delete[[2]]
-						}
-					} else if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 1) {
-						del1 <- deleteEdge(mat, scoreMatrix, i, j, score)
-						del2 <- deleteEdge(mat, scoreMatrix, j, i, score)
-
-						if (del1 > del2) {
-							scoreMatrix[i, j] <- 0
+							if (del1 > del2) {
+								scoreMatrix[i, j] <- 0
+							} else {
+								scoreMatrix[j, i] <- 0
+							}
 						} else {
-							scoreMatrix[j, i] <- 0
+							add <- addEdge(mat, scoreMatrix, i, j, score)
+							if (add[[1]]) {
+								scoreMatrix[i, j] <- 1
+								score <- add[[2]]
+							}
 						}
-					} else {
-						add <- addEdge(mat, scoreMatrix, i, j, score)
-						if (add[[1]]) {
-							scoreMatrix[i, j] <- 1
-							score <- add[[2]]
-						}
-					}
 
+					}
 				}
 			}
 		}
 	}
+
+	# scoreMatrix <<- scoreMatrix
+
+	# for (i in n:1) {
+	# 	for (j in n:1) {
+
+	# 		if (PC[i, j] == 1) {
+
+	# 			choose <- sample(c(0, 1), 1, prob = c(0.2, 0.8))
+
+	# 			if (choose) {
+
+	# 				reverse <- reverseEdge(mat, scoreMatrix, i, j, score)
+
+	# 				if (reverse[[1]]) {
+
+	# 					scoreMatrix[i, j] <- 0
+	# 					scoreMatrix[j, i] <- 1
+	# 					score <- reverse[[2]]
+
+	# 				}
+
+	# 			} else {
+
+	# 				delete <- deleteEdge(mat, scoreMatrix, i, j, score)
+
+	# 				if (delete[[1]]) {
+
+	# 					scoreMatrix[i, j] <- 0
+	# 					score <- delete[[2]]
+	# 				}
+
+	# 			}
+			
+	# 		}
+
+	# 	}
+	# }
 
 	return (scoreMatrix)
 }
@@ -662,32 +710,12 @@ MMHC <- function(df) {
 	return (adjMat)
 }
 
-Test <- function(df, func) {
-	if (func == 1) {
-		AM <- MMHC(df)
-		old.par <- par(mfrow = c(1, 2))
-		plot(AM, main = "My Function")
-		plot(mmhc(df), main = "bnlearn")
-		par(old.par)
-	}
-	if (func == 2) {
-		data(learning.test)
-		AM <- MMHC(learning.test)
-		old.par <- par(mfrow = c(1, 2))
-		plot(AM, main = "My Function")
-		plot(mmhc(learning.test), main = "bnlearn")
-		par(old.par)
-	}
-
-}
-
-dofunc <- function(mat, y) {
-	summy <- c()
-	for (i in 1:5) {
-		summy[i] <- nuScore(mat, y, i)
-	}
-
-	return (sum(summy))
+Test <- function(df) {
+	AM <- MMHC(df)
+	old.par <- par(mfrow = c(1, 2))
+	plot(AM, main = "My Function")
+	plot(mmhc(df), main = "bnlearn")
+	par(old.par)
 }
 
 # bench <- benchmark(MMPC(Matrix), mmpc(tmp), replications=1, columns = c("test", "elapsed", "relative"))

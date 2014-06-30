@@ -53,6 +53,40 @@ Example <- function(rows, cols = 5, char = TRUE) {
   return (student)
 }
 
+TwoNodes <- function(dim, cols = 3) {
+  binary <- c(1, 2)
+  dimnames <- list(c(), c("sprinkler", "rain", "grassWet"))
+  testMatrix <- matrix(, dim, cols, dimnames = dimnames)
+  df <- data.frame(testMatrix, check.names = FALSE)
+  df$rain <- sample(binary, dim, replace = TRUE, prob = c(0.2, 0.8))
+  n <- 1
+  for (i in df$rain) {
+
+    if (i == binary[1])
+      df$sprinkler[n] <- sample(binary, 1, replace = TRUE, prob = c(0.01, 0.99))
+
+    if (i == binary[2])
+      df$sprinkler[n] <- sample(binary, 1, replace = TRUE, prob = c(0.40, 0.60))
+
+    if (i == binary[1] && df$sprinkler[n] == 1)
+      df$grassWet[n] <- sample(binary, 1, replace = TRUE, prob = c(0.99, 0.01))
+
+    if (i == binary[1] && df$sprinkler[n] == 2)
+      df$grassWet[n] <- sample(binary, 1, replace = TRUE, prob = c(0.80, 0.20))
+
+    if (i == binary[2] && df$sprinkler[n] == 1)
+      df$grassWet[n] <- sample(binary, 1, replace = TRUE, prob = c(0.90, 0.10))
+
+    if (i == binary[2] && df$sprinkler[n] == 2)
+      df$grassWet[n] <- sample(binary, 1, replace = TRUE, prob = c(0.00, 1.00))
+
+
+    n <- n+1
+  }
+
+  return (df)
+}
+
 # The cardinality of the five random variables. For two we use binary 0 and 1 and for the
 # one with three possibilities we have 1, 2 and 3.
 # This array is set global
@@ -62,7 +96,7 @@ alpha <<- 0.05
 
 # Allocating the example of the book. Make it global and allocate it as a matrix for testing
 # purpose. Later on it should be a data frame.
-# MyExample <- Example(5000, char = FALSE)
+MyExample <- Example(1000, char = FALSE)
 # Frame <<- Example(1000, char = FALSE)
 # Matrixy <<- as.matrix(Frame)
 # write(t(Matrixy))
