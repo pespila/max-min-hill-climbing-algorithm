@@ -15,16 +15,6 @@ using namespace arma;
 // [[Rcpp::depends("RcppArmadillo")]]
 // [[Rcpp::plugins(openmp)]]
 
-// int getN_ij();
-// int getSingleN_ijk(int*, int*, int);
-// double ScoreEmptyGraph(SEXP, int*, int*, double*, int*);
-// double BDeu();
-
-// int main (int argc, char *argv[]) {
-
-// 	return 0;
-// }
-
 // [[Rcpp::export]]
 int getR(NumericVector& f) {
 	unordered_map<int, int> Map;
@@ -43,39 +33,6 @@ string int_array_to_string(NumericVector& array) { //  int int_array[], int size
 	
 	return oss.str();
 }
-
-//Faster!!!!!!!!!!!!!!!!!!!
-// // [[Rcpp::export]]
-// void PrintC(SEXP x, SEXP N, SEXP M) {
-// 	double *A = REAL(x);
-// 	int *n = INTEGER(N), *m = INTEGER(M);
-
-// 	for (int i = 0; i < *m; i++)
-// 	{
-// 		for (int j = 0; j < *n; j++)
-// 		{
-// 			// cout << A[i + j * (*m)] << " ";
-// 			A[i + j * (*m)] = sqrt(2);
-// 		}
-// 		// cout << endl;
-// 	}
-// }
-
-// // [[Rcpp::export]]
-// void PrintCpp(SEXP x, SEXP N, SEXP M) {
-// 	double *A = REAL(x);
-// 	int *n = INTEGER(N), *m = INTEGER(M);
-
-// 	for (int i = 0; i < *n; i++)
-// 	{
-// 		for (int j = 0; j < *m; j++)
-// 		{
-// 			// cout << A[i + j * (*n)] << " ";
-// 			A[i + j * (*n)] = sqrt(2);
-// 		}
-// 		// cout << endl;
-// 	}
-// }
 
 // [[Rcpp::export]]
 unordered_map<int, string> UniqueMap(SEXP x) {
@@ -193,26 +150,26 @@ double ScoreNodeWithOneParent(SEXP Xi, SEXP Pa, SEXP N, int r, int q, double eta
 }
 
 // [[Rcpp::export]]
-double ScoreNodeWithMoreParents(SEXP Xi, SEXP Pa, SEXP N, SEXP R, SEXP Q, SEXP Eta) {
-	int *n = INTEGER(N), *r = INTEGER(R), *q = INTEGER(Q), dim = XLENGTH(Xi);
-	double *vec = REAL(Xi), *eta = REAL(Eta);
+double ScoreNodeWithMoreParents(SEXP Xi, SEXP Pa, SEXP N, int r, int q, double eta) {
+	int *n = INTEGER(N), dim = XLENGTH(Xi);
+	double *vec = REAL(Xi);
 	NumericMatrix Parent(Pa);
 	unordered_map<int, string> parentMap = UniqueMap(Parent);
-	double gammaJ = *eta / (*q), gammaK = *eta / ((*q) * (*r));
+	double gammaJ = eta / q, gammaK = eta / ( q * r);
 	double rScore = 0.0, qScore = 0.0;
 	int n_ij, n_ijk = 0;
 
-	for (int j = 1; j <= *q; j++)
+	for (int j = 1; j <= q; j++)
 	{
 		n_ij = 0;
 		rScore = 0.0;
 
-		for (int k = 1; k <= *r; k++)
+		for (int k = 1; k <= r; k++)
 		{
 			n_ij += getMapN_ijk(vec, Parent, parentMap, dim, j, k);
 		}
 
-		for (int k = 1; k <= *r; k++)
+		for (int k = 1; k <= r; k++)
 		{
 			n_ijk = getMapN_ijk(vec, Parent, parentMap, dim, j, k);
 			rScore += lgamma( n_ijk + gammaK ) - lgamma( gammaK );
@@ -223,6 +180,18 @@ double ScoreNodeWithMoreParents(SEXP Xi, SEXP Pa, SEXP N, SEXP R, SEXP Q, SEXP E
 
 
 	return qScore;
+}
+
+NumericVector ReturnParents(int i, NumericMatrix& AdjMat, SEXP N) {
+	NumericVector parents;
+	int *n = INTEGER(N);
+	for (int j = 0; j < *n; j++)
+	{
+		if (AdjMat(j, i) == 1) {
+			parents.push_back(j);
+		}
+	}
+	return parents;
 }
 
 NumericVector InitScore(NumericMatrix& A, SEXP N, NumericVector& R, double eta) {
@@ -238,33 +207,207 @@ NumericVector InitScore(NumericMatrix& A, SEXP N, NumericVector& R, double eta) 
 }
 
 // [[Rcpp::export]]
-SEXP BDeu(SEXP x, SEXP y, SEXP z, SEXP N) {
-	NumericVector g, f, R(y), scores;
-	unordered_map<int, int> Node;
-	int *n= INTEGER(N), q;
-	NumericMatrix A(x), AdjMat(*n, *n);
-	double addScore, reverseScore, eta = 1.0;
-	List PC(z);
+NumericMatrix partialMatrix(const NumericMatrix& A, NumericVector& pa) {
+	NumericMatrix partMat(A.nrow(), pa.size());
 
-	scores = InitScore(A, N, R, eta);
+	for (int i = 0; i < pa.size(); i++)
+	{
+		partMat(_, i) = A(_, pa(i));
+	}
+
+	return partMat;
+}
+
+void SettingFirstEdges(const NumericMatrix& A, NumericMatrix& AdjMat, NumericVector& scores, const List& PC, SEXP N, const NumericVector& R, double eta) {
+	NumericVector childVector, parentVector, allParents, tmpAllParents, tmpChildVector;
+	NumericMatrix parentMatrix, tmpParentMatrix;
+	double add, tmp, tmpTranspose;
+	int q, setCase;
+	List Parent;
 
 	for (int i = 0; i < PC.size(); i++)
 	{
+		q = 1;
+		add = scores[i];
+		setCase = 0;
 		NumericVector pc = as<NumericVector>(PC[i]);
-		if (pc.size() == 1) {
-			q = R[pc[0] - 1];
-			g = A(_, i);
-			f = A(_, (pc[0]-1));
-			addScore = ScoreNodeWithOneParent(g, f, N, R[i], q, eta);
-			g = A(_, (pc[0]-1));
-			f = A(_, i);
-			reverseScore = ScoreNodeWithOneParent(g, f, N, R[i], q, eta);
-			if (addScore > scores[i]) {
-				scores[i] = addScore;
-				AdjMat(i, (pc[0]-1)) = 1;
+
+		for (int j = 0; j < pc.size(); j++)
+		{
+			if (AdjMat(i, pc[j] - 1) == 1) {
+				AdjMat(i, pc[j] - 1) = 0;
+				AdjMat(pc[j] - 1, i) = 1;
+				setCase = 1;
+			} else if (AdjMat(i, pc[j] - 1) == 0 && AdjMat(pc[j] - 1, i) == 0) {
+				AdjMat(pc[j] - 1, i) = 1;
+				setCase = 2;
+			}
+
+			allParents = ReturnParents(i, AdjMat, N);
+			childVector = A(_, i);
+
+			for (int k = 0; k < allParents.size(); k++)
+			{
+				q *= R[allParents[k]];
+			}
+
+			if (allParents.size() == 1) {
+				parentVector = A(_, pc[j] - 1);
+				add = ScoreNodeWithOneParent(childVector, parentVector, N, R[i], q, eta);
+			} else {
+				parentMatrix = partialMatrix(A, allParents);
+				add = ScoreNodeWithMoreParents(childVector, parentMatrix, N, R[i], q, eta);
+			}
+
+			if (add >= scores[i])
+				scores[i] = add;
+
+			if (setCase == 1 && add < scores[i]) {
+				AdjMat(i, pc[j] - 1) = 1;
+				AdjMat(pc[j] - 1, i) = 0;				
+			} else if (setCase == 2 && add < scores[i]) {
+				AdjMat(pc[j] - 1, i) = 0;
 			}
 		}
+		
+		// q = 1;
+		// NumericVector pc = as<NumericVector>(PC[i]);
+		// if (pc.size() == 0) {
+		// 	continue;
+		// } else {
+		// 	for (int j = 0; j < pc.size(); j++)
+		// 	{
+		// 		// if ((AdjMat(i, pc[j]-1) == 1 && AdjMat(pc[j] - 1, i) == 0) || (AdjMat(pc[j] - 1, i) == 1 && AdjMat(i, pc[j] - 1) == 0)) {
+		// 		if 	(AdjMat(i, pc[j] - 1) == 1 && AdjMat(pc[j] - 1, i) == 0) {
+		// 			AdjMat(i, pc[j] - 1) = 0;
+		// 			AdjMat(pc[j] - 1, i) = 1;
+
+		// 			allParents = ReturnParents(i, AdjMat, N);
+		// 			childVector = A(_, i);
+		// 			if (allParents.size() == 0) {
+		// 				parentVector = A(_, pc[j] - 1);
+		// 				add = ScoreNodeWithOneParent(childVector, parentVector, N, R[i], q, eta);
+		// 			} else {
+		// 				q = 1;
+		// 				parentMatrix = partialMatrix(A, allParents);
+		// 				for (int k = 0; k < allParents.size(); k++)
+		// 				{
+		// 					q *= R[parentMatrix[k]];
+		// 				}
+		// 				add = ScoreNodeWithMoreParents(childVector, parentMatrix, N, R[i], q, eta);
+		// 			}
+
+		// 			cout << i << " HI " << j << endl;
+
+		// 			if (add >= scores[i]) {
+		// 				scores[i] = add;
+		// 			} else {
+		// 				AdjMat(i, pc[j] - 1) = 1;
+		// 				AdjMat(pc[j] - 1, i) = 0;
+		// 			}
+		// 		} else if (AdjMat(pc[j] - 1, i) == 0 && AdjMat(i, pc[j] - 1) == 0) {
+		// 			allParents = ReturnParents(i, AdjMat, N);
+		// 			childVector = A(_, i);
+		// 			if (allParents.size() == 0) {
+		// 				parentVector = A(_, pc[j] - 1);
+		// 				add = ScoreNodeWithOneParent(childVector, parentVector, N, R[i], q, eta);
+		// 			} else {
+		// 				q = 1;
+		// 				parentMatrix = partialMatrix(A, allParents);
+		// 				for (int k = 0; k < allParents.size(); k++)
+		// 				{
+		// 					q *= R[parentMatrix[k]];
+		// 				}
+		// 				add = ScoreNodeWithMoreParents(childVector, parentMatrix, N, R[i], q, eta);
+		// 			}
+
+		// 			if (add >= scores[i]) {
+		// 				scores[i] = add;
+		// 				AdjMat(pc[j] - 1, i) = 1;
+		// 			}
+		// 		} else {
+		// 			AdjMat(pc[j] - 1, i) = 0;
+		// 			continue;
+		// 		}
+		// 	}
+		// }
+
+
+
+
+
+
+
+
+		// if (pc.size() == 0) {
+		// 	continue;
+		// } else if (pc.size() == 1) {
+		// 	if (AdjMat(i, (pc[0] - 1)) != 1) {
+		// 		q = R[pc[0] - 1];
+		// 		node = A(_, i);
+		// 		parentVector = A(_, (pc[0] - 1));
+		// 		addScore = ScoreNodeWithOneParent(node, parentVector, N, R[i], q, eta);
+		// 		cout << i+1 << "    " << pc[0] << "    " << addScore << "    " << scores[i] << endl;
+		// 		if (addScore >= scores[i]) {
+		// 			scores[i] = addScore;
+		// 			AdjMat((pc[0] - 1), i) = 1;
+		// 		}
+		// 	} else {
+		// 		q = R[pc[0] - 1];
+		// 		node = A(_, (pc[0] - 1));
+		// 		parentVector = A(_, i);
+		// 		addScore = ScoreNodeWithOneParent(node, parentVector, N, R[i], q, eta);
+		// 		cout << i+1 << "    " << pc[0] << "    " << addScore << "    " << scores[i] << endl;
+		// 		if (addScore >= scores[i]) {
+		// 			scores[i] = addScore;
+		// 			AdjMat((pc[0] - 1), i) = 1;
+		// 			AdjMat(i, (pc[0] - 1)) = 0;
+		// 		}
+		// 	}
+		// } else {
+		// 	for (int j = 0; j < pc.size(); j++)
+		// 	{
+		// 		if (AdjMat(i, (pc[j] - 1)) != 1) {
+		// 			q = R[pc[j] - 1];
+		// 			node = A(_, i);
+		// 			parentVector = A(_, (pc[j] - 1));
+		// 			addScore = ScoreNodeWithOneParent(node, parentVector, N, R[i], q, eta);
+		// 			cout << i+1 << "    " << pc[j] << "    " << addScore << "    " << scores[i] << endl;
+		// 			if (addScore >= scores[i]) {
+		// 				scores[i] = addScore;
+		// 				AdjMat((pc[j] - 1), i) = 1;
+		// 			}
+		// 		} else {
+		// 		q = R[pc[j] - 1];
+		// 		node = A(_, i);
+		// 		parentVector = A(_, (pc[j] - 1));
+		// 		addScore = ScoreNodeWithOneParent(node, parentVector, N, R[i], q, eta);
+		// 		cout << i+1 << "    " << pc[j] << "    " << addScore << "    " << scores[i] << endl;
+		// 		if (addScore >= scores[i]) {
+		// 			scores[i] = addScore;
+		// 			AdjMat((pc[j] - 1), i) = 1;
+		// 			AdjMat(i, (pc[j] - 1)) = 0;
+		// 		}
+		// 	}
+		// 	}
+		// }
 	}
+}
+
+// [[Rcpp::export]]
+SEXP BDeu(SEXP x, SEXP y, SEXP z, SEXP N) {
+	// NumericVector node, parentVector, R(y), scores, parentsOfNode;
+	// unordered_map<int, int> Node;
+	int *n= INTEGER(N);
+	NumericVector R(y), scores;
+	NumericMatrix A(x), AdjMat(*n, *n);
+	double eta = 1.0;
+	List PC(z);
+
+	scores = InitScore(A, N, R, eta);
+	cout << sum(scores) << endl;
+	SettingFirstEdges(A, AdjMat, scores, PC, N, R, eta);
+	cout << sum(scores) << endl;
 	
 	// while (highestScore < currentScore) {
 

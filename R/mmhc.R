@@ -329,8 +329,8 @@ MMPC <- function(mat) { # MMPC
 		}
 	}
 	# AdjMat <- graph.adjacency(AdjMat)
-	return (PC)
-	# return (AdjMat)
+	# return (PC)
+	return (AdjMat)
 } # MMPC
 
 # nuScore <- function(mat, PC, i) {
@@ -637,4 +637,10 @@ Test <- function(mat, pc) {
 		score[i] <- getScore(mat, pc, i)
 	}
 	return (sum(score))
+}
+
+TestNew <- function() {
+	x <- BDeu(E, card, mylist, as.integer(5))
+	x <- graph.adjacency(x)
+	plot(x)
 }
