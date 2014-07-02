@@ -329,8 +329,8 @@ MMPC <- function(mat) { # MMPC
 		}
 	}
 	# AdjMat <- graph.adjacency(AdjMat)
-	# return (PC)
-	return (AdjMat)
+	return (PC)
+	# return (AdjMat)
 } # MMPC
 
 # nuScore <- function(mat, PC, i) {
@@ -392,6 +392,10 @@ getScore <- function(mat, PC, i) {
 		jSum[j] <- lgamma ( x ) - lgamma ( nij + x ) + sum(kSum)
 
 	}
+
+	# if (length(pc) > 1) {
+	# 	print(jSum)
+	# }
 
 	return (sum(jSum))
 }
@@ -592,7 +596,9 @@ MMHC <- function(df) {
 	columnNames <- colnames(df)
 	mat <- data.matrix(df)
 	PC <- MMPC(mat)
-	adjMat <- ScoreMeNow(mat, PC)
+	card <- getCard(dm)
+	adjMat <- BDeu(mat, card, PC, as.integer(dim(mat)[2]))
+	# adjMat <- ScoreMeNow(mat, PC)
 	colnames(adjMat) <- columnNames
 	adjMat <- graph.adjacency(adjMat)
 
@@ -631,16 +637,36 @@ PlotSeperate <- function(plotter) {
 	# lines(plotter[[1]], plotter[[4]], col="blue")	
 }
 
-Test <- function(mat, pc) {
-	score <- c()
-	for (i in 1:5) {
-		score[i] <- getScore(mat, pc, i)
+getCard <- function(df) {
+	level <- c()
+	for (i in 1:dim(df)[2]) {
+		level[i] <- length(unique(df[,i]))
 	}
-	return (sum(score))
+	return (level)
 }
 
-TestNew <- function() {
-	x <- BDeu(E, card, mylist, as.integer(5))
+TestNew <- function(df) {
+	columnNames <- colnames(df)
+	dm <- data.matrix(df)
+	PC <- MMPC(dm)
+	card <- getCard(dm)
+	x <- BDeu(dm, card, PC, as.integer(dim(dm)[2]))
+	colnames(x) <- columnNames
 	x <- graph.adjacency(x)
 	plot(x)
+	# return (x);
 }
+
+dm <- data.matrix(MyExample)
+PC <- MMPC(dm)
+AdjMat <- matrix(0, dim(dm)[2], dim(dm)[2])
+for (i in 1:length(PC)) {
+	for (element in PC[[i]]) {
+		AdjMat[i, element] <- 1
+	}
+}
+card <- getCard(dm)
+dim <- as.integer(dim(dm)[2])
+
+# bench <- benchmark(BDeu(dm, card, PC, dim), ScoreMeNow(dm, AdjMat), columns = c("test", "elapsed", "relative"), replications = 1)
+bench <- benchmark(MMHC(MyExample), mmhc(MyExample), columns = c("test", "elapsed", "relative"), replications = 1)
