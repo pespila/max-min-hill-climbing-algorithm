@@ -65,6 +65,7 @@ MaxMinHeuristic <- function(T, CPC, mat, maxNumberOfVariables, selectedBefore = 
 
 		# statistical testing
 		if (pvalue[1] < alpha) { # IF: reject nullhypothesis
+			print(c(pvalue[1], reject[2], pvalue[2], reject[3]))
 
 			if (pvalue[1] < reject[2]) { # IF: test for the maximum over all rejected ones
 
