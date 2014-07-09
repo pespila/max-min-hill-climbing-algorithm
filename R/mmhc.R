@@ -23,6 +23,7 @@ require("bnlearn")
 require("rbenchmark")
 require("igraph")
 sourceCpp("./../src/mmhc.cpp")
+sourceCpp("./../src/mmpc.cpp")
 sourceCpp("./../src/score.cpp")
 source("mmhc_test.R")
 Sys.setenv("PKG_CXXFLAGS"="-fopenmp")
@@ -65,7 +66,7 @@ MaxMinHeuristic <- function(T, CPC, mat, maxNumberOfVariables, selectedBefore = 
 
 		# statistical testing
 		if (pvalue[1] < alpha) { # IF: reject nullhypothesis
-			print(c(pvalue[1], reject[2], pvalue[2], reject[3]))
+			# print(c(pvalue[1], reject[2], pvalue[2], reject[3]))
 
 			if (pvalue[1] < reject[2]) { # IF: test for the maximum over all rejected ones
 
@@ -128,6 +129,8 @@ ForwardPhase <- function(T, mat) { # FORWARDPHASE
 		
 		} # FOR
 	}
+
+	# print(length(maxNumberOfVariables))
 
 	# main loop
 	repeat { # REPEAT
@@ -289,7 +292,7 @@ BackwardPhase <- function(T, CPCset, mat) { # BACKWARDPHASE
 
 # Function MMPC. Takes the observed matrix (later on a data frame) and returns the 'real' set of parents and children for all
 # possible target variables
-MMPC <- function(mat) { # MMPC
+MMPCR <- function(mat) { # MMPC
 	PC <- list()
 
 	# iterate over all target variables
@@ -357,7 +360,7 @@ getScore <- function(mat, PC, i) {
 
 	jSum <- c()
 	kSum <- c()
-	pc <- which(PC[i, ] != 0)
+	pc <- which(PC[, i] != 0)
 	q <- getQ(mat, pc)
 	r <- getR(mat[, i])
 	eta <- getEta(mat)
@@ -494,6 +497,149 @@ deleteEdge <- function(mat, PC, row, col, currentScores) {
 	}
 }
 
+MatrixScore <- function(mat, PC) {
+	finalScore <- c()
+	n <- dim(mat)[2]
+	nijk <- 0
+	nij <- 0
+
+
+	for (i in 1:5) {
+		jSum <- c()
+		kSum <- c()
+		pc <- which(PC[, i] != 0)
+		q <- getQ(mat, pc)
+		r <- getR(mat[, i])
+		eta <- getEta(mat, FALSE)
+		wi <- getW(mat, pc)
+		x <- eta / q
+		y <- eta / ( r * q )
+		if (length(pc) <= 1) {
+			q <- length(wi)
+		} else {
+			q <- dim(wi)[1]
+		}
+
+		for (j in 1:q) {
+
+			if (length(pc) <= 1) {
+				nij <- getNij(mat, pc, wi[j], i, r)
+			} else {
+				nij <- getNij(mat, pc, wi[j, ], i, r)
+			}
+
+			for (k in 1:r) {
+
+				if (length(pc) <= 1) {
+					nijk <- getNijk(mat, pc, wi[j], i, k)
+				} else {
+					nijk <- getNijk(mat, pc, wi[j, ], i, k)
+				}
+
+				kSum[k] <- lgamma ( nijk + y ) - lgamma ( y )
+
+			}
+
+			jSum[j] <- lgamma ( x ) - lgamma ( nij + x ) + sum(kSum)
+
+		}
+		finalScore[i] <- sum(jSum)
+	}
+
+	return (sum(finalScore))
+}
+
+SetEdge <- function(mat, PC) {
+	n <- length(PC)
+	adjMat <- matrix(0, n, n)
+	before <- MatrixScore(mat, adjMat)
+	after <- 0
+	# print(adjMat)
+	for (i in 1:length(PC)) {
+		for (j in 1:length(PC[[i]])) {
+			if (adjMat[i, PC[[i]][j]] == 0 && adjMat[PC[[i]][j], i] == 0) {
+				adjMat[i, PC[[i]][j]] = 1
+				after <- MatrixScore(mat, adjMat)
+
+				if (after > before) {
+					before <- after
+				} else {
+					adjMat[i, PC[[i]][j]] = 0
+				}
+			}
+		}
+	}
+	return (adjMat)
+}
+
+ReversingOrDeleting <- function(mat, PC, adjMat) {
+	before <- MatrixScore(mat, adjMat)
+	for (i in 1:length(PC)) {
+		for (j in 1:length(PC[i])) {
+
+			rnd <- sample(c(0, 1), 1, prob = c(0.3, 0.7))
+
+			if (adjMat[i, PC[[i]][j]] == 0 && adjMat[PC[[i]][j], i] == 0) {
+				adjMat[i, PC[[i]][j]] = 1
+				after <- MatrixScore(mat, adjMat)
+
+				if (after > before) {
+					before <- after
+				} else {
+					adjMat[i, PC[[i]][j]] = 0
+				}
+			} else if (adjMat[PC[[i]][j], i] == 1 && rnd) {
+				adjMat[i, PC[[i]][j]] = 1
+				adjMat[PC[[i]][j], i] = 0
+				after <- MatrixScore(mat, adjMat)
+
+				if (after > before) {
+					before <- after
+				} else {
+					adjMat[i, PC[[i]][j]] = 0
+					adjMat[PC[[i]][j], i] = 1
+				}
+			} else if (adjMat[i, PC[[i]][j]] == 1 && !rnd) {
+				adjMat[i, PC[[i]][j]] = 0
+				after <- MatrixScore(mat, adjMat)
+
+				if (after > before) {
+					before <- after
+				} else {
+					adjMat[i, PC[[i]][j]] = 1
+				}
+			}
+
+		}
+	}
+
+	return (adjMat)
+}
+
+BDeuR <- function(mat, PC) {
+	adjMat <- SetEdge(mat, PC)
+
+	for (i in 1:10) {
+		adjMat <- ReversingOrDeleting(mat, PC, adjMat)
+	}
+
+	print(MatrixScore(mat, adjMat))
+
+	return (adjMat)
+}
+
+MMHCT <- function(df) {
+	columnNames <- colnames(df)
+	mat <- data.matrix(df)
+	PC <- MMPCR (mat)
+	print(PC)
+	adjMat <- BDeuR(mat, PC)
+	colnames(adjMat) <- columnNames
+	adjMat <- graph.adjacency(adjMat)
+
+	return (adjMat)
+}
+
 ScoreMeNow <- function(mat, PC) {
 	n <- dim(PC)[1]
 	scoreMatrix <- matrix(0, n, n)
@@ -593,13 +739,23 @@ ScoreMeNow <- function(mat, PC) {
 	return (scoreMatrix)
 }
 
-MMHC <- function(df) {
+MMHCC <- function(df) {
 	columnNames <- colnames(df)
 	mat <- data.matrix(df)
-	PC <- MMPC(mat)
-	card <- getCard(dm)
+	card <- getCard(mat)
+	PC <- MMPCC(mat, card, 0.05)
 	adjMat <- BDeu(mat, card, PC, as.integer(dim(mat)[2]))
-	# adjMat <- ScoreMeNow(mat, PC)
+	colnames(adjMat) <- columnNames
+	adjMat <- graph.adjacency(adjMat)
+
+	return (adjMat)
+}
+
+MMHCR <- function(df) {
+	columnNames <- colnames(df)
+	mat <- data.matrix(df)
+	PC <- MMPCR (mat)
+	adjMat <- ScoreMeNow(mat, PC)
 	colnames(adjMat) <- columnNames
 	adjMat <- graph.adjacency(adjMat)
 
@@ -670,4 +826,4 @@ card <- getCard(dm)
 dim <- as.integer(dim(dm)[2])
 
 # bench <- benchmark(BDeu(dm, card, PC, dim), ScoreMeNow(dm, AdjMat), columns = c("test", "elapsed", "relative"), replications = 1)
-bench <- benchmark(MMHC(MyExample), mmhc(MyExample), columns = c("test", "elapsed", "relative"), replications = 1)
+# bench <- benchmark(MMHC(MyExample), mmhc(MyExample), columns = c("test", "elapsed", "relative"), replications = 1)

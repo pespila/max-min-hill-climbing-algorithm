@@ -244,6 +244,41 @@ NumericVector ScoreGraph(const NumericMatrix& A, NumericMatrix& AdjMat, SEXP N, 
 	return score;
 }
 
+// [[Rcpp::export]]
+double ScoreTheGraph(SEXP x, SEXP y, SEXP N, SEXP z, SEXP E) {
+	NumericVector childVector, parentVector, allParents, score, R(z);
+	NumericMatrix parentMatrix, A(x), AdjMat(y);
+	int q;
+	double *e = REAL(E);
+	double eta = *e;
+
+	for (int i = 0; i < AdjMat.ncol(); i++)
+	{
+		q = 1;
+		allParents = ReturnParents(i, AdjMat, N);
+		childVector = A(_, i);
+
+		for (int k = 0; k < allParents.size(); k++)
+			q *= R[allParents[k]];
+
+		// cout << "In ScoreGraph: " << i << "   " << allParents.size() << endl;
+
+		if (allParents.size() == 0) {
+			score.push_back(ScoreNodeWithNoneParents(childVector, N, R[i], eta));
+		} else if (allParents.size() == 1) {
+			parentVector = A(_, allParents[0]);
+			score.push_back(ScoreNodeWithOneParent(childVector, parentVector, N, R[i], q, eta));
+		} else {
+			parentMatrix = partialMatrix(A, allParents);
+			score.push_back(ScoreNodeWithMoreParents(childVector, parentMatrix, N, R[i], q, eta));
+		}
+	}
+
+	double out = sum(score);
+
+	return out;
+}
+
 void SettingEdges(const NumericMatrix& A, NumericMatrix& AdjMat, NumericVector& scores, const List& PC, SEXP N, const NumericVector& R, double eta) {
 	NumericVector childVector, parentVector, allParents, tmp;
 	NumericMatrix parentMatrix;
