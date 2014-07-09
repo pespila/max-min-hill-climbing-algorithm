@@ -499,7 +499,7 @@ ReversingOrDeleting <- function(mat, PC, adjMat) {
 BDeuR <- function(mat, PC) {
 	adjMat <- SetEdge(mat, PC)
 
-	for (i in 1:10) {
+	for (i in 1:5) {
 		adjMat <- ReversingOrDeleting(mat, PC, adjMat)
 	}
 
@@ -540,9 +540,9 @@ getCard <- function(df) {
 }
 
 
-b1 <- benchmark(R_MMHC(MyExample), C_MMHC(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
-b2 <- benchmark(R_MMHC(MyExample), mmhc(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
-b3 <- benchmark(mmhc(MyExample), C_MMHC(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
-b4 <- benchmark(R_MMHC(MyExample), C_MMHC(MyExample), mmhc(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
+# b1 <- benchmark(R_MMHC(MyExample), C_MMHC(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
+# b2 <- benchmark(R_MMHC(MyExample), mmhc(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
+# b3 <- benchmark(mmhc(MyExample), C_MMHC(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
+# b4 <- benchmark(R_MMHC(MyExample), C_MMHC(MyExample), mmhc(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
 # bench <- benchmark(BDeu(dm, card, PC, dim), ScoreMeNow(dm, AdjMat), columns = c("test", "elapsed", "relative"), replications = 1)
 # bench <- benchmark(MMHC(MyExample), mmhc(MyExample), columns = c("test", "elapsed", "relative"), replications = 1)
