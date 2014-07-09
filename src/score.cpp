@@ -166,7 +166,6 @@ double ScoreNodeWithMoreParents(SEXP Xi, SEXP Pa, SEXP N, int r, int q, double e
 		{
 			n_ijk = getMapN_ijk(vec, Parent, parentMap, dim, j, k);
 			n_ij += n_ijk;
-			// cout << "N_ijk and N_ij: " << n_ijk << "   " << n_ij << endl;
 			if (n_ijk != 0)
 				rScore += lgamma( n_ijk + gammaK ) - lgamma( gammaK );
 		}
@@ -228,8 +227,6 @@ NumericVector ScoreGraph(const NumericMatrix& A, NumericMatrix& AdjMat, SEXP N, 
 		for (int k = 0; k < allParents.size(); k++)
 			q *= R[allParents[k]];
 
-		// cout << "In ScoreGraph: " << i << "   " << allParents.size() << endl;
-
 		if (allParents.size() == 0) {
 			score.push_back(ScoreNodeWithNoneParents(childVector, N, R[i], eta));
 		} else if (allParents.size() == 1) {
@@ -260,8 +257,6 @@ double ScoreTheGraph(SEXP x, SEXP y, SEXP N, SEXP z, SEXP E) {
 
 		for (int k = 0; k < allParents.size(); k++)
 			q *= R[allParents[k]];
-
-		// cout << "In ScoreGraph: " << i << "   " << allParents.size() << endl;
 
 		if (allParents.size() == 0) {
 			score.push_back(ScoreNodeWithNoneParents(childVector, N, R[i], eta));

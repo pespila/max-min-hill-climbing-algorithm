@@ -245,7 +245,6 @@ SEXP MySvalue(SEXP mat) {
 				if (x[i] < 1 || y[j] < 1 || z[i][j] < 1)
 					continue;
 				sum[0] += 2.0 * z[i][j] * log( (z[i][j] * vDim) / (x[i] * y[j]) );
-				// cout << "2.0 * " << z[i][j] << "* log( ( " << z[i][j] << " * " << vDim << " ) / ( " << x[i] << " * " << y[j] << ") ) = " << 2.0 * z[i][j] * log( (z[i][j] * vDim) / (x[i] * y[j]) ) << endl;
 			}
 		}
 

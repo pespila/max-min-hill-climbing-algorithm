@@ -568,7 +568,7 @@ NumericVector Backward(SEXP x, SEXP z, SEXP a, List& CPC, int T) {
 }
 
 // [[Rcpp::export]]
-List MMPCC(SEXP x, SEXP z, SEXP a) {
+List C_MMPC(SEXP x, SEXP z, SEXP a) {
 	NumericVector cpc, pc, tmppc;
 	List CPC, PC, tmpPC;
 	NumericVector count;

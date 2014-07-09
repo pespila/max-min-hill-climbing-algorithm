@@ -87,17 +87,6 @@ Rainy <- function(dim, cols = 3) {
   return (df)
 }
 
-# The cardinality of the five random variables. For two we use binary 0 and 1 and for the
-# one with three possibilities we have 1, 2 and 3.
-# This array is set global
-# card <<- c(2, 2, 2, 3, 2)
-
-alpha <<- 0.05
-
 # Allocating the example of the book. Make it global and allocate it as a matrix for testing
 # purpose. Later on it should be a data frame.
-MyExample <- Example(5000, char = FALSE)
-# Frame <<- Example(1000, char = FALSE)
-# Matrixy <<- as.matrix(Frame)
-# write(t(Matrixy))
-# Matrixy <<- as.matrix(Example(5000, char = FALSE))
+MyExample <- Example(1000, char = FALSE)

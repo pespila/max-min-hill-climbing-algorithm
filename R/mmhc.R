@@ -6,22 +6,17 @@
 if (!("Rcpp" %in% rownames(installed.packages())))
   install.packages("Rcpp")
 
-# Checks whether 'sets' is installed or not. If not it will be installed
-# if(!("sets" %in% rownames(installed.packages())))
-#   install.packages("sets")
-
 # Load the packages which are neede:
 # - Rcpp: for compiling
 # - bnlearn: will be removed
 # - rbenchmark: will be removed
-# - sets: to create and handle sets
 # - mmhc.cpp: the C++-file which holds the 'fast' code blocks
 # - mmhc_test.R: my Example's based on the book of Daphne Koller
 require("Rcpp")
-require("RcppArmadillo")
 require("bnlearn")
 require("rbenchmark")
 require("igraph")
+require("RcppArmadillo")
 sourceCpp("./../src/mmhc.cpp")
 sourceCpp("./../src/mmpc.cpp")
 sourceCpp("./../src/score.cpp")
@@ -30,12 +25,7 @@ Sys.setenv("PKG_CXXFLAGS"="-fopenmp")
 Sys.setenv("PKG_LIBS"="-fopenmp")
 
 options(warn=-1)
-# MatrixT <<- t(Matrixy)
 
-# ToCrossOutR <- function(vec, out) {
-# 	vec <- vec[!(vec == out)]
-# 	return (vec)
-# }
 # Function MaxMinHeuristic which takes:
 # - the target variable T for whose children and parents we are seeking for.
 # - the current set of children and parents CPC
@@ -45,7 +35,7 @@ options(warn=-1)
 # It returns a list of parents and children for a specific target variable, the variables where the
 # nullhypothesis holds (they are going to be crossed out) and maybe the variables with the (second) highest association
 # for which the nullhypothesis also could have been reject.
-MaxMinHeuristic <- function(T, CPC, mat, maxNumberOfVariables, selectedBefore = 0, minimum = 1) { # MAXMINHEURISTIC
+MaxMinHeuristic <- function(T, CPC, mat, maxNumberOfVariables, alpha, selectedBefore = 0, minimum = 1) { # MAXMINHEURISTIC
 	reject <- c(selectedBefore, minimum, 1) # set which holds the values to compare (reject the nullhypothesis)
 	temporaryMinimum <- reject
 	accepted <- c() # the sets which holds the values where the nullhypothesis is not rejected
@@ -66,7 +56,6 @@ MaxMinHeuristic <- function(T, CPC, mat, maxNumberOfVariables, selectedBefore = 
 
 		# statistical testing
 		if (pvalue[1] < alpha) { # IF: reject nullhypothesis
-			# print(c(pvalue[1], reject[2], pvalue[2], reject[3]))
 
 			if (pvalue[1] < reject[2]) { # IF: test for the maximum over all rejected ones
 
@@ -110,13 +99,13 @@ MaxMinHeuristic <- function(T, CPC, mat, maxNumberOfVariables, selectedBefore = 
 
 # Function ForwardPhase which takes the target variable T and the underlying matrix (later on a data frame)
 # it returns a possible CPC set which could have some false positive values
-ForwardPhase <- function(T, mat) { # FORWARDPHASE
+ForwardPhase <- function(T, mat, alpha) { # FORWARDPHASE
 
 	tmp <- list()
 	CPC <- UpdateCPC(tmp, 0)
 	maxNumberOfVariables <- 1:dim(mat)[2] # iteration array...
 	maxNumberOfVariables <- maxNumberOfVariables[!(maxNumberOfVariables == T)] # ...iterate over all values except the target (trivial case)
-	CPCset <- MaxMinHeuristic(T, NULL, mat, maxNumberOfVariables) # the first CPC set where we start with the empty set
+	CPCset <- MaxMinHeuristic(T, NULL, mat, maxNumberOfVariables, alpha) # the first CPC set where we start with the empty set
 	if (length(CPCset) == 1) {
 		maxNumberOfVariables <- NULL
 	} else {
@@ -129,8 +118,6 @@ ForwardPhase <- function(T, mat) { # FORWARDPHASE
 		
 		} # FOR
 	}
-
-	# print(length(maxNumberOfVariables))
 
 	# main loop
 	repeat { # REPEAT
@@ -148,11 +135,11 @@ ForwardPhase <- function(T, mat) { # FORWARDPHASE
 			# From chapter 6: decides if there was a minimum before which could also be taken
 			if (length(CPCset) != 3) { # IF
 
-				CPCset <- MaxMinHeuristic(T, CPC[[3]], mat, maxNumberOfVariables)
+				CPCset <- MaxMinHeuristic(T, CPC[[3]], mat, maxNumberOfVariables, alpha)
 			
 			} else { # ELSE
 
-				CPCset <- MaxMinHeuristic(T, CPC[[3]], mat, maxNumberOfVariables, CPCset$tmpMin[1], CPCset$tmpMin[2])
+				CPCset <- MaxMinHeuristic(T, CPC[[3]], mat, maxNumberOfVariables, alpha, CPCset$tmpMin[1], CPCset$tmpMin[2])
 			
 			} # IF/ELSE
 			
@@ -188,11 +175,11 @@ ForwardPhase <- function(T, mat) { # FORWARDPHASE
 
 				if ( length(CPCset) != 3 || ( length(CPCset) == 3 && CPCset$tmpMin[1] %in% CPC[[length(CPC)]] ) ) { # IF
 
-					CPCset <- MaxMinHeuristic(T, as.numeric(cpc), mat, maxNumberOfVariables)
+					CPCset <- MaxMinHeuristic(T, as.numeric(cpc), mat, maxNumberOfVariables, alpha)
 				
 				} else { # IF
 
-					CPCset <- MaxMinHeuristic(T, as.numeric(cpc), mat, maxNumberOfVariables, CPCset$tmpMin[1], CPCset$tmpMin[2])
+					CPCset <- MaxMinHeuristic(T, as.numeric(cpc), mat, maxNumberOfVariables, alpha, CPCset$tmpMin[1], CPCset$tmpMin[2])
 				
 				} # IF/ELSE
 
@@ -251,7 +238,7 @@ ForwardPhase <- function(T, mat) { # FORWARDPHASE
 
 # Function BackwardPhase which detects false positive elements of CPC and removes them
 # Takes the current target T and the current CPC set of T. Returns the 'clean' CPC set
-BackwardPhase <- function(T, CPCset, mat) { # BACKWARDPHASE
+BackwardPhase <- function(T, CPCset, mat, alpha) { # BACKWARDPHASE
 
 	CPC <- CPCset[[length(CPCset)]]
 	CPCList <- CPCset[2:length(CPCset)]
@@ -292,26 +279,26 @@ BackwardPhase <- function(T, CPCset, mat) { # BACKWARDPHASE
 
 # Function MMPC. Takes the observed matrix (later on a data frame) and returns the 'real' set of parents and children for all
 # possible target variables
-MMPCR <- function(mat) { # MMPC
+R_MMPC <- function(mat, alpha) { # MMPC
 	PC <- list()
 
 	# iterate over all target variables
 	for (T in 1:dim(mat)[2]) { # FOR
 
-		CPC <- ForwardPhase(T, mat) # Runs the ForwardPhase
+		CPC <- ForwardPhase(T, mat, alpha) # Runs the ForwardPhase
 		if (length(CPC) == 2) {
 			PC[[T]] <- NULL
 			next
 		}
-		CPC <- BackwardPhase(T, CPC, mat) # Runs the BackwardPhase
+		CPC <- BackwardPhase(T, CPC, mat, alpha) # Runs the BackwardPhase
 		# calculates whether the observed target variable is a member of the temporary CPC set with target X out of CPC
 		# if so then X from CPC is a parent or child of T, if not then it's not likely that X from CPC is a parent or child
 		# of T and is removed.
 
 		for (X in CPC) { # FOR
 
-			tmp <- ForwardPhase(X, mat) # ForwardPhase for temporary CPC set
-			tmp <- BackwardPhase(X, tmp, mat) # BackwardPhase for temporary CPC set
+			tmp <- ForwardPhase(X, mat, alpha) # ForwardPhase for temporary CPC set
+			tmp <- BackwardPhase(X, tmp, mat, alpha) # BackwardPhase for temporary CPC set
 
 			# test whether T is in temporary CPC set or not. If not -> remove corresponding X
 			if (!(T %in% tmp)) { # IF
@@ -336,74 +323,6 @@ MMPCR <- function(mat) { # MMPC
 	return (PC)
 	# return (AdjMat)
 } # MMPC
-
-# nuScore <- function(mat, PC, i) {
-# 	eta <- 1
-# 	n <- dim(mat)[2]
-# 	qSet <- c()
-
-
-
-# 	for (j in 1:n) {
-# 		rSet[i] <- getR(mat[, j])
-# 	}
-# double ScoreNodeWithNoneParents(SEXP column, SEXP N, SEXP R, SEXP Eta) {
-# double ScoreNodeWithOneParent(SEXP Xi, SEXP Pa, SEXP N, SEXP R, SEXP Q, SEXP Eta) {
-# double ScoreNodeWithMoreParents(SEXP Xi, SEXP Pa, SEXP N, SEXP R, SEXP Q, SEXP Eta) {
-# }
-
-getScore <- function(mat, PC, i) {
-	n <- dim(mat)[2]
-	nijk <- 0
-	nij <- 0
-
-
-	jSum <- c()
-	kSum <- c()
-	pc <- which(PC[, i] != 0)
-	q <- getQ(mat, pc)
-	r <- getR(mat[, i])
-	eta <- getEta(mat)
-	wi <- getW(mat, pc)
-	x <- eta / q
-	y <- eta / ( r * q )
-	if (length(pc) <= 1) {
-		q <- length(wi)
-	} else {
-		q <- dim(wi)[1]
-	}
-
-	for (j in 1:q) {
-
-		if (length(pc) <= 1) {
-			nij <- getNij(mat, pc, wi[j], i, r)
-		} else {
-			nij <- getNij(mat, pc, wi[j, ], i, r)
-		}
-
-		for (k in 1:r) {
-
-			if (length(pc) <= 1) {
-				nijk <- getNijk(mat, pc, wi[j], i, k)
-			} else {
-				nijk <- getNijk(mat, pc, wi[j, ], i, k)
-			}
-
-			kSum[k] <- lgamma ( nijk + y ) - lgamma ( y )
-
-		}
-
-		jSum[j] <- lgamma ( x ) - lgamma ( nij + x ) + sum(kSum)
-
-	}
-
-	# if (length(pc) > 1) {
-	# 	print(jSum)
-	# }
-
-	return (sum(jSum))
-}
-
 
 getQ <- function(mat, pc = NULL) {
 	out <- 1
@@ -457,44 +376,6 @@ getNij <- function(mat, pc, wij, Xi, r) {
 
 getW <- function(mat, pc) {
 	return (unique(mat[, pc]))
-}
-
-addEdge <- function(mat, PC, row, col, currentScores) {
-	PC[row, col] <- 1
-	newScores <- currentScores
-	newScores[row] <- getScore(mat, PC, row)
-
-	if (sum(newScores) > sum(currentScores)) {
-		return (list(TRUE, newScores))
-	} else {
-		return (list(FALSE, currentScores))
-	}
-}
-
-reverseEdge <- function(mat, PC, row, col, currentScores) {
-	PC[row, col] <- 0
-	PC[col, row] <- 1
-	newScores <- currentScores
-	newScores[row] <- getScore(mat, PC, row)
-	newScores[col] <- getScore(mat, PC, col)
-
-	if (sum(newScores) >= sum(currentScores)) {
-		return (list(TRUE, newScores))
-	} else {
-		return (list(FALSE, currentScores))
-	}
-}
-
-deleteEdge <- function(mat, PC, row, col, currentScores) {
-	PC[row, col] <- 0
-	newScores <- currentScores
-	newScores[row] <- getScore(mat, PC, row)
-
-	if (sum(newScores) > sum(currentScores)) {
-		return (list(TRUE, newScores))
-	} else {
-		return (list(FALSE, currentScores))
-	}
 }
 
 MatrixScore <- function(mat, PC) {
@@ -554,7 +435,6 @@ SetEdge <- function(mat, PC) {
 	adjMat <- matrix(0, n, n)
 	before <- MatrixScore(mat, adjMat)
 	after <- 0
-	# print(adjMat)
 	for (i in 1:length(PC)) {
 		for (j in 1:length(PC[[i]])) {
 			if (adjMat[i, PC[[i]][j]] == 0 && adjMat[PC[[i]][j], i] == 0) {
@@ -628,11 +508,10 @@ BDeuR <- function(mat, PC) {
 	return (adjMat)
 }
 
-MMHCT <- function(df) {
+R_MMHC <- function(df) {
 	columnNames <- colnames(df)
 	mat <- data.matrix(df)
-	PC <- MMPCR (mat)
-	print(PC)
+	PC <- R_MMPC (mat, 0.05)
 	adjMat <- BDeuR(mat, PC)
 	colnames(adjMat) <- columnNames
 	adjMat <- graph.adjacency(adjMat)
@@ -640,158 +519,16 @@ MMHCT <- function(df) {
 	return (adjMat)
 }
 
-ScoreMeNow <- function(mat, PC) {
-	n <- dim(PC)[1]
-	scoreMatrix <- matrix(0, n, n)
-	score <- c()
-	highestScore <- 0
-
-	for (i in 1:n) {
-		score[i] <- getScore(mat, scoreMatrix, i)
-	}
-
-	repeat {
-
-		if (sum(score) == highestScore) {
-			break
-		}
-
-		highestScore <- sum(score)
-
-		for (i in 1:n) {
-			for (j in 1:n) {
-				
-				if (PC[i, j] == 1) {
-
-					choose <- sample(c(0, 1), 1, prob = c(0.5, 0.5))
-
-					if (choose) {
-						
-						if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 0) {
-							reverse <- reverseEdge(mat, scoreMatrix, i, j, score)
-							if (reverse[[1]]) {
-								scoreMatrix[i, j] <- 0
-								scoreMatrix[j, i] <- 1
-								score <- reverse[[2]]
-							}
-						} else if (scoreMatrix[j, i] == 1 && scoreMatrix[i, j] == 0) {
-							reverse <- reverseEdge(mat, scoreMatrix, j, i, score)
-							if (reverse[[1]]) {
-								scoreMatrix[i, j] <- 1
-								scoreMatrix[j, i] <- 0
-								score <- reverse[[2]]
-							}
-						} else if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 1) {
-							del1 <- deleteEdge(mat, scoreMatrix, i, j, score)
-							del2 <- deleteEdge(mat, scoreMatrix, j, i, score)
-
-							if (del1 > del2) {
-								scoreMatrix[i, j] <- 0
-							} else {
-								scoreMatrix[j, i] <- 0
-							}
-						} else {
-							add <- addEdge(mat, scoreMatrix, i, j, score)
-							if (add[[1]]) {
-								scoreMatrix[i, j] <- 1
-								score <- add[[2]]
-							}
-						}
-
-					} else {
-						
-						if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 0) {
-							delete <- deleteEdge(mat, scoreMatrix, i, j, score)
-							if (delete[[1]]) {
-								scoreMatrix[i, j] <- 0
-								score <- delete[[2]]
-							}
-						} else if (scoreMatrix[j, i] == 1 && scoreMatrix[i, j] == 0) {
-							delete <- deleteEdge(mat, scoreMatrix, j, i, score)
-							if (delete[[1]]) {
-								scoreMatrix[j, i] <- 0
-								score <- delete[[2]]
-							}
-						} else if (scoreMatrix[i, j] == 1 && scoreMatrix[j, i] == 1) {
-							del1 <- deleteEdge(mat, scoreMatrix, i, j, score)
-							del2 <- deleteEdge(mat, scoreMatrix, j, i, score)
-
-							if (del1 > del2) {
-								scoreMatrix[i, j] <- 0
-							} else {
-								scoreMatrix[j, i] <- 0
-							}
-						} else {
-							add <- addEdge(mat, scoreMatrix, i, j, score)
-							if (add[[1]]) {
-								scoreMatrix[i, j] <- 1
-								score <- add[[2]]
-							}
-						}
-
-					}
-				}
-			}
-		}
-	}
-
-	# print(sum(score))
-	return (scoreMatrix)
-}
-
-MMHCC <- function(df) {
+C_MMHC <- function(df) {
 	columnNames <- colnames(df)
 	mat <- data.matrix(df)
 	card <- getCard(mat)
-	PC <- MMPCC(mat, card, 0.05)
+	PC <- C_MMPC(mat, card, 0.05)
 	adjMat <- BDeu(mat, card, PC, as.integer(dim(mat)[2]))
 	colnames(adjMat) <- columnNames
 	adjMat <- graph.adjacency(adjMat)
 
 	return (adjMat)
-}
-
-MMHCR <- function(df) {
-	columnNames <- colnames(df)
-	mat <- data.matrix(df)
-	PC <- MMPCR (mat)
-	adjMat <- ScoreMeNow(mat, PC)
-	colnames(adjMat) <- columnNames
-	adjMat <- graph.adjacency(adjMat)
-
-	return (adjMat)
-}
-
-PlotRuntime <- function(reps) {
-
-	i <- 1
-	plotter <- list()
-	plotter$size <- c(100, 200, 300, 500, 700, 1000, 1500, 2000, 3000, 4000, 5000)#, 7500, 10000)
-	plotter$timeBN <- c()
-	plotter$timeMine <- c()
-	plotter$relative <- c()
-
-	for (t in plotter$size) {
-		df <- data.matrix(Example(t, char = FALSE))
-		bench1 <- benchmark(mmpc(df), replications = reps, columns = c("elapsed"))
-		bench2 <- benchmark(MMPC(df), replications = reps, columns = c("elapsed"))
-		plotter$timeBN[i] <- bench1[1]
-		plotter$timeMine[i] <- bench2[1]
-		plotter$relative[i] <- bench2[1]/bench1[1]
-		i <- i + 1
-	}
-
-	plot(plotter$size, plotter$timeMine, type = "l", col= "red")
-	lines(plotter$size, plotter$timeBN, col="green")
-	lines(plotter$size, plotter$relative, col="blue")
-
-	return (plotter)
-}
-
-PlotSeperate <- function(plotter) {
-	plot(plotter[[1]], plotter[[3]], type = "l", col= "red", xlab = "observed data", ylab = "seconds")
-	lines(plotter[[1]], plotter[[2]], col="green")
-	# lines(plotter[[1]], plotter[[4]], col="blue")	
 }
 
 getCard <- function(df) {
@@ -802,28 +539,10 @@ getCard <- function(df) {
 	return (level)
 }
 
-TestNew <- function(df) {
-	columnNames <- colnames(df)
-	dm <- data.matrix(df)
-	PC <- MMPC(dm)
-	card <- getCard(dm)
-	x <- BDeu(dm, card, PC, as.integer(dim(dm)[2]))
-	colnames(x) <- columnNames
-	x <- graph.adjacency(x)
-	plot(x)
-	# return (x);
-}
 
-dm <- data.matrix(MyExample)
-PC <- MMPC(dm)
-AdjMat <- matrix(0, dim(dm)[2], dim(dm)[2])
-for (i in 1:length(PC)) {
-	for (element in PC[[i]]) {
-		AdjMat[i, element] <- 1
-	}
-}
-card <- getCard(dm)
-dim <- as.integer(dim(dm)[2])
-
+b1 <- benchmark(R_MMHC(MyExample), C_MMHC(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
+b2 <- benchmark(R_MMHC(MyExample), mmhc(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
+b3 <- benchmark(mmhc(MyExample), C_MMHC(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
+b4 <- benchmark(R_MMHC(MyExample), C_MMHC(MyExample), mmhc(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
 # bench <- benchmark(BDeu(dm, card, PC, dim), ScoreMeNow(dm, AdjMat), columns = c("test", "elapsed", "relative"), replications = 1)
 # bench <- benchmark(MMHC(MyExample), mmhc(MyExample), columns = c("test", "elapsed", "relative"), replications = 1)
