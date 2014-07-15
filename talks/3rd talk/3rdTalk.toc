@@ -1,0 +1,26 @@
+\beamer@endinputifotherversion {3.10pt}
+\beamer@sectionintoc {1}{Bayesian Network (BN)}{2}{0}{1}
+\beamer@sectionintoc {2}{Bayesian Network - Example}{3}{0}{2}
+\beamer@sectionintoc {3}{Examples}{4}{0}{3}
+\beamer@subsectionintoc {3}{1}{Bioinformatics}{4}{0}{3}
+\beamer@subsectionintoc {3}{2}{Football and medicine}{5}{0}{3}
+\beamer@subsectionintoc {3}{3}{My Example}{6}{0}{3}
+\beamer@sectionintoc {4}{Running the algorithm}{8}{0}{4}
+\beamer@subsectionintoc {4}{1}{Starting from empty graph}{8}{0}{4}
+\beamer@subsectionintoc {4}{2}{Iterate over all variables}{9}{0}{4}
+\beamer@subsectionintoc {4}{3}{Consider the new added variable(s)}{10}{0}{4}
+\beamer@subsectionintoc {4}{4}{Consider the new added variable(s)}{11}{0}{4}
+\beamer@subsectionintoc {4}{5}{Consider the new added variable(s)}{12}{0}{4}
+\beamer@subsectionintoc {4}{6}{Iterate over all variables}{13}{0}{4}
+\beamer@subsectionintoc {4}{7}{My Example with the corresponding output}{14}{0}{4}
+\beamer@subsectionintoc {4}{8}{Benchmark}{16}{0}{4}
+\beamer@sectionintoc {5}{The BDeu scoring}{17}{0}{5}
+\beamer@subsectionintoc {5}{1}{Bayesian Dirichlet equivalent uniform (BDeu) score}{17}{0}{5}
+\beamer@subsectionintoc {5}{2}{Adding edges}{18}{0}{5}
+\beamer@subsectionintoc {5}{3}{Adding edges}{19}{0}{5}
+\beamer@subsectionintoc {5}{4}{Reversing edges}{20}{0}{5}
+\beamer@subsectionintoc {5}{5}{Adding edges}{21}{0}{5}
+\beamer@subsectionintoc {5}{6}{Adding edges}{22}{0}{5}
+\beamer@subsectionintoc {5}{7}{Adding edges}{23}{0}{5}
+\beamer@subsectionintoc {5}{8}{My output}{24}{0}{5}
+\beamer@sectionintoc {6}{Thank you}{25}{0}{6}

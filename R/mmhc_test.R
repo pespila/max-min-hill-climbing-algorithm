@@ -89,4 +89,4 @@ Rainy <- function(dim, cols = 3) {
 
 # Allocating the example of the book. Make it global and allocate it as a matrix for testing
 # purpose. Later on it should be a data frame.
-MyExample <- Example(5000, char = FALSE)
+# MyExample <- Example(5000, char = FALSE)
