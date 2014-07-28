@@ -610,3 +610,21 @@ List C_MMPC(SEXP x, SEXP z, SEXP a) {
 
 	return PC;
 }
+
+// [[Rcpp::export]]
+NumericVector Cardinality(SEXP x) {
+	NumericMatrix A(x);
+	NumericVector y;
+
+	for (int i = 0; i < A.ncol(); i++)
+	{
+		unordered_map<double, int> Count;
+		for (int j = 0; j < A.nrow(); j++)
+		{
+			Count[A(j, i)]++;
+		}
+		y.push_back(Count.size());
+	}
+
+	return y;
+}

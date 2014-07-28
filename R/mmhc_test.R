@@ -15,8 +15,6 @@ Example <- function(rows, cols = 5, char = TRUE) {
   dimnames <- list(c(), c("difficulty", "intelligence", "SAT", "grade", "letter"))#, "prop"))
   studentMatrix <- matrix(, rows, cols, dimnames = dimnames)
   student <- data.frame(studentMatrix, check.names = FALSE)
-  # cardinality <- c(2, 2, 2, 3, 2, sample(0, (rows - 5), replace = TRUE))
-  # student$prop <- cardinality
   student$difficulty <- sample(binary, rows, replace = TRUE, prob = c(0.6, 0.4))
   student$intelligence <- sample(binary, rows, replace = TRUE, prob = c(0.7, 0.3))
   n <- 1
@@ -86,7 +84,3 @@ Rainy <- function(dim, cols = 3) {
 
   return (df)
 }
-
-# Allocating the example of the book. Make it global and allocate it as a matrix for testing
-# purpose. Later on it should be a data frame.
-# MyExample <- Example(5000, char = FALSE)

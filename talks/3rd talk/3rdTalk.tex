@@ -44,7 +44,7 @@
 	\begin{frame}
 		\begin{block}{Definition}
 			A Bayesian Network is a \underline{directed acyclic graph} (DAG) whose \underline{nodes} are \underline{random variables} and \underline{edges} represent \underline{conditional dependencies}. If two random variables are \underline{connected} they are said to be \underline{dependent}. If there is \underline{no connection} they are said to be \underline{conditional independent}.\\
-			For instance, we say: "A and B are conditional independent given C".
+			% For instance, we say: "A and B are conditional independent given C".
 		\end{block}
 	\end{frame}
 
@@ -77,6 +77,7 @@
 			\item free of cycles
 			\item random variable is represented as a node
 			\item edges encode dependencies
+			\item For instance: parent A, child C
 		\end{itemize}
 	\end{flushright}
 	\end{frame}
@@ -494,6 +495,31 @@
 
 
 \section{The BDeu scoring}
+	\subsection{Graph without arrows}
+	\begin{frame}[fragile]
+	\frametitle{The arrows are still missing}
+	\centering
+		$
+			\psmatrix[colsep=1.2cm,rowsep=1cm,mnode=circle]
+			&Difficulty&&Intelligence\\
+			&&Graph&&SAT\\
+			&&Letter
+			\ncline{-}{1,2}{2,3}
+			\ncline{-}{1,4}{2,3}
+			\ncline{-}{1,4}{2,5}
+			\ncline{-}{2,3}{3,3}
+			\endpsmatrix
+		$
+	\end{frame}
+
+	\subsection{Formular}
+	\begin{frame}
+	\frametitle{Bayesian Dirichlet equivalent uniform (BDeu) score}
+		\begin{equation}
+			BDeu(G) = \sum_{i=1}^{n} \sum_{j=1}^{q_{i}} \left( \log \left( \frac{\Gamma (\frac{\eta}{q_{i}})}{\Gamma(N_{ij} + \frac{\eta}{q_{i}})} \right) + \sum_{k=1}^{r_{i}} \log \left( \frac{\Gamma (N_{ijk} + \frac{\eta}{r_{i}{q_{i}}})}{\Gamma (\frac{\eta}{r_{i}q_{i}})} \right) \right). \notag
+		\end{equation}
+	\end{frame}
+
 	\subsection{Bayesian Dirichlet equivalent uniform (BDeu) score}
 	\begin{frame}[fragile]
 	\frametitle{Bayesian Dirichlet equivalent uniform (BDeu) score}
@@ -551,9 +577,9 @@
 		$
 	\end{frame}
 
-	\subsection{Adding edges}
+	\subsection{Reverse edge}
 	\begin{frame}[fragile]
-	\frametitle{Adding an edge}
+	\frametitle{Reverse again}
 	\centering
 		$
 			\psmatrix[colsep=1.2cm,rowsep=1cm,mnode=circle]
@@ -608,9 +634,34 @@
 	\end{itemize}
 }
 
+\subsection{Benchmark}
+		\begin{frame}[fragile]
+		\frametitle{Benchmark for the whole program}
+			\begin{columns}[c]
+				\column[c]{7.5cm}
+					\begin{figure}
+						\includegraphics[scale=0.4]{img/mmhc}
+					\end{figure}
+				\column{5cm}
+				\begin{small}
+					\begin{tabular}{llll}
+					    nobs & C & bnlearn\\
+					    250 & 0.011 & 0.023\\
+					    500 & 0.007 & 0.024\\
+					    750 & 0.107 & 0.024\\
+					    1000 & 0.166 & 0.022\\
+					    1500 & 0.575 & 0.023\\
+					    2500 & 0.493 & 0.036\\
+					    5000 & 1.313 & 0.041
+					    % 10000 & 3.701 & 0.048
+					\end{tabular}
+				\end{small}
+			\end{columns}
+		\end{frame}
+
 \subsection{My output}
 		\begin{frame}[fragile]
-		\frametitle{Output of my programme}
+		\frametitle{Output of my program}
 			\begin{figure}
 				\includegraphics[scale=0.5]{img/myFunc}
 				\end{figure}

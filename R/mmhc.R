@@ -17,7 +17,7 @@ require("bnlearn")
 require("rbenchmark")
 require("igraph")
 require("RcppArmadillo")
-sourceCpp("./../src/mmhc.cpp")
+# sourceCpp("./../src/mmhc.cpp")
 sourceCpp("./../src/mmpc.cpp")
 sourceCpp("./../src/score.cpp")
 source("mmhc_test.R")
@@ -523,7 +523,7 @@ R_MMHC <- function(df) {
 C_MMHC <- function(df) {
 	columnNames <- colnames(df)
 	mat <- data.matrix(df)
-	card <- getCard(mat)
+	card <- Cardinality(mat)
 	PC <- C_MMPC(mat, card, 0.05)
 	adjMat <- BDeu(mat, card, PC, as.integer(dim(mat)[2]))
 	colnames(adjMat) <- columnNames
@@ -531,53 +531,3 @@ C_MMHC <- function(df) {
 
 	return (adjMat)
 }
-
-getCard <- function(df) {
-	level <- c()
-	for (i in 1:dim(df)[2]) {
-		level[i] <- length(unique(df[,i]))
-	}
-	return (level)
-}
-
-BenchFunction <- function() {
-	myList <- c(250, 500, 750, 1000, 1500, 2000, 2500, 3500, 4000, 5000, 10000)
-	solution <- list()
-	exes <- list()
-	rmmpcs <- list()
-	cmmpcs <- list()
-	card <- c(2,2,2,3,2)
-
-	for (i in 1:11) {
-		exes[[i]] <- Example(myList[i], char = FALSE)
-	}
-
-	for (i in 1:11) {
-		rmmpcs[[i]] <- R_MMPC(exes[[i]], 0.05)
-		cmmpcs[[i]] <- C_MMPC(exes[[i]], card, 0.05)
-	}
-
-	for (i in 1:11) {
-		solution[[i]] <- benchmark(C_MMHC(cmmpcs), R_MMHC(rmmpcs), replications=1, columns = c("test", "elapsed", "relative"))
-		print(i)
-	}
-
-	return (solution)
-
-}
-
-
-# b1 <- benchmark(R_MMHC(MyExample), C_MMHC(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
-# b2 <- benchmark(R_MMHC(MyExample), mmhc(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
-# b3 <- benchmark(mmhc(MyExample), C_MMHC(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
-# b4 <- benchmark(R_MMHC(MyExample), C_MMHC(MyExample), mmhc(MyExample), replications = 1, columns = c("test", "elapsed", "relative"))
-# bench <- benchmark(BDeu(dm, card, PC, dim), ScoreMeNow(dm, AdjMat), columns = c("test", "elapsed", "relative"), replications = 1)
-# bench <- benchmark(MMHC(MyExample), mmhc(MyExample), columns = c("test", "elapsed", "relative"), replications = 1)
-
-myList <- c(250, 500, 750, 1000, 1500, 2000, 2500, 3500, 4000, 5000)#, 10000)
-mmpcTimeC <- c(0.001, 0.005, 0.012, 0.015, 0.024, 0.031, 0.037, 0.053, 0.062, 0.079)#, 0.151)
-mmpcTimeR <- c(0.006, 0.014, 0.031, 0.038, 0.054, 0.070, 0.086, 0.116, 0.133, 0.166)#, 0.363)
-mmpcTimeBN <- c(0.014, 0.014, 0.017, 0.014, 0.015, 0.015, 0.019, 0.016, 0.017, 0.018)#, 0.026)
-
-mmhcTimeC <- c(0.011, 0.007, 0.107, 0.166, 0.575, 0.634, 0.462, 0.493, 0.56, 1.313)#, 3.701)
-mmhcTimeBN <- c(0.023, 0.024, 0.024, 0.022, 0.023, 0.031, 0.026, 0.036, 0.031, 0.041)#, 0.048)
