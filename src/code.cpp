@@ -1,29 +1,20 @@
-#include <omp.h>
-#include <R.h>
-#include <Rmath.h>
-#include <vector>
+#include <Rcpp.h>
 #include <tr1/unordered_map>
-#include <RcppArmadillo.h>
-#include <time.h>
-#include <string>
-#include <sstream>
+#include <algorithm>
+
 using namespace std;
 using namespace std::tr1;
 using namespace Rcpp;
-using namespace arma;
 
-// [[Rcpp::depends("RcppArmadillo")]]
-// [[Rcpp::plugins(openmp)]]
-
-string HashC(NumericVector& array, int i, bool skip) {
-	ostringstream oss("");
+int Hash(NumericVector& array, int i, bool skip) {
+	int out = 0;
 	for (i; i < array.size(); i++) {
 		if (skip && i == 1)
 			continue;
-		oss << array[i];
+		out = 10*out + array[i];
 	}
 	
-	return oss.str();
+	return out;
 }
 
 NumericMatrix T(NumericMatrix& A, int row, int col) {
@@ -128,7 +119,7 @@ double *****FiveD(double x, double y, double z, double a, double b) {
 }
 
 // [[Rcpp::export]]
-SEXP MySvalue(NumericMatrix& A, const NumericVector& cardinality) {
+NumericVector Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 	int hDim = A.ncol(), vDim = A.nrow();
 	NumericVector sum(1, 0.0), pvalue(1, 0.0), out(2, 0.0);
 
@@ -282,20 +273,20 @@ SEXP MySvalue(NumericMatrix& A, const NumericVector& cardinality) {
 		return out;
 		
 	} else {
-		string acKey, bcKey, abcKey, cKey;
+		int acKey, bcKey, abcKey, cKey;
 		NumericMatrix B = T(A, hDim, vDim);
-		unordered_map<string, int> Count;
-		unordered_map<int, string> ReMap;
+		unordered_map<int, int> Count;
+		unordered_map<int, int> ReMap;
 		int teta = 0;
 		NumericVector tmp(hDim);
 
 		for (int i = 0; i < vDim; i++)
 		{
 			tmp = B(_, i);
-			abcKey = HashC(tmp, 0, FALSE);
-			bcKey = HashC(tmp, 1, FALSE);
-			cKey = HashC(tmp, 2, FALSE);
-			acKey = HashC(tmp, 0, TRUE);
+			abcKey = Hash(tmp, 0, FALSE);
+			bcKey = Hash(tmp, 1, FALSE);
+			cKey = Hash(tmp, 2, FALSE);
+			acKey = Hash(tmp, 0, TRUE);
 			if (Count[abcKey] == 0) {
 				ReMap[teta] = abcKey;
 				ReMap[teta+1] = acKey;
@@ -328,61 +319,173 @@ SEXP MySvalue(NumericMatrix& A, const NumericVector& cardinality) {
 	}
 }
 
-void Cardinality(NumericMatrix& A, NumericVector& cardinality) {
-	for (int i = 0; i < A.ncol(); i++)
-		cardinality[i] = max(A(_, i));
+class Properties
+{
+public:
+	Properties(SEXP);
+	~Properties();
+
+	template <typename T, int RTYPE> int colCardinality(const Vector<RTYPE>& x, unordered_map<T, int>& y);
+	NumericVector Cardinality(SEXP);
+	int Hash(NumericVector&, int);
+	NumericVector It(NumericVector&, int);
+	NumericMatrix partialMatrix(const NumericMatrix&, NumericVector&, int);
+	NumericVector CorrespondingCardinality(NumericVector&, const NumericVector&, int);
+	void Powerset(SEXP);
+	
+	int n;
+	NumericVector cardinality;
+	unordered_map<int, double> P;
+	unordered_map<int, double> S;
+	List sums;
+};
+
+Properties::Properties(SEXP z) {
+	cardinality = Cardinality(z);
+	n = cardinality.size();
+	Powerset(z);
 }
 
-NumericMatrix partialMatrix(const NumericMatrix& A, NumericVector& pa) {
-	NumericMatrix partMat(A.nrow(), pa.size());
+Properties::~Properties() {}
 
-	for (int i = 0; i < pa.size(); i++)
+template <typename T, int RTYPE> int Properties::colCardinality(const Vector<RTYPE>& x, unordered_map<T, int>& y) {
+	int m = x.size();
+	y.clear();
+	for (int i = 0; i < m; i++)
+		y[x[i]] = 1;
+
+	return y.size();
+}
+
+NumericVector Properties::Cardinality(SEXP z) {
+	NumericVector card;
+	int i;
+	switch (TYPEOF(z)) {
+		case INTSXP:
+		{
+			IntegerMatrix A(z);
+			IntegerVector x;
+			unordered_map<int, int> y;
+			for (i = 0; i < A.ncol(); i++) {
+				x = A(_, i);
+				card.push_back(colCardinality<int, INTSXP>(x, y));
+			}
+			break;
+		}
+		case REALSXP:
+		{
+			NumericMatrix A(z);
+			NumericVector x;
+			unordered_map<double, int> y;
+			for (i = 0; i < A.ncol(); i++) {
+				x = A(_, i);
+				card.push_back(colCardinality<double, REALSXP>(x, y));
+			}
+			break;
+		}
+		default:
+		{
+			card.push_back(0);
+			cout << "Error 02: Wrong datatype in matrix!" << endl;
+		}
+	}
+	return card;
+}
+
+int Properties::Hash(NumericVector& array, int size) {
+	int out = 0;
+	for (int i = 0; i < size; i++)
+		out = 10*out + array[i];
+
+	return out;
+}
+
+NumericVector Properties::It(NumericVector& array, int size) {
+	NumericVector out;
+	for (int i = 1; i <= size; i++)
+		out.push_back(array[i]-1);
+
+	return out;
+}
+
+NumericMatrix Properties::partialMatrix(const NumericMatrix& A, NumericVector& pa, int size) {
+	NumericMatrix partMat(A.nrow(), size);
+
+	for (int i = 0; i < size; i++)
 		partMat(_, i) = A(_, pa(i));
 
 	return partMat;
 }
 
-void ElementsToTest(NumericVector& variablesToTest, NumericVector& cpc, int *T, int n) {
-	variablesToTest = NumericVector::create();
-	for (int i = 0; i < n; i++)
-	{
-		int k = 0;
-		for (int j = 0; j < cpc.size(); j++)
-		{
-			if (i != cpc[j])
-				k++;
-		}
-		if (k == cpc.size() && i != *T)
-			variablesToTest.push_back(i);
-	}
-}
-
-NumericVector CorrespondingCardinality(NumericVector& pa, const NumericVector& cardinality) {
+NumericVector Properties::CorrespondingCardinality(NumericVector& pa, const NumericVector& cardinality, int size) {
 	NumericVector tmpCardinality;
 
-	for (int i = 0; i < pa.size(); i++)
-	{
+	for (int i = 0; i < size; i++)
 		tmpCardinality.push_back(cardinality[pa[i]]);
-	}
 
 	return tmpCardinality;
 }
 
-NumericVector SetCols(NumericVector& cpc, int T, int X) {
-	NumericVector pa;
-	pa.push_back(X);
-	pa.push_back(T);
-	for (int i = 0; i < cpc.size(); i++)
-	{
-		pa.push_back(cpc[i]);
+void Properties::Powerset (SEXP a) {
+	NumericMatrix A(a), B;
+	int n = A.ncol(), k = 0, hash;
+	NumericVector stack(n), newCard, Iterator, output;
+	stack[0] = 0;
+
+	while(1) {
+		if (stack[k] < n) {
+			stack[k + 1] = stack[k] + 1;
+			k++;
+		} else {
+			stack[k - 1]++;
+			k--;
+		}
+
+		if (k == 0)
+			break;
+
+		Iterator = It(stack, k);
+
+		if (Iterator.size() > 1) {
+  			do {
+				B = partialMatrix(A, Iterator, k);
+				newCard = CorrespondingCardinality(Iterator, cardinality, k);
+				output = Svalue(B, newCard);
+				hash = Hash(Iterator, k);
+				P[hash] = output[0];
+				S[hash] = output[1];
+			} while (next_permutation(Iterator.begin(), Iterator.end()));
+		}
 	}
-	return pa;
+	sums = List::create(wrap(P), wrap(S));
+}
+
+RCPP_MODULE(props) {
+	class_<Properties>("Properties")
+	.constructor<SEXP>()
+	.field("dim", &Properties::n)
+	.field("cardinality", &Properties::cardinality)
+	.field("sums", &Properties::sums)
+	.method("Cardinality", &Properties::Cardinality)
+	.method("Powerset", &Properties::Powerset)
+;}
+
+int SetCols(NumericVector& cpc, int T, int X) {
+	NumericVector pa;
+	pa.push_back(T);
+	pa.push_back(X);
+	for (int i = 0; i < cpc.size(); i++)
+		pa.push_back(cpc[i]);
+
+	int hash = Hash(pa, 0, FALSE);
+
+	return hash;
 }
 
 void UpdateCPC(List& CPC, int selected) {
 	NumericVector tmp;
 	if (CPC.size() == 0) {
-		CPC.push_back(0);
+		CPC.push_back(1);
 		CPC.push_back(R_NilValue);
 	} else if (CPC.size() == 2) {
 		CPC[0] = 2;
@@ -413,26 +516,26 @@ bool IsIn(NumericVector& x, double y) {
 	return out;
 }
 
-void MaxMinHeuristic(NumericMatrix& A, NumericVector& cpc, List& CPCprops, NumericVector& variablesToTest, const NumericVector& cardinality, int T, double alpha) {//, double selectedBefore = -1.0, double minimum = 1.0) {
-	NumericMatrix statisticMatrix;
-	NumericVector pa, pvalue, tmpCardinality, rejectedInLastStep = as<NumericVector>(CPCprops[1]), temporaryMinimum = rejectedInLastStep, accepted;
+void MaxMinHeuristic(Properties& A, NumericVector& cpc, List& CPCprops, NumericVector& variablesToTest, int T, double alpha) {//, double selectedBefore = -1.0, double minimum = 1.0) {
+	NumericVector pvalue, rejectedInLastStep = as<NumericVector>(CPCprops[1]), temporaryMinimum = rejectedInLastStep, accepted;
+	int pa;
 
-	for (int i = 0; i < variablesToTest.size(); i++)
+	// for (int i = 0; i < variablesToTest.size(); i++)
+	for (NumericVector::iterator it = variablesToTest.begin(); it != variablesToTest.end(); it++)
 	{
-		pa = SetCols(cpc, T, variablesToTest[i]);
-		tmpCardinality = CorrespondingCardinality(pa, cardinality);
-		statisticMatrix = partialMatrix(A, pa);
-		pvalue = MySvalue(statisticMatrix, tmpCardinality);
+		pa = SetCols(cpc, T, *it);
+		cout << T << " " << *it << " " << pa << " " << A.P[pa] << endl;
+		pvalue = NumericVector::create(A.P[pa], A.S[pa]);
 
 		if (pvalue[0] < alpha) {
 			if (pvalue[0] < rejectedInLastStep[1]) {
 				temporaryMinimum = rejectedInLastStep;
-				rejectedInLastStep = NumericVector::create(variablesToTest[i], pvalue[0], pvalue[1]);
+				rejectedInLastStep = NumericVector::create(*it, pvalue[0], pvalue[1]);
 			} else if (pvalue[0] == rejectedInLastStep[1] && pvalue[1] > rejectedInLastStep[2]) {
-				rejectedInLastStep = NumericVector::create(variablesToTest[i], rejectedInLastStep[1], pvalue[1]);
+				rejectedInLastStep = NumericVector::create(*it, rejectedInLastStep[1], pvalue[1]);
 			}
 		} else {
-			accepted.push_back(variablesToTest[i]);
+			accepted.push_back(*it);
 		}
 	}
 
@@ -444,35 +547,27 @@ void MaxMinHeuristic(NumericMatrix& A, NumericVector& cpc, List& CPCprops, Numer
 		CPCprops[2] = temporaryMinimum;
 }
 
-void CompatibilityToR(NumericVector& cpc) {
-	for (int i = 0; i < cpc.size(); i++)
-		cpc[i]++;
-}
-
 // List Forward(NumericMatrix& A, int T, const NumericVector& cardinality, double alpha) {
 // [[Rcpp::export]]
-List Forward(SEXP x, int T, SEXP z, SEXP a) {
-	NumericMatrix A(x);
-	NumericVector cpc, variablesToTest, cardinality(z);
-	// int *t = INTEGER(y), n = A.ncol();
-	// int T = *t - 1;
-	int n = A.ncol();
+List Forward(Properties& A, int T, SEXP a) {
+	NumericVector cpc, variablesToTest;
+
+	int n = A.n;
 	double *beta = REAL(a);
 	double alpha = *beta;
 	List CPC, CPCprops;
-	// *T = *T - 1;
 
 	NumericVector reject = NumericVector::create(-1.0, 1.0, 1.0), accepted = NumericVector::create(T), tmpAccepted;
 	CPCprops.push_back(T);
 	CPCprops.push_back(reject);
 	CPCprops.push_back(reject);
 
-	for (int i = 0; i < n; i++)
+	for (int i = 1; i <= n; i++)
 		if (i != T)
 			variablesToTest.push_back(i);
 
 	UpdateCPC(CPC, 0);
-	MaxMinHeuristic(A, cpc, CPCprops, variablesToTest, cardinality, T, alpha);
+	MaxMinHeuristic(A, cpc, CPCprops, variablesToTest, T, alpha);
 	
 	reject = as<NumericVector>(CPCprops[1]);
 	tmpAccepted = as<NumericVector>(CPCprops[0]);
@@ -483,11 +578,12 @@ List Forward(SEXP x, int T, SEXP z, SEXP a) {
 		accepted.push_back(reject[0]);
 	}
 
-	for (int i = 0; i < tmpAccepted.size(); i++)
-		accepted.push_back(tmpAccepted[i]);
+	// for (int i = 0; i < tmpAccepted.size(); i++)
+	for (NumericVector::iterator it = tmpAccepted.begin(); it != tmpAccepted.end(); it++)
+		accepted.push_back(*it);
 
 	variablesToTest = NumericVector::create();
-	for (int i = 0; i < n; i++)
+	for (int i = 1; i <= n; i++)
 	{
 		if (!IsIn(accepted, i)) {
 			variablesToTest.push_back(i);
@@ -497,7 +593,7 @@ List Forward(SEXP x, int T, SEXP z, SEXP a) {
 	// if (variablesToTest.size() > 0) {
 	while (variablesToTest.size() > 0) {
 		CPCprops[1] = NumericVector::create(-1.0, 1.0, 1.0);
-		MaxMinHeuristic(A, cpc, CPCprops, variablesToTest, cardinality, T, alpha);
+		MaxMinHeuristic(A, cpc, CPCprops, variablesToTest, T, alpha);
 
 		reject = as<NumericVector>(CPCprops[1]);
 		tmpAccepted = as<NumericVector>(CPCprops[0]);
@@ -511,7 +607,7 @@ List Forward(SEXP x, int T, SEXP z, SEXP a) {
 				accepted.push_back(tmpAccepted[i]);
 
 			variablesToTest = NumericVector::create();
-			for (int i = 0; i < n; i++)
+			for (int i = 1; i <= n; i++)
 			{
 				if (!IsIn(accepted, i)) {
 					variablesToTest.push_back(i);
@@ -522,18 +618,13 @@ List Forward(SEXP x, int T, SEXP z, SEXP a) {
 		}
 	}
 
-	// CompatibilityToR(cpc);
-
 	return CPC;
 }
 
-NumericVector Backward(SEXP x, SEXP z, SEXP a, List& CPC, int T) {
-	NumericMatrix A(x);
-	NumericVector cardinality(z);
+NumericVector Backward(Properties& A, SEXP a, List& CPC, int T) {
 	double *alpha = REAL(a);
-	NumericVector cpc = as<NumericVector>(CPC[CPC.size()-1]), rm, pa, tmpCardinality, pvalue, fromCPC;
-	NumericMatrix statisticMatrix;
-	int k = -1;
+	NumericVector cpc = as<NumericVector>(CPC[CPC.size()-1]), rm, tmpCardinality, pvalue, fromCPC;
+	int k = -1, pa;
 
 	if (cpc.size() == 1) {
 		return cpc;
@@ -550,9 +641,7 @@ NumericVector Backward(SEXP x, SEXP z, SEXP a, List& CPC, int T) {
 				}
 
 				pa = SetCols(fromCPC, T, cpc[i]);
-				tmpCardinality = CorrespondingCardinality(pa, cardinality);
-				statisticMatrix = partialMatrix(A, pa);
-				pvalue = MySvalue(statisticMatrix, tmpCardinality);
+				pvalue = NumericVector::create(A.P[pa], A.S[pa]);
 
 				if (pvalue[0] > *alpha && pvalue[0] != 1.0) {
 					k = i;
@@ -569,24 +658,25 @@ NumericVector Backward(SEXP x, SEXP z, SEXP a, List& CPC, int T) {
 }
 
 // [[Rcpp::export]]
-List C_MMPC(SEXP x, SEXP z, SEXP a) {
+List C_MMPC(SEXP x, SEXP a) {
 	NumericVector cpc, pc, tmppc;
 	List CPC, PC, tmpPC;
 	NumericVector count;
+	Properties A(x);
 	
-	for (int T = 0; T < 5; T++)
+	for (int T = 1; T <= 5; T++)
 	{
-		CPC = Forward(x, T, z, a);
+		CPC = Forward(A, T, a);
 		cpc = as<NumericVector>(CPC[CPC.size()-1]);
 		if (cpc.size() == 0) {
 			PC.push_back(R_NilValue);
 		} else {
-			pc = Backward(x, z, a, CPC, T);
+			pc = Backward(A, a, CPC, T);
 
 			for (int j = 0; j < pc.size(); j++)
 			{
-				tmpPC = Forward(x, (int)pc[j], z, a);
-				tmppc = Backward(x, z, a, tmpPC, (int)pc[j]);
+				tmpPC = Forward(A, (int)pc[j], a);
+				tmppc = Backward(A, a, tmpPC, (int)pc[j]);
 				if (!(IsIn(tmppc, T))) {
 					int k = pc.size();
 					for (int l = 0; l < k; l++)
@@ -598,34 +688,10 @@ List C_MMPC(SEXP x, SEXP z, SEXP a) {
 				}
 			}
 
-			CompatibilityToR(pc);
 			PC.push_back(pc);
 		}
 
-		// cpc = Backward(A, CPC, cardinality, T, 0.05);
-		// PC.push_back(cpc);
 	}
-
-	// PC = Forward(x, y, z, a);
-	// PC.push_back(cpc);
 
 	return PC;
-}
-
-// [[Rcpp::export]]
-NumericVector Cardinality(SEXP x) {
-	NumericMatrix A(x);
-	NumericVector y;
-
-	for (int i = 0; i < A.ncol(); i++)
-	{
-		unordered_map<double, int> Count;
-		for (int j = 0; j < A.nrow(); j++)
-		{
-			Count[A(j, i)]++;
-		}
-		y.push_back(Count.size());
-	}
-
-	return y;
 }
