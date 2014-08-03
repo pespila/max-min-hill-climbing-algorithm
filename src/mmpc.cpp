@@ -1,19 +1,11 @@
-#include <omp.h>
-#include <R.h>
-#include <Rmath.h>
-#include <vector>
+#include <Rcpp.h>
 #include <tr1/unordered_map>
-#include <RcppArmadillo.h>
-#include <time.h>
 #include <string>
 #include <sstream>
+
 using namespace std;
 using namespace std::tr1;
 using namespace Rcpp;
-using namespace arma;
-
-// [[Rcpp::depends("RcppArmadillo")]]
-// [[Rcpp::plugins(openmp)]]
 
 string HashC(NumericVector& array, int i, bool skip) {
 	ostringstream oss("");
@@ -569,7 +561,7 @@ NumericVector Backward(SEXP x, SEXP z, SEXP a, List& CPC, int T) {
 }
 
 // [[Rcpp::export]]
-List C_MMPC(SEXP x, SEXP z, SEXP a) {
+List Old_MMPC(SEXP x, SEXP z, SEXP a) {
 	NumericVector cpc, pc, tmppc;
 	List CPC, PC, tmpPC;
 	NumericVector count;
