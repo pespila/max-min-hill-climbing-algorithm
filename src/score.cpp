@@ -1,19 +1,11 @@
-// #include <omp.h>
-#include <R.h>
-#include <Rmath.h>
-#include <vector>
+#include <Rcpp.h>
 #include <tr1/unordered_map>
-// #include <RcppArmadillo.h>
-#include <time.h>
 #include <string>
 #include <sstream>
+
 using namespace std;
 using namespace std::tr1;
 using namespace Rcpp;
-using namespace arma;
-
-// // [[Rcpp::depends("RcppArmadillo")]]
-// // [[Rcpp::plugins(openmp)]]
 
 // [[Rcpp::export]]
 int getR(NumericVector& f) {

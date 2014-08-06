@@ -13,18 +13,18 @@ if (!("Rcpp" %in% rownames(installed.packages())))
 # - mmhc.cpp: the C++-file which holds the 'fast' code blocks
 # - mmhc_test.R: my Example's based on the book of Daphne Koller
 require("Rcpp")
-# require("bnlearn")
-# require("rbenchmark")
+require("bnlearn")
+require("rbenchmark")
 require("igraph")
-# require("RcppArmadillo")
+require("RcppArmadillo")
 # sourceCpp("./../src/mmhc.cpp")
 sourceCpp("./../src/mmpc.cpp")
 sourceCpp("./../src/score.cpp")
-source("mmhc_test.R")
-# Sys.setenv("PKG_CXXFLAGS"="-fopenmp")
-# Sys.setenv("PKG_LIBS"="-fopenmp")
+# source("./mmhc_test.R")
+Sys.setenv("PKG_CXXFLAGS"="-fopenmp")
+Sys.setenv("PKG_LIBS"="-fopenmp")
 
-# options(warn=-1)
+options(warn=-1)
 
 # Function MaxMinHeuristic which takes:
 # - the target variable T for whose children and parents we are seeking for.
