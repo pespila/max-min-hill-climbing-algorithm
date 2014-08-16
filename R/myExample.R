@@ -2,16 +2,9 @@
 # For any questions send me an email via michael1.bauer@stud.uni-r.de
 # File description comment, including purpose of program, inputs and outputs
 
-Example <- function(rows, cols = 5, char = TRUE) {
-  binary <- c()
-  trinary <- c()
-  if(char) {
-    binary <- c("LOW", "HIGH")
-    trinary <- c("A", "B", "C")
-  } else {
-    binary <- c(1, 2)
-    trinary <- c(1, 2, 3)
-  }
+student <- function(rows, cols = 5) {
+  binary <- c(1, 2)
+  trinary <- c(1, 2, 3)
   dimnames <- list(c(), c("difficulty", "intelligence", "SAT", "grade", "letter"))#, "prop"))
   studentMatrix <- matrix(, rows, cols, dimnames = dimnames)
   student <- data.frame(studentMatrix, check.names = FALSE)
@@ -51,7 +44,7 @@ Example <- function(rows, cols = 5, char = TRUE) {
   return (student)
 }
 
-Rainy <- function(dim, cols = 3) {
+rainy <- function(dim, cols = 3) {
   binary <- c(1, 2)
   dimnames <- list(c(), c("sprinkler", "rain", "grassWet"))
   testMatrix <- matrix(, dim, cols, dimnames = dimnames)

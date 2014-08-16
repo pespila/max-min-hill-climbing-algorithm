@@ -1,29 +1,18 @@
 #include <Rcpp.h>
 #include <tr1/unordered_map>
-#include <string>
-#include <sstream>
 
 using namespace std;
 using namespace std::tr1;
 using namespace Rcpp;
 
-string HashC(NumericVector& array, int i, bool skip) {
-	ostringstream oss("");
-	for (i; i < array.size(); i++) {
+int Hash(NumericVector& array, int i, bool skip) {
+	int out = 0;
+	for (i; i < array.size(); i++)
 		if (skip && i == 1)
 			continue;
-		oss << array[i];
-	}
-	
-	return oss.str();
-}
+		out += 10*out + array[i];
 
-NumericMatrix T(NumericMatrix& A, int row, int col) {
-	NumericMatrix B(row, col);
-	for (int i = 0; i < row; i++)
-		for (int j = 0; j < col; j++)
-			B(i, j) = A(j, i);
-	return B;
+	return out;
 }
 
 double *OneD(double x) {
@@ -120,7 +109,7 @@ double *****FiveD(double x, double y, double z, double a, double b) {
 }
 
 // [[Rcpp::export]]
-SEXP MySvalue(NumericMatrix& A, const NumericVector& cardinality) {
+SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 	int hDim = A.ncol(), vDim = A.nrow();
 	NumericVector sum(1, 0.0), pvalue(1, 0.0), out(2, 0.0);
 
@@ -274,20 +263,19 @@ SEXP MySvalue(NumericMatrix& A, const NumericVector& cardinality) {
 		return out;
 		
 	} else {
-		string acKey, bcKey, abcKey, cKey;
-		NumericMatrix B = T(A, hDim, vDim);
-		unordered_map<string, int> Count;
-		unordered_map<int, string> ReMap;
+		int acKey, bcKey, abcKey, cKey;
+		unordered_map<int, int> Count;
+		unordered_map<int, int> ReMap;
 		int teta = 0;
 		NumericVector tmp(hDim);
 
-		for (int i = 0; i < vDim; i++)
+		for (int i = 0; i < hDim; i++)
 		{
-			tmp = B(_, i);
-			abcKey = HashC(tmp, 0, FALSE);
-			bcKey = HashC(tmp, 1, FALSE);
-			cKey = HashC(tmp, 2, FALSE);
-			acKey = HashC(tmp, 0, TRUE);
+			tmp = A(i, _);
+			abcKey = Hash(tmp, 0, FALSE);
+			bcKey = Hash(tmp, 1, FALSE);
+			cKey = Hash(tmp, 2, FALSE);
+			acKey = Hash(tmp, 0, TRUE);
 			if (Count[abcKey] == 0) {
 				ReMap[teta] = abcKey;
 				ReMap[teta+1] = acKey;
@@ -320,9 +308,23 @@ SEXP MySvalue(NumericMatrix& A, const NumericVector& cardinality) {
 	}
 }
 
+template <typename T, int RTYPE> int colCardinality(const Vector<RTYPE>& x, unordered_map<T, int>& y) {
+	int m = x.size();
+	y.clear();
+	for (int i = 0; i < m; i++)
+		y[x[i]] = 1;
+
+	return y.size();
+}
+
 void Cardinality(NumericMatrix& A, NumericVector& cardinality) {
+	NumericVector x;
+	unordered_map<double, int> y;
 	for (int i = 0; i < A.ncol(); i++)
-		cardinality[i] = max(A(_, i));
+	{
+		x = A(_, i);
+		cardinality.push_back(colCardinality<double, REALSXP>(x, y));
+	}
 }
 
 NumericMatrix partialMatrix(const NumericMatrix& A, NumericVector& pa) {
@@ -414,7 +416,7 @@ void MaxMinHeuristic(NumericMatrix& A, NumericVector& cpc, List& CPCprops, Numer
 		pa = SetCols(cpc, T, variablesToTest[i]);
 		tmpCardinality = CorrespondingCardinality(pa, cardinality);
 		statisticMatrix = partialMatrix(A, pa);
-		pvalue = MySvalue(statisticMatrix, tmpCardinality);
+		pvalue = Svalue(statisticMatrix, tmpCardinality);
 
 		if (pvalue[0] < alpha) {
 			if (pvalue[0] < rejectedInLastStep[1]) {
@@ -442,10 +444,9 @@ void CompatibilityToR(NumericVector& cpc) {
 }
 
 // List Forward(NumericMatrix& A, int T, const NumericVector& cardinality, double alpha) {
-// [[Rcpp::export]]
-List Forward(SEXP x, int T, SEXP z, SEXP a) {
-	NumericMatrix A(x);
-	NumericVector cpc, variablesToTest, cardinality(z);
+List Forward(NumericMatrix& A, int T, NumericVector& cardinality, SEXP a) {
+	// NumericMatrix A(x);
+	NumericVector cpc, variablesToTest;//, cardinality(z);
 	// int *t = INTEGER(y), n = A.ncol();
 	// int T = *t - 1;
 	int n = A.ncol();
@@ -519,9 +520,9 @@ List Forward(SEXP x, int T, SEXP z, SEXP a) {
 	return CPC;
 }
 
-NumericVector Backward(SEXP x, SEXP z, SEXP a, List& CPC, int T) {
-	NumericMatrix A(x);
-	NumericVector cardinality(z);
+NumericVector Backward(NumericMatrix& A, NumericVector& cardinality, SEXP a, List& CPC, int T) {
+	// NumericMatrix A(x);
+	// NumericVector cardinality(z);
 	double *alpha = REAL(a);
 	NumericVector cpc = as<NumericVector>(CPC[CPC.size()-1]), rm, pa, tmpCardinality, pvalue, fromCPC;
 	NumericMatrix statisticMatrix;
@@ -544,7 +545,7 @@ NumericVector Backward(SEXP x, SEXP z, SEXP a, List& CPC, int T) {
 				pa = SetCols(fromCPC, T, cpc[i]);
 				tmpCardinality = CorrespondingCardinality(pa, cardinality);
 				statisticMatrix = partialMatrix(A, pa);
-				pvalue = MySvalue(statisticMatrix, tmpCardinality);
+				pvalue = Svalue(statisticMatrix, tmpCardinality);
 
 				if (pvalue[0] > *alpha && pvalue[0] != 1.0) {
 					k = i;
@@ -561,24 +562,26 @@ NumericVector Backward(SEXP x, SEXP z, SEXP a, List& CPC, int T) {
 }
 
 // [[Rcpp::export]]
-List C_MMPC(SEXP x, SEXP z, SEXP a) {
+List MMPC(SEXP x, SEXP a) {
+	NumericMatrix A(x);
 	NumericVector cpc, pc, tmppc;
 	List CPC, PC, tmpPC;
-	NumericVector count;
+	NumericVector count, cardinality;
+	Cardinality(A, cardinality);
 	
 	for (int T = 0; T < 5; T++)
 	{
-		CPC = Forward(x, T, z, a);
+		CPC = Forward(A, T, cardinality, a);
 		cpc = as<NumericVector>(CPC[CPC.size()-1]);
 		if (cpc.size() == 0) {
 			PC.push_back(R_NilValue);
 		} else {
-			pc = Backward(x, z, a, CPC, T);
+			pc = Backward(A, cardinality, a, CPC, T);
 
 			for (int j = 0; j < pc.size(); j++)
 			{
-				tmpPC = Forward(x, (int)pc[j], z, a);
-				tmppc = Backward(x, z, a, tmpPC, (int)pc[j]);
+				tmpPC = Forward(A, (int)pc[j], cardinality, a);
+				tmppc = Backward(A, cardinality, a, tmpPC, (int)pc[j]);
 				if (!(IsIn(tmppc, T))) {
 					int k = pc.size();
 					for (int l = 0; l < k; l++)
@@ -602,22 +605,4 @@ List C_MMPC(SEXP x, SEXP z, SEXP a) {
 	// PC.push_back(cpc);
 
 	return PC;
-}
-
-// [[Rcpp::export]]
-NumericVector Cardinality(SEXP x) {
-	NumericMatrix A(x);
-	NumericVector y;
-
-	for (int i = 0; i < A.ncol(); i++)
-	{
-		unordered_map<double, int> Count;
-		for (int j = 0; j < A.nrow(); j++)
-		{
-			Count[A(j, i)]++;
-		}
-		y.push_back(Count.size());
-	}
-
-	return y;
 }

@@ -1,0 +1,331 @@
+\input{report_settings.tex} % Importiere die Einstellungen aus der Präambel
+% hier beginnt der eigentliche Inhalt
+
+\usepackage{geometry}
+\geometry{tmargin=2cm,bmargin=3cm,lmargin=2cm,rmargin=2cm}
+
+\usepackage{tikz}
+\usetikzlibrary{arrows}
+
+\begin{document}
+% \pagenumbering{Roman} % große Römische Seitenummerierung
+\pagestyle{empty}
+
+% Titelseite
+\clearscrheadings\clearscrplain
+
+\begin{center}
+\includegraphics[width=6cm]{img/uniR.png}
+
+\begin{huge}
+UNIVERSITÄT REGENSBURG
+\vspace{10mm}
+\end{huge}
+
+{\Large \textbf{Institute of Genomics \& Practical Bioinformatics}}
+\vspace{0mm}
+
+{\Large Master of Science Computational Science}
+
+\vspace{10mm}
+\begin{huge}
+The max-min-hill-climbing algorithm
+\end{huge}
+
+\vspace{10mm}
+
+\begin{Large}
+Report
+\end{Large}
+
+\begin{large}
+in practical Bioinformatics
+\end{large}
+
+\vspace{5mm}
+\begin{small}
+by
+\end{small}
+
+\begin{large}
+Michael Bauer
+\end{large}
+
+\begin{small}
+Matrikelnummer: 152 8558
+\end{small}
+
+\vspace{1cm}
+\begin{tabular}{ll}
+{\bf Tutor:} &Dr. Giusi Moffa\\
+{\bf Adviser:} &Prof. Dr. Rainer Spang\\
+{\bf Date:} &\\
+\end{tabular}
+
+\end{center}
+\clearpage
+
+
+\pagestyle{useheadings} % normale Kopf- und Fußzeilen für den Rest
+
+\tableofcontents
+\listoffigures
+\listoftables
+
+\chapter{Abstract}
+
+In this report we present a new implementation of the max-min-hill-climbing algorithm (MMHC) for R, first stated in \cite{TBA}. It combines both: greedy search and constraint-based learning techniques. We will discuss those two methods seperately and how they effect running time. We also want to work out the importance of this algorithm. The main goal of it is to reconstruct Bayesian networks from estimated data. Bayesian networks play a great role in science, economics, sports and many more fields where the observational data can get extremely big. It is not the first time R provides this algorithm but we come up by using RCPP (C++ interface for R) for our implementation to have a better chance to deal with big data. Since running time is getting more important we tried to improve it for this algorithm and beat the existing one.
+
+\chapter{Introduction}
+
+The max-min-hill-climbing algorithm is one of the state of the art algorithms in statistical computing. The primal aim of this algorithm is reconstructing BN out of estimated data. A Bayesian network is a Directed Acyclic Graph (DAG) whose nodes are random variables and eges represent conditional dependencies. If two random variables are connected they are said to be dependent. If there is no connection they are said to be conditional independent. BNs are more important than one can imagine. They play a great role in everdays life. For example \cite{NBBCW} use them to predict the effect of missense mutations on the protein function. But not only medical science uses Bayesian networks. Another example where scientists used them was football. In \cite{PKA} they refer to an article where european football clubs tried to predict injuries of their players depending on BNs. With a simple Google search you may also find the prediction of stock exchanges and many more. Wikipedia provides a simple but descriptive example which illustrates BNs in a nice way.
+
+\bild{BNexample}{8cm}{A simple example of a Bayesian network (source: http://en.wikipedia.org/wiki/Bayesian\_network\#mediaviewer/File:SimpleBayesNetNodes.svg).}{A first example of a Bayesian network.}
+
+Reconstructing those networks is not easy, more precisely it is a np-hard problem. It is not only the amount of data which leads to a bad running time, also the dependencies between nodes can slow the code down.\\
+In the first step of this algorithm we try to reconstruct the skeleteon of the graph. Therefor we iterate over all variables - we select a fixed variable (we call it "target" $\mat{T}$) in each iteration step - and find those variables which are dependent to the selected one. The more variables we find the longer a single iteration takes. The dependent variables are then said to be a parent or a child of $\mat{T}$. It may happen that there are false positive ones in our set (which we will call $\mat{CPC}$). For this reason we have to check again if the parents/children in the set really belong to our selected variable $\mat{T}$. The relation between $\mat{T}$ and its parents/children is symmetric. That means for a target $\mat{T}$ and $\mat{A} \in \mat{CPC}_{T}$ it follows:
+
+\begin{equation}
+	\mat{T} \longleftrightarrow \mat{A} \Longleftrightarrow \mat{A} \longleftrightarrow \mat{T}
+\end{equation}
+
+for a target $\mat{A}$ and $\mat{T} \in \mat{CPC}_{A}$. Since this relation holds we have to check in a second step if this symmetrie is fullfild. For that we check for every $\mat{X} \in \mat{CPC}_{T}$ if $\mat{T} \in \mat{CPC}_{X}$. In the end we did all our calculations twice to estimate the skeleton of the graph.\\
+Though this is a great approach, we are interested in the whole Directed Acyclic Graph. The second part of the algorithm will then take this skeleton and add directed edges to it such that it does not become cyclic and is fully directed. We will see that this is based on one formula which is not complicated to understand but extremely tricky for implementation. Once we observe the Bayesian network from our data we then can look at the running time of the algorithm and where the time gets lost but also where we optimized to save time. But more important for us was to beat the existing algorithm for R (part of the "bnlearn" package). The goal for us was to be faster. So after a brief discussion of our implementation we will see if it was possible to optimize the code with RCPP to beat the "bnlearn" algorithm.
+
+\chapter{Background}
+
+Before we are able to analyze our implementation and talk about it in detail we need some mathematical background. In this section we fully follow \cite{TBA}[p. 5-7]. For the proofs of the Lemmas and Theorems we also reference to this paper.
+
+	\section{Notation}
+
+		We introduce our notation which is completely consistent to \cite{TBA}.\\
+		We denote
+		\begin{enumerate}
+			\item variables with an upper-case letter (e.g., $A, V_{i}$),
+			\item a state or a value of that variable by the same lower-case letter (e.g., $a, v_{i}$),
+			\item a set of variables by upper-case bold face (e.g., $\mat{Z}, \mat{Pa}_{i}$),
+			\item an assignment of state or value to each variable in the given set with the corresponding lower-case bold-face letter (e.g., $\mat{y}, \mat{pa}_{i}$),
+			\item special sets of variables (e.g. the set of all variables $\mathcal{V}$) with calligraphic fonts.
+		\end{enumerate}
+
+	\section{Definition (conditional independence)} \label{s.Def1}
+	
+		Two variables $X$ and $Y$ are conditionally independent given $\mat{Z}$ with respect to a probability distribution $P$, denoted as $Ind_{P}(X; Y|\mat{Z})$, if for all $x, y, \mat{z}$ where $P(\mat{Z} = \mat{z}) > 0$,
+
+		\begin{equation}
+			P(X = x, Y = y|\mat{Z} = \mat{z}) = P(X = x|\mat{Z} = \mat{z})P(Y = y|\mat{Z} = \mat{z})
+		\end{equation}
+		or
+		\begin{equation}
+			P(X , Y|\mat{Z}) = P(X|\mat{Z})P(Y|\mat{Z})
+		\end{equation}
+		for short. If $X, Y$ are dependent given $\mat{Z}$ we denote $Dep_{P}(X; Y|\mat{Z}$.
+
+	\section{Definition (Bayesian network)} \label{s.Def2}
+
+		Let $P$ be a discrete joint probability distribution of the random variables in some set $\mathcal{V}$ and $\mathcal{G} = <\mathcal{V}, E>$ be a Directed Acyclic Graph (DAG). We call $<\mathcal{G}, P>$ a (discrete) \textit{Bayesian network} if $<\mathcal{G}, P>$ satisfies the Markov condition.
+
+	\section{Definition (Markov condition)} \label{s.Def3}
+
+		Any node in a Bayesian network is conditionally independent of its non-descendants, given its parents.\\
+
+	\section{Explanation}
+		With those definitions we have our first concept we will discuss briefly. We will explain the definitions by using the following picture:
+		\begin{center}
+			\begin{tikzpicture}[->,>=stealth',shorten >=2pt,auto,node distance=5cm,
+			                    thick,main node/.style={circle,draw,font=\sffamily\Large\bfseries}]
+
+			  \node[main node] (1) {Z};
+			  \node[main node] (2) [below left of=1] {X};
+			  \node[main node] (3) [below right of=1] {Y};
+
+			  \path[every node/.style={font=\sffamily\small}]
+			    (1) edge node [left] {} (3)
+			    	edge node [left] {} (2);
+			\end{tikzpicture}
+		\end{center}
+
+		The Markov condition states that $X$ and $Y$ given $\mat{Z}$ must be conditionally independent of each other. This comes from the fact that $X$ is a non-descendant of $Y$ and vice versa and $\mat{Z}$ is a parent of both nodes. By fullfilling this condition we get from \autoref{s.Def2} that this graph is a Bayesian network and with \autoref{s.Def1} we have: $P(X , Y|\mat{Z}) = P(X|\mat{Z})P(Y|\mat{Z})$.
+
+	\section{Defintion (collider)} \label{s.Def4}
+
+		A node $W$ of a path $p$ is a \textit{collider} if $p$ contains two incomming edges into $W$.
+
+	\section{Definition (blocked path)} \label{s.Def5}
+
+		A path $p$ from node $X$ to node $Y$ is \textit{blocked} by a set of nodes $\mat{Z}$, if there is a node $W$ on $p$ for which one of the following two conditions hold:
+
+		\begin{enumerate}
+			\item $W$ is not a collider and $W \in \mat{Z}$, or
+			\item $W$ is a collider and neither $W$ or its descendants are in $\mat{Z}$ \cite{P88}
+		\end{enumerate}
+
+	\section{Definition (d-seperation)} \label{s.Def6}
+
+		Two nodes $X$ and $Y$ are \textit{d-seperated} by $\mat{Z}$ in graph $\mathcal{G}$ (denoted as $Dsep_{\mathcal{G}}(X;Y|\mat{Z})$) if and only if every path from $X$ to $Y$ is blocked by $\mat{Z}$. Two nodes are \textit{d-connected} if they are not \textit{d-seperated}.
+
+	\section{Definition (faithful)} \label{s.Def7}
+
+		If all and only the conditional independencies true in the distribution $P$ are entailed by the Markov condition applied to $\mathcal{G}$, we will say that $P$ and $\mathcal{G}$ are \textit{faithful to each other} (\cite{SGSN}). Furthermore, a distribution $P$ is \textit{faithful} if there exists a graph $\mathcal{G}$, to which it is faithful.
+
+	\section{Definition (faithfulness condition)} \label{s.Def8}
+
+		A Bayesian network $<\mathcal{G}, P>$ satisfies the \textit{faithfulness condition} if $P$ embodies only independencies that can be represented in the DAG $\mathcal{G}$ (\cite{SGSN}). We will call such a Bayesian network a \textit{faithful network}.
+
+	\section{Theorem} \label{s.Theorem3}
+
+		In a faithful Bayesian network $<\mathcal{G}, P>$ the following equivalence holds (\cite{P88})
+
+		\begin{equation}
+			Dsep_{\mathcal{G}} (X;Y|\mat{Z}) \Longleftrightarrow Ind_{P} (X;Y|\mat{Z})
+		\end{equation}
+
+	\section{Remark and Explanation}
+
+		\textbf{Remark:} For the rest of this report we assume faithfulness of the networks to learn. For this reason we don't want to explain the corresponding definitions in detail. Just note, that the definitions are neccessary for mathematical correctness.
+
+		\textbf{Explanation:} The definition of a collider already tells everything about it. To illustrate a collider, we have:
+
+		\begin{center}
+			\begin{tikzpicture}[->,>=stealth',shorten >=2pt,auto,node distance=5cm,
+			                    thick,main node/.style={circle,draw,font=\sffamily\Large\bfseries}]
+
+			  \node[main node] (1) {Z};
+			  \node[main node] (2) [left of=1] {X};
+			  \node[main node] (3) [right of=1] {Y};
+
+			  \path[every node/.style={font=\sffamily\small}]
+			    (2) edge node [left] {} (1)
+			    (3) edge node [left] {} (1);
+			\end{tikzpicture}
+		\end{center}
+
+		Here $Z$ is a \textit{collider} because it has two incoming edges. In this case if we just look for $P(X;Y|\{\})$, the path between $X$ and $Y$ would be blocked and for this $X$ and $Y$ are \textit{d-seperated}. If we look for $P(X;Y|\mat{Z})$, then this path is not blocked and we state that $X$ and $Y$ are \textit{d-connected}.\\
+		Because of \autoref{s.Theorem3} and the faithfulness assumptions we have say for the rest of our report that the terms d-seperation and conditional independence are equivalent. With this we already know that $X$ and $Y$ are conditional dependent given $\mat{Z}$ in the example above. This brings us a big step closer to learn the structure of a Bayesian network from observational data. Before we start looking at the algorithms, we want to give you two other examples for d-seperation of variables.
+
+		\begin{center}
+			\begin{tikzpicture}[->,>=stealth',shorten >=2pt,auto,node distance=2cm,
+			                    thick,main node/.style={circle,draw,font=\sffamily\Large\bfseries}]
+
+			  \node[main node] (1) {T};
+			  \node[main node] (2) [left of=1] {A};
+			  \node[main node, fill=orange] (3) [left of=2] {B};
+			  \node[main node] (4) [left of=3] {X};
+			  \node[main node] (5) [right of=1] {C};
+			  \node[main node, fill=orange] (6) [right of=5] {D};
+			  \node[main node] (7) [right of=6] {Y};
+
+			  \path[every node/.style={font=\sffamily\small}]
+			    (2) edge node [left] {} (1)
+			    (5) edge node [left] {} (1)
+			    (3) edge node [left] {} (2)
+			    (4) edge node [left] {} (3)
+			    (7) edge node [left] {} (6)
+			    (6) edge node [left] {} (5);
+			\end{tikzpicture}
+		\end{center}
+
+		If we are looking for $Ind_{P} (X;Y|\mat{Z})$ with $\mat{Z} = \{B, D\}$ we learn that $X$ and $Y$ are conditionally independent given $\mat{Z}$. In other words they are d-seperated in the path because of the following reasons:
+
+		\begin{itemize}
+			\item $T$ is a collider and blocks the path between $X$ and $Y$.
+			\item The nodes $B$ and $B$ are no colliders but they are elements of $\mat{Z}$.
+		\end{itemize}
+
+		The situation becomes a bit more difficult if we take a look at the next example:
+
+		\begin{center}
+			\begin{tikzpicture}[->,>=stealth',shorten >=2pt,auto,node distance=2cm,
+			                    thick,main node/.style={circle,draw,font=\sffamily\Large\bfseries}]
+
+			  \node[main node] (1) {T};
+			  \node[main node] (2) [left of=1] {A};
+			  \node[main node, fill=orange] (3) [left of=2] {B};
+			  \node[main node] (4) [left of=3] {X};
+			  \node[main node] (5) [right of=1] {C};
+			  \node[main node] (6) [right of=5] {D};
+			  \node[main node] (7) [right of=6] {Y};
+			  \node[main node] (8) [below of=3] {E};
+			  \node[main node] (9) [below of=6] {F};
+			  \node[main node, fill=orange] (10) [below of=1] {G};
+
+			  \path[every node/.style={font=\sffamily\small}]
+			    (2) edge node [left] {} (1)
+			    (5) edge node [left] {} (1)
+			    (3) edge node [left] {} (8)
+			    (1) edge node [left] {} (10)
+			    (6) edge node [left] {} (9)
+			    (3) edge node [left] {} (2)
+			    (4) edge node [left] {} (3)
+			    (7) edge node [left] {} (6)
+			    (6) edge node [left] {} (5);
+			\end{tikzpicture}
+		\end{center}
+
+		We learn that the path between $X$ and $Y$ remains blocked by looking for $Ind_{P}(X;Y|\mat{Z})$ with $\mat{Z} = \{B, G\}$, i.e. $X$ and $Y$ are conditionally independent given $\mat{Z}$. If we would look at the path between $A$ and $Y$ we would learn that $A$ and $Y$ are d-connected. This comes from:
+
+		\begin{itemize}
+			\item $T$ is a collider but its descendant $G \in \mat{Z}$, i.e. $T$ would not block the path.
+			\item The node $B$ is no collider but it is an element of $\mat{Z}$. For that it blocks the path.
+		\end{itemize}
+
+		As we could see, detecting conditional independence of two nodes is quite difficult in small graphs. Since we normally observe large data sets with a couple of nodes, a concept for this is needed. As we will see, statistical methods, such as hypothesis testing is a useful friend for this task.
+
+\chapter{Functions of bnlearn}
+
+	As we stated, our purpose was to implement the max-min-hill-climbing algorithm in a way that it will be faster and more efficient than the existing is. That's why we want to give you a brief introduction to the "mmpc" and "mmhc" functions of the "bnlearn" package. We also want to present some numbers depending on running time which show you the effectiveness of the two algorithms. Afterwards we explain our algorithm and we present our results. You will see that there will be some differences on the running time of both implementations.
+
+	\section{mmpc(data.frame)}
+
+		This function represents the first part of the algorithm, which returns the skeleton of the graph. You can choose between several testing methods. The input is a R data frame and the return value of it is of the class "bn". With the plot function you are able to plot the whole skeleton of the graph.
+
+	\section{mmhc(data.frame)}
+
+		This function is similiar to the mmpc(). The differences are, that it returns a DAG and you can choose a score function which is used to direct the edges.
+
+\chapter{The max-min-hill-climbing algorithm}
+
+	That should be enough of bnlearn. We now want to go into the implementation of the algorithm. First of all we want you present the pseudo code and then talk about it. Afterwards we present the statistical methods behind the algorithm and how the effect running time. In the end we want to present an example which should be reconstructed by our algorithm.
+
+	\section{Pseudo code MMHC}
+
+		\begin{eqnarray}
+			&&\textnormal{function MMHC } (\mathcal{D}) \textnormal{ \#input: data } \mathcal{D} \notag \\
+				&&\hspace{10mm} \textnormal{for every variable } X \in \mathcal{V} \textnormal{ do } \notag \\
+					&&\hspace{10mm}\hspace{10mm} \mat{PC}_{X} = MMPC(X, \mathcal{D}) \notag \\
+				&&\hspace{10mm} \textnormal{end for} \notag \\ \notag \\
+				&&\hspace{10mm} \mat{A} = BDeu(\mat{PC}) \textnormal{ \# where } \mat{PC} \textnormal{ contains all } \mat{PC}_{X} \forall X \notag \\
+				&&\hspace{10mm} return(\mat{A}) \textnormal{ \#returns an adjacency matrix A; a DAG} \notag
+		\end{eqnarray}
+
+		As mentioned before, the MMHC function has to parts. First we find the skeleton and then we add directed edges to the skeleton graph. Of course, this is not as easy as it seems to, so let's take a closer look to the several parts of MMHC.
+
+		\subsection{max-min parents and children (MMPC))}
+
+			The max-min parents and children is the algorithm which reconstructs the graph skeleton out of data. To bring you the concept of this closer, let us first present the pseudo code of it:
+
+\begin{thebibliography}{56}
+
+\bibitem[TBA]{TBA}
+Ioannis Tsamardinos, Laura E. Brown, Constantin F. Aliferis,\\
+The max-min hill-climbing Bayesian network structure learning algorithm,\\
+Springer Science + Business Media,
+Inc. 2006
+\bibitem[NBBCW]{NBBCW}
+Chris J. Needham1, James R. Bradford, Andrew J. Bulpitt, Matthew A. Care and David R. Westhead,\\
+Predicting the effect of missense mutations on protein function: analysis with Bayesian networks,\\
+http://www.biomedcentral.com/1471-2105/7/405
+\bibitem[PKA]{PKA}
+http://www-ekp.physik.uni-karlsruhe.de/\~zupanc/WS1011/docs/Datenanalyse2010\_3.pdf
+\bibitem[P88]{P88}
+Pearl,
+1988
+\bibitem[SGSN]{SGSN}
+Spirtes, Glymour \& Scheines,
+1993, 2000; \\
+Neapolitan,
+2003
+
+\end{thebibliography}
+
+\end{document}

@@ -325,13 +325,33 @@ void AddReverseDelete(const NumericMatrix& A, NumericMatrix& AdjMat, NumericVect
 	}
 }
 
+template <typename T, int RTYPE> int colCardinality(const Vector<RTYPE>& x, unordered_map<T, int>& y) {
+	int m = x.size();
+	y.clear();
+	for (int i = 0; i < m; i++)
+		y[x[i]] = 1;
+
+	return y.size();
+}
+
+void Cardinality(NumericMatrix& A, NumericVector& cardinality) {
+	NumericVector x;
+	unordered_map<double, int> y;
+	for (int i = 0; i < A.ncol(); i++)
+	{
+		x = A(_, i);
+		cardinality.push_back(colCardinality<double, REALSXP>(x, y));
+	}
+}
+
 // [[Rcpp::export]]
-SEXP BDeu(SEXP x, SEXP y, SEXP z, SEXP N) {
+SEXP BDeu(SEXP x, SEXP z, SEXP N) {
 	int *n= INTEGER(N);
 	double eta = 2.2;
-	NumericVector R(y), scores, tmpScores;
+	NumericVector scores, tmpScores, R;
 	NumericMatrix A(x), AdjMat(*n, *n), tmpAdjMat(*n, *n);
 	List PC(z);
+	Cardinality(A, R);
 
 	scores = InitScore(A, N, R, eta);
 	SettingEdges(A, AdjMat, scores, PC, N, R, eta);
