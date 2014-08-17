@@ -7,7 +7,7 @@ using namespace std;
 using namespace std::tr1;
 using namespace Rcpp;
 
-// [[Rcpp::export]]
+
 int getR(NumericVector& f) {
 	unordered_map<int, int> Map;
 
@@ -26,7 +26,7 @@ string int_array_to_string(NumericVector& array) { //  int int_array[], int size
 	return oss.str();
 }
 
-// [[Rcpp::export]]
+
 unordered_map<int, string> UniqueMap(SEXP x) {
 	NumericMatrix A(x);
 	NumericVector u;
@@ -88,7 +88,7 @@ int getMapN_ijk(double *vec, NumericMatrix& parentMatrix, unordered_map<int, str
 	return count;
 }
 
-// [[Rcpp::export]]
+
 double ScoreNodeWithNoneParents(SEXP column, SEXP N, int r, double eta) {
 	int *n = INTEGER(N), dim = XLENGTH(column);
 	double *vec = REAL(column);
@@ -110,7 +110,7 @@ double ScoreNodeWithNoneParents(SEXP column, SEXP N, int r, double eta) {
 	return qScore;
 }
 
-// [[Rcpp::export]]
+
 double ScoreNodeWithOneParent(SEXP Xi, SEXP Pa, SEXP N, int r, int q, double eta) {
 	int *n = INTEGER(N), dim = XLENGTH(Xi);
 	double *vec = REAL(Xi), *parentVec = REAL(Pa);
@@ -138,7 +138,7 @@ double ScoreNodeWithOneParent(SEXP Xi, SEXP Pa, SEXP N, int r, int q, double eta
 	return qScore;
 }
 
-// [[Rcpp::export]]
+
 double ScoreNodeWithMoreParents(SEXP Xi, SEXP Pa, SEXP N, int r, int q, double eta) {
 	int *n = INTEGER(N), dim = XLENGTH(Xi);
 	double *vec = REAL(Xi);
@@ -193,7 +193,7 @@ NumericVector InitScore(NumericMatrix& A, SEXP N, NumericVector& R, double eta) 
 	return score;
 }
 
-// [[Rcpp::export]]
+
 NumericMatrix partialMatrix(const NumericMatrix& A, NumericVector& pa) {
 	NumericMatrix partMat(A.nrow(), pa.size());
 

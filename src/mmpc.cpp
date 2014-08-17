@@ -108,7 +108,7 @@ double *****FiveD(double x, double y, double z, double a, double b) {
 	return matrix;
 }
 
-// [[Rcpp::export]]
+
 SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 	int hDim = A.ncol(), vDim = A.nrow();
 	NumericVector sum(1, 0.0), pvalue(1, 0.0), out(2, 0.0);
