@@ -78,18 +78,18 @@ In this report we present a new implementation of the max-min-hill-climbing algo
 
 \chapter{Introduction}
 
-The max-min-hill-climbing algorithm is one of the state of the art algorithms in statistical computing. The primal aim of this algorithm is reconstructing BN out of estimated data. A Bayesian network is a Directed Acyclic Graph (DAG) whose nodes are random variables and eges represent conditional dependencies. If two random variables are connected they are said to be dependent. If there is no connection they are said to be conditional independent. BNs are more important than one can imagine. They play a great role in everdays life. For example \cite{NBBCW} use them to predict the effect of missense mutations on the protein function. But not only medical science uses Bayesian networks. Another example where scientists used them was football. In \cite{PKA} they refer to an article where european football clubs tried to predict injuries of their players depending on BNs. With a simple Google search you may also find the prediction of stock exchanges and many more. Wikipedia provides a simple but descriptive example which illustrates BNs in a nice way.
+The max-min-hill-climbing algorithm is one of the state of the art algorithms in statistical computing. The primal aim of this algorithm is reconstructing BN out of estimated data. A Bayesian network is a Directed Acyclic Graph (DAG) whose nodes are random variables and eges represent conditional dependencies. If two random variables are connected they are said to be dependent. If there is no connection they are said to be conditional independent. BNs are more important than one can imagine. They play a great role in everdays life. For example \cite{NBBCW} use them to predict the effect of missense mutations on the protein function. But not only medical science uses Bayesian networks. Another example where scientists used them was football. In \cite{PKA} they refer to an article where european football clubs tried to predict injuries of their players depending on BNs. With a simple Google search you may also find the prediction of stock exchanges and many more. Wikipedia provides a simple but descriptive example which illustrates BNs in a smooth way.
 
-\bild{BNexample}{8cm}{A simple example of a Bayesian network (source: http://en.wikipedia.org/wiki/Bayesian\_network\#mediaviewer/File:SimpleBayesNetNodes.svg).}{A first example of a Bayesian network.}
+\bild{BNexample}{8cm}{A simple example of a Bayesian network.}{source: \url{http://en.wikipedia.org/wiki/Bayesian\_network\#mediaviewer/File:SimpleBayesNetNodes.svg}}
 
 Reconstructing those networks is not easy, more precisely it is a np-hard problem. It is not only the amount of data which leads to a bad running time, also the dependencies between nodes can slow the code down.\\
-In the first step of this algorithm we try to reconstruct the skeleteon of the graph. Therefor we iterate over all variables - we select a fixed variable (we call it "target" $\mat{T}$) in each iteration step - and find those variables which are dependent to the selected one. The more variables we find the longer a single iteration takes. The dependent variables are then said to be a parent or a child of $\mat{T}$. It may happen that there are false positive ones in our set (which we will call $\mat{CPC}$). For this reason we have to check again if the parents/children in the set really belong to our selected variable $\mat{T}$. The relation between $\mat{T}$ and its parents/children is symmetric. That means for a target $\mat{T}$ and $\mat{A} \in \mat{CPC}_{T}$ it follows:
+In the first step of this algorithm we try to reconstruct the skeleteon of the graph. Therefor we iterate over all variables - we select one variable (we call it "target" $\mat{T}$) in each iteration step - and find those variables which are dependent to the selected one. The more variables we find the longer a single iteration takes. The dependent variables are then said to be a parent or a child of $\mat{T}$. It may happen that there are false positive ones in our set (which we will call $\mat{CPC}$). For this reason we have to check again if the parents/children in the set really belong to our selected variable $\mat{T}$. The relation between $\mat{T}$ and its parents/children is symmetric. That means for a target $\mat{T}$ and $\mat{A} \in \mat{CPC}_{T}$ it follows:
 
 \begin{equation}
-	\mat{T} \longleftrightarrow \mat{A} \Longleftrightarrow \mat{A} \longleftrightarrow \mat{T}
+	\mat{T} \longleftrightarrow \mat{A} \Longleftrightarrow \mat{A} \longleftrightarrow \mat{T} \label{eq.symmetric}
 \end{equation}
 
-for a target $\mat{A}$ and $\mat{T} \in \mat{CPC}_{A}$. Since this relation holds we have to check in a second step if this symmetrie is fullfild. For that we check for every $\mat{X} \in \mat{CPC}_{T}$ if $\mat{T} \in \mat{CPC}_{X}$. In the end we did all our calculations twice to estimate the skeleton of the graph.\\
+for a target $\mat{A}$ and $\mat{T} \in \mat{CPC}_{A}$. Since this relation holds we have to check in a second step if this symmetrie is fullfild. For that we check for every $\mat{X} \in \mat{CPC}_{T}$ if $\mat{T} \in \mat{CPC}_{X}$.\\
 Though this is a great approach, we are interested in the whole Directed Acyclic Graph. The second part of the algorithm will then take this skeleton and add directed edges to it such that it does not become cyclic and is fully directed. We will see that this is based on one formula which is not complicated to understand but extremely tricky for implementation. Once we observe the Bayesian network from our data we then can look at the running time of the algorithm and where the time gets lost but also where we optimized to save time. But more important for us was to beat the existing algorithm for R (part of the "bnlearn" package). The goal for us was to be faster. So after a brief discussion of our implementation we will see if it was possible to optimize the code with RCPP to beat the "bnlearn" algorithm.
 
 \chapter{Background}
@@ -145,7 +145,7 @@ Before we are able to analyze our implementation and talk about it in detail we 
 			\end{tikzpicture}
 		\end{center}
 
-		The Markov condition states that $X$ and $Y$ given $\mat{Z}$ must be conditionally independent of each other. This comes from the fact that $X$ is a non-descendant of $Y$ and vice versa and $\mat{Z}$ is a parent of both nodes. By fullfilling this condition we get from \autoref{s.Def2} that this graph is a Bayesian network and with \autoref{s.Def1} we have: $P(X , Y|\mat{Z}) = P(X|\mat{Z})P(Y|\mat{Z})$.
+		The Markov condition states that $X$ and $Y$ given $\mat{Z}$ must be conditionally independent. This comes from the fact that $X$ is a non-descendant of $Y$ and vice versa and $\mat{Z}$ is a parent of both nodes. By fullfilling this condition we get from \autoref{s.Def2} that this graph is a Bayesian network and with \autoref{s.Def1} we have: $P(X , Y|\mat{Z}) = P(X|\mat{Z})P(Y|\mat{Z})$.
 
 	\section{Defintion (collider)} \label{s.Def4}
 
@@ -201,7 +201,7 @@ Before we are able to analyze our implementation and talk about it in detail we 
 		\end{center}
 
 		Here $Z$ is a \textit{collider} because it has two incoming edges. In this case if we just look for $P(X;Y|\{\})$, the path between $X$ and $Y$ would be blocked and for this $X$ and $Y$ are \textit{d-seperated}. If we look for $P(X;Y|\mat{Z})$, then this path is not blocked and we state that $X$ and $Y$ are \textit{d-connected}.\\
-		Because of \autoref{s.Theorem3} and the faithfulness assumptions we have say for the rest of our report that the terms d-seperation and conditional independence are equivalent. With this we already know that $X$ and $Y$ are conditional dependent given $\mat{Z}$ in the example above. This brings us a big step closer to learn the structure of a Bayesian network from observational data. Before we start looking at the algorithms, we want to give you two other examples for d-seperation of variables.
+		Because of \autoref{s.Theorem3} and the faithfulness assumptions we state for the rest of our report that the terms d-seperation and conditional independence are equivalent. With this we already know that $X$ and $Y$ are conditional dependent given $\mat{Z}$ in the example above. This brings us a big step closer to learn the structure of a Bayesian network from observational data. Before we start looking at the algorithms, we want to give you two other examples for d-seperation of variables.
 
 		\begin{center}
 			\begin{tikzpicture}[->,>=stealth',shorten >=2pt,auto,node distance=2cm,
@@ -228,8 +228,8 @@ Before we are able to analyze our implementation and talk about it in detail we 
 		If we are looking for $Ind_{P} (X;Y|\mat{Z})$ with $\mat{Z} = \{B, D\}$ we learn that $X$ and $Y$ are conditionally independent given $\mat{Z}$. In other words they are d-seperated in the path because of the following reasons:
 
 		\begin{itemize}
-			\item $T$ is a collider and blocks the path between $X$ and $Y$.
-			\item The nodes $B$ and $B$ are no colliders but they are elements of $\mat{Z}$.
+			\item $T$ is a collider with $T \not\in \mat{Z}$ and blocks the path between $X$ and $Y$.
+			\item The nodes $B$ and $D$ are no colliders but they are elements of $\mat{Z}$.
 		\end{itemize}
 
 		The situation becomes a bit more difficult if we take a look at the next example:
@@ -269,40 +269,170 @@ Before we are able to analyze our implementation and talk about it in detail we 
 			\item The node $B$ is no collider but it is an element of $\mat{Z}$. For that it blocks the path.
 		\end{itemize}
 
-		As we could see, detecting conditional independence of two nodes is quite difficult in small graphs. Since we normally observe large data sets with a couple of nodes, a concept for this is needed. As we will see, statistical methods, such as hypothesis testing is a useful friend for this task.
+		So there is no element which blocks the path between $A$ and $Y$, but for $X$ and $Y$, $B$ blocks the path. \\
+		As we could see, detecting conditional independence of two nodes is quite difficult in small graphs. Since we normally observe large data sets with a couple of nodes, a concept for this is needed. As we will see, statistical methods, such as hypothesis testing will be a useful friend for this task.
+
+	\section{Definition} \label{s.Def9}
+
+		We define the minimum association of $X$ and $T$ relative to a feature subset $\mat{Z}$, denoted as $MinAssoc(X; T | \mat{Z})$, as
+
+		\begin{equation}
+			MinAssoc (X; T | \mat{Z}) = \min_{\mat{S} \subseteq \mat{Z}} Assoc(X; T | \mat{S})
+		\end{equation}
+
+		i.e., as the minimum association achieved between $X$ and $T$ over all subsets of $\mat{Z}$. \\
+		\textbf{Remark:}
+		\begin{enumerate}
+			\item In \autoref{img.mmpcBar} we will see this $MinAssoc$ statement again as a function. With that we measure conditional independence of $X$ and $T$ given $\mat{Z}$.
+			\item For that the following equivalence holds (providing without a proof): 
+				\begin{equation}
+					Ind(X; T | \mat{Z}) \Longleftrightarrow (Assoc(X; T | \mat{Z} = 0).
+				\end{equation}
+		\end{enumerate}
 
 \chapter{Functions of bnlearn}
 
-	As we stated, our purpose was to implement the max-min-hill-climbing algorithm in a way that it will be faster and more efficient than the existing is. That's why we want to give you a brief introduction to the "mmpc" and "mmhc" functions of the "bnlearn" package. We also want to present some numbers depending on running time which show you the effectiveness of the two algorithms. Afterwards we explain our algorithm and we present our results. You will see that there will be some differences on the running time of both implementations.
+	As we stated, our purpose was to implement the max-min-hill-climbing algorithm in a way that it will be faster and more efficient than the existing is. That's why we want to give you a brief introduction to the mmpc() and mmhc() functions of the "bnlearn" package. We also want to present some numbers depending on running time which show you the effectiveness of the two algorithms. Afterwards we explain our algorithm and we present our results. You will see that there will be some differences on the running time of both implementations.
 
 	\section{mmpc(data.frame)}
 
-		This function represents the first part of the algorithm, which returns the skeleton of the graph. You can choose between several testing methods. The input is a R data frame and the return value of it is of the class "bn". With the plot function you are able to plot the whole skeleton of the graph.
+		This function represents the first part of the algorithm, which returns the skeleton of the graph. You can choose between several methods of independence testing. The input is a R data frame and the return value of it is of the class "bn". With the plot function you are able to plot the whole skeleton of the graph, like:
+		
+		\begin{verbatim}
+> graph <- mmpc(data.frame)
+> plot(graph)
+		\end{verbatim}
 
 	\section{mmhc(data.frame)}
 
-		This function is similiar to the mmpc(). The differences are, that it returns a DAG and you can choose a score function which is used to direct the edges.
+		This function is similiar to the mmpc(). The differences are, that it returns a DAG and you can additionally choose a score function which is used to direct the edges. Again you execute this with:
+
+		\begin{verbatim}
+> graph <- mmhc(data.frame)
+> plot(graph)
+		\end{verbatim}
 
 \chapter{The max-min-hill-climbing algorithm}
 
-	That should be enough of bnlearn. We now want to go into the implementation of the algorithm. First of all we want you present the pseudo code and then talk about it. Afterwards we present the statistical methods behind the algorithm and how the effect running time. In the end we want to present an example which should be reconstructed by our algorithm.
+	We now want to go into the implementation of our algorithm. First of all we want you present the pseudo code and then talk about it. Afterwards we present the statistical methods behind the algorithm and how they effect running time. In the end we want to present an example which should be reconstructed by our algorithm.
 
 	\section{Pseudo code MMHC}
 
-		\begin{eqnarray}
-			&&\textnormal{function MMHC } (\mathcal{D}) \textnormal{ \#input: data } \mathcal{D} \notag \\
-				&&\hspace{10mm} \textnormal{for every variable } X \in \mathcal{V} \textnormal{ do } \notag \\
-					&&\hspace{10mm}\hspace{10mm} \mat{PC}_{X} = MMPC(X, \mathcal{D}) \notag \\
-				&&\hspace{10mm} \textnormal{end for} \notag \\ \notag \\
-				&&\hspace{10mm} \mat{A} = BDeu(\mat{PC}) \textnormal{ \# where } \mat{PC} \textnormal{ contains all } \mat{PC}_{X} \forall X \notag \\
-				&&\hspace{10mm} return(\mat{A}) \textnormal{ \#returns an adjacency matrix A; a DAG} \notag
-		\end{eqnarray}
+		\bild{MaxMinHillClimb-004}{12cm}{The pseudo code of the MMHC algorithm. Line 2-4 represent the loop over all nodes calling the MMPC function. At line 5 the scoring starts.}{source: The max-min hill-climbing Bayesian network structure learning algorithm, page 14.} \label{img.mmhc}
+		% \begin{eqnarray}
+		% 	&&\textnormal{function MMHC } (\mathcal{D}) \textnormal{ \#input: data } \mathcal{D} \notag \\
+		% 		&&\hspace{10mm} \textnormal{for every variable } X \in \mathcal{V} \textnormal{ do } \notag \\
+		% 			&&\hspace{10mm}\hspace{10mm} \mat{PC}_{X} = MMPC(X, \mathcal{D}) \notag \\
+		% 		&&\hspace{10mm} \textnormal{end for} \notag \\ \notag \\
+		% 		&&\hspace{10mm} \mat{A} = BDeu(\mat{PC}) \textnormal{ \# where } \mat{PC} \textnormal{ contains all } \mat{PC}_{X} \forall X \notag \\
+		% 		&&\hspace{10mm} return(\mat{A}) \textnormal{ \#returns an adjacency matrix A; a DAG} \notag
+		% \end{eqnarray}
 
-		As mentioned before, the MMHC function has to parts. First we find the skeleton and then we add directed edges to the skeleton graph. Of course, this is not as easy as it seems to, so let's take a closer look to the several parts of MMHC.
+		As mentioned before, the MMHC function has to parts. First we find the skeleton and then direct the edges of the skeleton graph. We first discuss the $MMPC$ (max-min parents and children) function which is called the observational data $\mathcal{D}$ in the for loop (over all possible nodes in the graph) and then we take a closer look at the scoring function starting at line 5. This function will later be stated as $BDeu$ which stands for Bayesian Dirichlet likelihood-equivalence uniform.
 
 		\subsection{max-min parents and children (MMPC))}
 
-			The max-min parents and children is the algorithm which reconstructs the graph skeleton out of data. To bring you the concept of this closer, let us first present the pseudo code of it:
+			The max-min parents and children (MMPC) is the algorithm which reconstructs the graph skeleton from data. To bring you the concept of this closer, let us first present the pseudo code of it:
+
+			\bild{MaxMinHillClimb-003}{14cm}{The pseudo code of the MMPC function. First the $\mat{CPC}$ set is computed by the $\overline{MMPC}$ function. Afterwards the false positives are erased.}{source: The max-min hill-climbing Bayesian network structure learning algorithm, page 12.} \label{img.mmpc}
+
+			In this algorithm another function $\overline{MMPC}$ is executed. In \autoref{img.mmpcBar} this function - including the $MaxMinHeuristic$ function - is shown. Back to \autoref{img.mmpc}, we see, that $\overline{MMPC}$ is executed twice. Firstly at line 2 and secondly in the if-statement at line 4. As we stated in \autoref{eq.symmetric}, for two variables they are connected, the symmetrie holds. At line 2 we only now that some $X$ are in the set $\mat{CPC}$ for a target variable $T$, i.e. the $X$ is a parent or a child of $T$. By testing if $T$ is also a parent or child of $X$, we see if the symmetrie holds, if not, $X$ is removed from the $\mat{CPC}$ set. Let's talk about the $\overline{MMPC}$ function. First take a look at is:
+
+			\bild{MaxMinHillClimb-000}{12cm}{Here you see both: the $\overline{MMPC}$ function and the calculation of the association between $X$ and $T$ by the $MaxMinHeuristic$ function.}{source: The max-min hill-climbing Bayesian network structure learning algorithm, page 8.} \label{img.mmpcBar}
+
+			In this subfunction we have two important routines: the execution of $\overline{MMPC}$ and the $MaxMinHeuristic$.
+
+			\subsubsection{The $MaxMinHeuristic$ function}
+
+				This function finds the $X$ which maximizes the measure of association between $X$ and $T$ given the current $\mat{CPC}$ set. The current $\mat{CPC}$ set is therefor passed into the function. The return of the function is the $X$ and the value of association between $X$ and $T$ given $\mat{CPC}$. At this point, we left one important question: How do we measure this association.
+
+			\subsubsection{The $G^{2}$ value}
+
+				Because this algorithm is based on conditional independence testing and measuring the strength of association between two variables, we need some formulas for implementation to get this measure. We followed \cite{SGSN} and calculated the $G^{2}$ statistic, under the null hypothesis of the conditional independence holding. For that we have (from \cite{TBA}):\\
+				Let $S_{ijk}^{ab\mat{c}}$ be the number of times in the data where $X_{i} = a$, $X_{j} = b$ and $X_{k} = \mat{c}$. We define in a similar fashion, $S_{ik}^{a\mat{c}}$, $S_{jk}^{b\mat{c}}$  and $S_{k}^{\mat{c}}$, then the $G^{2}$ statistic is defined as (c.f. \cite{SGSN}):
+
+				\begin{equation}
+					G^{2} := 2 * \sum_{a,b,c} S^{ab\textbf{c}}_{ijk} * ln \left( \frac{S^{ab\textbf{c}}_{ijk}*S^{\textbf{c}}_{k}}{S^{a\textbf{c}}_{ik}*S^{b\textbf{c}}_{jk}} \right),
+				\end{equation}
+
+				The $G^{2}$ statistic is asymptotically distributed as $\chi^{2}$ with appropriate degrees of freedom. To compute these degrees of freedom we use:
+
+				\begin{equation}
+					df = (|D(X_{i})| - 1)(|D(X_{j})| - 1) \prod_{X_{l} \in \mat{X}_{\mat{k}}} |D(X_{l})|,
+				\end{equation}
+
+				where $D(X_{i})$ is the domain (number of distinct values) of variable $X_{i}$. After bringing this to code, we can work with the output of this function.
+
+			\subsubsection{How $\overline{MMPC}$ works}
+
+				 The procedure of the $\overline{MMPC}$ function then works as follows:
+
+				\begin{itemize}
+					\item Compute the $G^{2}$ value. You observe a $Svalue$ of type $double$ value.
+					\item Compute the degrees of freedom $df$.
+					\item Assign the $pvalue$ to the output of the function $pchisq(Svalue, df)$.
+					\item Test if the $pvalue$ is smaller than $0.05$, if yes then keep this $pvalue$, it's corresponding $Svalue$ and $X$.
+					\item At the end let the $X$ join the $\mat{CPC}$ set which has the smallest $pvalue$.
+					\item If two pvalues are equaled then take the variable $X$ with the higher $Svalue$.
+					\item If you checked all variables over all subsets of the $\mat{CPC}$ set, stop the calculations.
+				\end{itemize}
+
+				\textbf{Hint:} At the moment you find that a target $T$ and a variable $X$ are conditionally independent, i.e. the association values equales zero, you don't need to check this connection again since you already know of their independence. The same holds for the fact, if they are dependent. This saves running time.
+
+% The G 2 statistic is asymptotically distributed as χ 2 with appropriate degrees of freedom.
+% Assuming no structural zeros the number of degrees of freedom is:
+% d f = ( | D(X i ) | − 1)( | D(X j )| − 1)
+% | D(X l )|
+% X l ∈X k
+% where D(X ) is the domain (number of distinct values) of variable X . As a heuristic, Spirtes,
+% Glymour & Scheines (2000) reduce the number of degrees of freedom by one for each cell
+% of the contingency tables of the expected (under the independence hypothesis) distribution
+% ac
+% (i.e., for each S ik
+% S bc
+% jk product) that is equal to zero. In our implementation we calculate the
+% degrees of freedom following Steck & Jaakkola (2002) instead (see calculation of Effective
+% Number of Parameters).
+% The χ 2 test returns a p-value that corresponds to the probability of falsely rejecting the
+% null hypothesis given that it is true. If the p-value is less than a significance level α (set to 0.05
+% in our experiments) the null hypothesis is rejected. If the independence hypothesis cannot be
+% rejected, it is accepted instead. A more detailed discussion on this use of independence tests
+% is in Neapolitan (2003) pp. 593.
+
+
+
+
+
+
+
+
+
+
+			% \begin{eqnarray}
+			% 	&&\textnormal{function MMPC } (T, \mathcal{D}) \textnormal{ \#input: target } T, \textnormal{ data } \mathcal{D} \notag \\
+			% 		&&\hspace{10mm} \textnormal{\# Forward Phase:} \notag \\
+			% 		&&\hspace{10mm} \mat{CPC} = \emptyset \notag \\
+			% 		&&\hspace{10mm} \textnormal{while } \mat{CPC} \textnormal{ is changing } \{ \notag \\
+			% 			&&\hspace{10mm}\hspace{10mm} \textnormal{Tuple<X, assoc(X,T)> } = MaxMinHeuristic(T, \mat{CPC}) \notag \\
+			% 			&&\hspace{10mm}\hspace{10mm} \textnormal{if (assoc(X,T) } \ne \textnormal{ 0) } \{ \notag \\
+			% 				&&\hspace{10mm}\hspace{10mm}\hspace{10mm} \mat{CPC} = \mat{CPC} \cup X \notag \\
+			% 			&&\hspace{10mm}\hspace{10mm} \} \notag \\
+			% 		&&\hspace{10mm} \} \notag \\
+			% 		\notag \\
+			% 		&&\hspace{10mm} \textnormal{\# Backward Phase:} \notag \\
+			% 		&&\hspace{10mm} \textnormal{for all } X \in \mat{CPC} \textnormal{ do } \notag \\
+			% 			&&\hspace{10mm}\hspace{10mm} \textnormal{if } \exists \mat{} \ne \textnormal{ 0) } \{ \notag \\
+			% 			&&\hspace{10mm}\hspace{10mm} \mat{PC}_{X} = MMPC(X, \mathcal{D}) \notag \\
+			% 		&&\hspace{10mm} \textnormal{end for} \notag \\ \notag \\
+			% 		&&\hspace{10mm} \mat{A} = BDeu(\mat{PC}) \textnormal{ \# where } \mat{PC} \textnormal{ contains all } \mat{PC}_{X} \forall X \notag \\
+
+
+
+			% 		&&\hspace{10mm} \textnormal{end for} \notag \\ \notag \\
+			% 		&&\hspace{10mm} \mat{A} = BDeu(\mat{PC}) \textnormal{ \# where } \mat{PC} \textnormal{ contains all } \mat{PC}_{X} \forall X \notag \\
+			% 		&&\hspace{10mm} return(\mat{A}) \textnormal{ \#returns the parents and children of } T \notag
+			% \end{eqnarray}
+
 
 \begin{thebibliography}{56}
 

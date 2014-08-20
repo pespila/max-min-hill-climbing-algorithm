@@ -5,7 +5,6 @@ library("igraph")
 source('myExample.R')
 sourceCpp('../src/mmpc.cpp')
 sourceCpp('../src/score.cpp')
-sourceCpp('../src/mmhc.cpp')
 
 df <- student(1000)
 
@@ -19,5 +18,8 @@ MMHC <- function(df, alpha = 0.05) {
 
 	return (adjMat)
 }
+
+print(MMHC(df))
+rm(list = ls())
 
 # T <- benchmark(mmhc(df, test = "x2", score = "bde"), MMHC(df), replications=1)

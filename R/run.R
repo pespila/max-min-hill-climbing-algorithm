@@ -2,17 +2,20 @@ library("Rcpp")
 library("bnlearn")
 library("rbenchmark")
 library("igraph")
-sourceCpp("mmhc.cpp")
+sourceCpp("../src/mmhc.cpp")
+source("myExample.R")
 
 df <- student(1000)
 
-my <- function(df, alpha = 0.05, eta = as.integer(1)) {
-	K <- new(MMHC, df, alpha, eta)
+my <- function(df) {
+	K <- new(MMHC, df)
 	K$mmpc()
 	K$mmhc()
-	adjMat <- graph.adjacency(K$graph)
-	print(K$score)
+	adjMat <- graph.adjacency(K$adjMat())
+	print(K$score())
+	rm(K)
 	# plot(adjMat)
 }
+
 
 # T <- benchmark(mmhc(df), my(df), replications=1)

@@ -1,4 +1,5 @@
 #include <Rcpp.h>
+#include <cstdlib>
 #include <tr1/unordered_map>
 
 using namespace std;
@@ -15,100 +16,165 @@ int Hash(NumericVector& array, int i, bool skip) {
 	return out;
 }
 
+// double *OneD(double x) {
+// 	double *matrix = (double*)R_alloc(x, sizeof(double));
+// 	for (int i = 0; i < x; i++)
+// 	{
+// 		matrix[i] = 0;
+// 	}
+// 	return matrix;
+// }
+
+// double **TwoD(double x, double y) {
+// 	double **matrix = (double**)R_alloc(x, sizeof(double*));
+
+// 	for (int i = 0; i < x; i++)
+// 	{
+// 		matrix[i] = (double*)R_alloc(y, sizeof(double));
+// 		for (int j = 0; j < y; j++)
+// 		{
+// 			matrix[i][j] = 0;
+// 		}
+// 	}
+
+// 	return matrix;
+// }
+
+// double ***ThreeD(double x, double y, double z) {
+// 	double ***matrix = (double***)R_alloc(x, sizeof(double*));
+
+// 	for (int i = 0; i < x; i++)
+// 	{
+// 		matrix[i] = (double**)R_alloc(y, sizeof(double*));
+// 		for (int j = 0; j < y; j++)
+// 		{
+// 			matrix[i][j] = (double*)R_alloc(z, sizeof(double));
+// 			for (int k = 0; k < z; k++)
+// 			{
+// 				matrix[i][j][k] = 0;
+// 			}
+// 		}
+// 	}
+
+// 	return matrix;
+// }
+
+// double ****FourD(double x, double y, double z, double a) {
+// 	double ****matrix = (double****)R_alloc(x, sizeof(double*));
+
+// 	for (int i = 0; i < x; i++)
+// 	{
+// 		matrix[i] = (double***)R_alloc(y, sizeof(double*));
+// 		for (int j = 0; j < y; j++)
+// 		{
+// 			matrix[i][j] = (double**)R_alloc(z, sizeof(double*));
+// 			for (int k = 0; k < z; k++)
+// 			{
+// 				matrix[i][j][k] = (double*)R_alloc(a, sizeof(double));
+// 				for (int l = 0; l < a; l++)
+// 				{
+// 					matrix[i][j][k][l] = 0;
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	return matrix;
+// }
+
+// double *****FiveD(double x, double y, double z, double a, double b) {
+// 	double *****matrix = (double*****)R_alloc(x, sizeof(double*));
+
+// 	for (int i = 0; i < x; i++)
+// 	{
+// 		matrix[i] = (double****)R_alloc(y, sizeof(double*));
+// 		for (int j = 0; j < y; j++)
+// 		{
+// 			matrix[i][j] = (double***)R_alloc(z, sizeof(double*));
+// 			for (int k = 0; k < z; k++)
+// 			{
+// 				matrix[i][j][k] = (double**)R_alloc(a, sizeof(double*));
+// 				for (int l = 0; l < a; l++)
+// 				{
+// 					matrix[i][j][k][l] = (double*)R_alloc(b, sizeof(double));
+// 					for (int m = 0; m < b; m++)
+// 					{
+// 						matrix[i][j][k][l][m] = 0;
+// 					}
+// 				}
+// 			}
+// 		}
+// 	}
+
+// 	return matrix;
+// }
+
 double *OneD(double x) {
-	double *matrix = (double*)R_alloc(x, sizeof(double));
+	double *matrix = (double*)calloc(x, sizeof(double));
 	for (int i = 0; i < x; i++)
-	{
 		matrix[i] = 0;
-	}
 	return matrix;
 }
 
 double **TwoD(double x, double y) {
-	double **matrix = (double**)R_alloc(x, sizeof(double*));
-
-	for (int i = 0; i < x; i++)
-	{
-		matrix[i] = (double*)R_alloc(y, sizeof(double));
+	double **matrix = (double**)calloc(x, sizeof(double*));
+	for (int i = 0; i < x; i++)	{
+		matrix[i] = (double*)calloc(y, sizeof(double));
 		for (int j = 0; j < y; j++)
-		{
 			matrix[i][j] = 0;
-		}
 	}
-
 	return matrix;
 }
 
 double ***ThreeD(double x, double y, double z) {
-	double ***matrix = (double***)R_alloc(x, sizeof(double*));
-
-	for (int i = 0; i < x; i++)
-	{
-		matrix[i] = (double**)R_alloc(y, sizeof(double*));
-		for (int j = 0; j < y; j++)
-		{
-			matrix[i][j] = (double*)R_alloc(z, sizeof(double));
+	double ***matrix = (double***)calloc(x, sizeof(double*));
+	for (int i = 0; i < x; i++)	{
+		matrix[i] = (double**)calloc(y, sizeof(double*));
+		for (int j = 0; j < y; j++)	{
+			matrix[i][j] = (double*)calloc(z, sizeof(double));
 			for (int k = 0; k < z; k++)
-			{
 				matrix[i][j][k] = 0;
-			}
 		}
 	}
-
 	return matrix;
 }
 
 double ****FourD(double x, double y, double z, double a) {
-	double ****matrix = (double****)R_alloc(x, sizeof(double*));
-
-	for (int i = 0; i < x; i++)
-	{
-		matrix[i] = (double***)R_alloc(y, sizeof(double*));
-		for (int j = 0; j < y; j++)
-		{
-			matrix[i][j] = (double**)R_alloc(z, sizeof(double*));
-			for (int k = 0; k < z; k++)
-			{
-				matrix[i][j][k] = (double*)R_alloc(a, sizeof(double));
+	double ****matrix = (double****)calloc(x, sizeof(double*));
+	for (int i = 0; i < x; i++)	{
+		matrix[i] = (double***)calloc(y, sizeof(double*));
+		for (int j = 0; j < y; j++)	{
+			matrix[i][j] = (double**)calloc(z, sizeof(double*));
+			for (int k = 0; k < z; k++)	{
+				matrix[i][j][k] = (double*)calloc(a, sizeof(double));
 				for (int l = 0; l < a; l++)
-				{
 					matrix[i][j][k][l] = 0;
-				}
 			}
 		}
 	}
-
 	return matrix;
 }
 
 double *****FiveD(double x, double y, double z, double a, double b) {
-	double *****matrix = (double*****)R_alloc(x, sizeof(double*));
-
-	for (int i = 0; i < x; i++)
-	{
-		matrix[i] = (double****)R_alloc(y, sizeof(double*));
-		for (int j = 0; j < y; j++)
-		{
-			matrix[i][j] = (double***)R_alloc(z, sizeof(double*));
-			for (int k = 0; k < z; k++)
-			{
-				matrix[i][j][k] = (double**)R_alloc(a, sizeof(double*));
-				for (int l = 0; l < a; l++)
-				{
-					matrix[i][j][k][l] = (double*)R_alloc(b, sizeof(double));
+	double *****matrix = (double*****)calloc(x, sizeof(double*));
+	for (int i = 0; i < x; i++)	{
+		matrix[i] = (double****)calloc(y, sizeof(double*));
+		for (int j = 0; j < y; j++)	{
+			matrix[i][j] = (double***)calloc(z, sizeof(double*));
+			for (int k = 0; k < z; k++)	{
+				matrix[i][j][k] = (double**)calloc(a, sizeof(double*));
+				for (int l = 0; l < a; l++)	{
+					matrix[i][j][k][l] = (double*)calloc(b, sizeof(double));
 					for (int m = 0; m < b; m++)
-					{
 						matrix[i][j][k][l][m] = 0;
-					}
 				}
 			}
 		}
 	}
-
 	return matrix;
 }
 
-
+// SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 	int hDim = A.ncol(), vDim = A.nrow();
 	NumericVector sum(1, 0.0), pvalue(1, 0.0), out(2, 0.0);
@@ -117,28 +183,31 @@ SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 		int l = cardinality[1], m = cardinality[0];
 		double *x = OneD(m), *y = OneD(l), **z = TwoD(m, l);
 
-		for (int i = 0; i < vDim; i++)
-		{
+		for (int i = 0; i < vDim; i++) {
 			x[(int)A(i, 0) - 1]++;
 			y[(int)A(i, 1) - 1]++;
 			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1]++;
 		}
 
-		for (int i = 0; i < m; i++)
-		{
-			for (int j = 0; j < l; j++)
-			{
+		for (int i = 0; i < m; i++) {
+			for (int j = 0; j < l; j++) {
 				if (x[i] < 1 || y[j] < 1 || z[i][j] < 1)
 					continue;
 				sum[0] += 2.0 * z[i][j] * log( (z[i][j] * vDim) / (x[i] * y[j]) );
 			}
 		}
 
+		for (int i = 0; i < m; i++)
+			free(z[i]);
+
+		free(z);
+		free(x);
+		free(y);
+
 		int DF = cardinality[0] * cardinality[1];
 		for (int i = 2; i < cardinality.size(); i++)
-		{
 			DF *= (cardinality[i] + 1);
-		}
+
 		pvalue = pchisq(sum, DF, FALSE);
 		out[0] = pvalue[0];
 		out[1] = sum[0];
@@ -149,20 +218,16 @@ SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 		int k = cardinality[2], l = cardinality[1], m = cardinality[0];
 		double *v = OneD(k), **x = TwoD(m, k), **y = TwoD(l, k), ***z = ThreeD(m, l, k);
 
-		for (int i = 0; i < vDim; i++)
-		{
+		for (int i = 0; i < vDim; i++) {
 			v[(int)A(i, 2) - 1]++;
 			x[(int)A(i, 0) - 1][(int)A(i, 2) - 1]++;
 			y[(int)A(i, 1) - 1][(int)A(i, 2) - 1]++;
 			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1][(int)A(i, 2) - 1]++;
 		}
 
-		for (int i = 0; i < m; i++)
-		{
-			for (int j = 0; j < l; j++)
-			{
-				for (int h = 0; h < k; h++)
-				{
+		for (int i = 0; i < m; i++) {
+			for (int j = 0; j < l; j++) {
+				for (int h = 0; h < k; h++) {
 					if (x[i][h] < 1 || y[j][h] < 1 || z[i][j][h] < 1 || v[h] < 1)
 						continue;
 					sum[0] += 2.0 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) );
@@ -170,11 +235,30 @@ SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 			}
 		}
 
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < l; j++)
+			{
+				free(z[i][j]);
+			}
+			free(z[i]);
+		}
+		free(z);
+
+		for (int i = 0; i < l; i++)
+			free(y[i]);
+		free(y);
+
+		for (int i = 0; i < m; i++)
+			free(x[i]);
+		free(x);
+
+		free(v);
+
 		int DF = cardinality[0] * cardinality[1];
 		for (int i = 2; i < cardinality.size(); i++)
-		{
 			DF *= (cardinality[i] + 1);
-		}
+
 		pvalue = pchisq(sum, DF, FALSE);
 		out[0] = pvalue[0];
 		out[1] = sum[0];
@@ -185,22 +269,17 @@ SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 		int n = cardinality[3], k = cardinality[2], l = cardinality[1], m = cardinality[0];
 		double **v = TwoD(k, n), ***x = ThreeD(m, k, n), ***y = ThreeD(l, k, n), ****z = FourD(m, l, k, n);
 
-		for (int i = 0; i < vDim; i++)
-		{
+		for (int i = 0; i < vDim; i++) {
 			v[(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
 			x[(int)A(i, 0) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
 			y[(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
 			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
 		}
 
-		for (int i = 0; i < m; i++)
-		{
-			for (int j = 0; j < l; j++)
-			{
-				for (int h = 0; h < k; h++)
-				{
-					for (int f = 0; f < n; f++)
-					{
+		for (int i = 0; i < m; i++) {
+			for (int j = 0; j < l; j++) {
+				for (int h = 0; h < k; h++) {
+					for (int f = 0; f < n; f++) {
 						if (x[i][h][f] < 1 || y[j][h][f] < 1 || z[i][j][h][f] < 1 || v[h][f] < 1)
 							continue;
 						sum[0] += 2.0 * z[i][j][h][f] * log( (z[i][j][h][f] * v[h][f]) / (x[i][h][f] * y[j][h][f]) );
@@ -209,11 +288,49 @@ SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 			}
 		}
 
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < l; j++)
+			{
+				for (int a = 0; a < k; a++)
+				{
+					free(z[i][j][a]);
+				}
+				free(z[i][j]);
+			}
+			free(z[i]);
+		}
+		free(z);
+
+		for (int i = 0; i < l; i++)
+		{
+			for (int j = 0; j < k; j++)
+			{
+				free(y[i][j]);
+			}
+			free(y[i]);
+		}
+		free(y);
+
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < k; j++)
+			{
+				free(x[i][j]);
+			}
+			free(x[i]);
+		}
+		free(x);
+
+		for (int i = 0; i < k; i++)
+			free(v[i]);
+		free(v);
+
+
 		int DF = cardinality[0] * cardinality[1];
 		for (int i = 2; i < cardinality.size(); i++)
-		{
 			DF *= (cardinality[i] + 1);
-		}
+
 		pvalue = pchisq(sum, DF, FALSE);
 		out[0] = pvalue[0];
 		out[1] = sum[0];
@@ -224,24 +341,18 @@ SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 		int o = cardinality[4], n = cardinality[3], k = cardinality[2], l = cardinality[1], m = cardinality[0];
 		double ***v = ThreeD(k, n, o), ****x = FourD(m, k, n, o), ****y = FourD(l, k, n, o), *****z = FiveD(m, l, k, n, o);
 
-		for (int i = 0; i < vDim; i++)
-		{
+		for (int i = 0; i < vDim; i++) {
 			v[(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
 			x[(int)A(i, 0) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
 			y[(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
 			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
 		}
 
-		for (int i = 0; i < m; i++)
-		{
-			for (int j = 0; j < l; j++)
-			{
-				for (int h = 0; h < k; h++)
-				{
-					for (int f = 0; f < n; f++)
-					{
-						for (int e = 0; e < o; e++)
-						{
+		for (int i = 0; i < m; i++) {
+			for (int j = 0; j < l; j++) {
+				for (int h = 0; h < k; h++) {
+					for (int f = 0; f < n; f++) {
+						for (int e = 0; e < o; e++) {
 							if (x[i][h][f][e] < 1 || y[j][h][f][e] < 1 || z[i][j][h][f][e] < 1 || v[h][f][e] < 1)
 								continue;
 							sum[0] += 2.0 * z[i][j][h][f][e] * log( (z[i][j][h][f][e] * v[h][f][e]) / (x[i][h][f][e] * y[j][h][f][e]) );
@@ -251,11 +362,66 @@ SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 			}
 		}
 
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < l; j++)
+			{
+				for (int a = 0; a < k; a++)
+				{
+					for (int b = 0; b < n; b++)
+					{
+						free(z[i][j][a][b]);
+					}
+					free(z[i][j][a]);
+				}
+				free(z[i][j]);
+			}
+			free(z[i]);
+		}
+		free(z);
+
+		for (int i = 0; i < l; i++)
+		{
+			for (int j = 0; j < k; j++)
+			{
+				for (int a = 0; a < n; a++)
+				{
+					free(y[i][j][a]);
+				}
+				free(y[i][j]);
+			}
+			free(y[i]);
+		}
+		free(y);
+
+		for (int i = 0; i < m; i++)
+		{
+			for (int j = 0; j < k; j++)
+			{
+				for (int a = 0; a < n; a++)
+				{
+					free(x[i][j][a]);
+				}
+				free(x[i][j]);
+			}
+			free(x[i]);
+		}
+		free(x);
+
+		for (int i = 0; i < k; i++)
+		{
+			for (int j = 0; j < n; j++)
+			{
+				free(v[i][j]);
+			}
+			free(v[i]);
+		}
+		free(v);
+
 		int DF = cardinality[0] * cardinality[1];
 		for (int i = 2; i < cardinality.size(); i++)
-		{
 			DF *= (cardinality[i] + 1);
-		}
+
 		pvalue = pchisq(sum, DF, FALSE);
 		out[0] = pvalue[0];
 		out[1] = sum[0];
@@ -263,50 +429,246 @@ SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 		return out;
 		
 	} else {
-		int acKey, bcKey, abcKey, cKey;
-		unordered_map<int, int> Count;
-		unordered_map<int, int> ReMap;
-		int teta = 0;
-		NumericVector tmp(hDim);
+		// int acKey, bcKey, abcKey, cKey;
+		// unordered_map<int, int> Count;
+		// unordered_map<int, int> ReMap;
+		// int teta = 0;
+		// IntegerVector tmp(hDim);
 
-		for (int i = 0; i < hDim; i++)
-		{
-			tmp = A(i, _);
-			abcKey = Hash(tmp, 0, FALSE);
-			bcKey = Hash(tmp, 1, FALSE);
-			cKey = Hash(tmp, 2, FALSE);
-			acKey = Hash(tmp, 0, TRUE);
-			if (Count[abcKey] == 0) {
-				ReMap[teta] = abcKey;
-				ReMap[teta+1] = acKey;
-				ReMap[teta+2] = bcKey;
-				ReMap[teta+3] = cKey;
-				teta = teta + 4;
-				Count[abcKey]++;
-				Count[acKey]++;
-				Count[bcKey]++;
-				Count[cKey]++;
-			}
-		}
+		// for (int i = 0; i < hDim; i++) {
+		// 	tmp = A(i, _);
+		// 	abcKey = Hash(tmp, 0, FALSE);
+		// 	bcKey = Hash(tmp, 1, FALSE);
+		// 	cKey = Hash(tmp, 2, FALSE);
+		// 	acKey = Hash(tmp, 0, TRUE);
+		// 	if (Count[abcKey] == 0) {
+		// 		ReMap[teta] = abcKey;
+		// 		ReMap[teta+1] = acKey;
+		// 		ReMap[teta+2] = bcKey;
+		// 		ReMap[teta+3] = cKey;
+		// 		teta = teta + 4;
+		// 		Count[abcKey]++;
+		// 		Count[acKey]++;
+		// 		Count[bcKey]++;
+		// 		Count[cKey]++;
+		// 	}
+		// }
 
-		for (int i = 0; i < ReMap.size(); i = i + 4)
-		{
-			sum[0] += 2.0 * Count[ReMap[i]] == 0 * log( (Count[ReMap[i]] == 0 * Count[ReMap[i+3]] == 0) / (Count[ReMap[i+1]] == 0 * Count[ReMap[i+2]] == 0) );
-		}
+		// for (int i = 0; i < ReMap.size(); i = i + 4)
+		// 	sum[0] += 2.0 * Count[ReMap[i]] == 0 * log( (Count[ReMap[i]] == 0 * Count[ReMap[i+3]] == 0) / (Count[ReMap[i+1]] == 0 * Count[ReMap[i+2]] == 0) );
 
-		int DF = cardinality[0] * cardinality[1];
-		for (int i = 2; i < cardinality.size(); i++)
-		{
-			DF *= (cardinality[i] + 1);
-		}
-		pvalue = pchisq(sum, DF, FALSE);
-		out[0] = pvalue[0];
-		out[1] = sum[0];
+		// int DF = cardinality[0] * cardinality[1];
+		// for (int i = 2; i < cardinality.size(); i++)
+		// 	DF *= (cardinality[i] + 1);
 
-		return out;
+		// pvalue = pchisq(sum, DF, FALSE);
+		// out[0] = pvalue[0];
+		// out[1] = sum[0];
+
+		return NumericVector::create(1.0, 1.0);
 
 	}
 }
+
+
+// SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
+// 	int hDim = A.ncol(), vDim = A.nrow();
+// 	NumericVector sum(1, 0.0), pvalue(1, 0.0), out(2, 0.0);
+
+// 	if (hDim == 2) {
+// 		int l = cardinality[1], m = cardinality[0];
+// 		double *x = OneD(m), *y = OneD(l), **z = TwoD(m, l);
+
+// 		for (int i = 0; i < vDim; i++)
+// 		{
+// 			x[(int)A(i, 0) - 1]++;
+// 			y[(int)A(i, 1) - 1]++;
+// 			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1]++;
+// 		}
+
+// 		for (int i = 0; i < m; i++)
+// 		{
+// 			for (int j = 0; j < l; j++)
+// 			{
+// 				if (x[i] < 1 || y[j] < 1 || z[i][j] < 1)
+// 					continue;
+// 				sum[0] += 2.0 * z[i][j] * log( (z[i][j] * vDim) / (x[i] * y[j]) );
+// 			}
+// 		}
+
+// 		int DF = cardinality[0] * cardinality[1];
+// 		for (int i = 2; i < cardinality.size(); i++)
+// 		{
+// 			DF *= (cardinality[i] + 1);
+// 		}
+// 		pvalue = pchisq(sum, DF, FALSE);
+// 		out[0] = pvalue[0];
+// 		out[1] = sum[0];
+
+// 		return out;
+
+// 	}  else if (hDim == 3) {
+// 		int k = cardinality[2], l = cardinality[1], m = cardinality[0];
+// 		double *v = OneD(k), **x = TwoD(m, k), **y = TwoD(l, k), ***z = ThreeD(m, l, k);
+
+// 		for (int i = 0; i < vDim; i++)
+// 		{
+// 			v[(int)A(i, 2) - 1]++;
+// 			x[(int)A(i, 0) - 1][(int)A(i, 2) - 1]++;
+// 			y[(int)A(i, 1) - 1][(int)A(i, 2) - 1]++;
+// 			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1][(int)A(i, 2) - 1]++;
+// 		}
+
+// 		for (int i = 0; i < m; i++)
+// 		{
+// 			for (int j = 0; j < l; j++)
+// 			{
+// 				for (int h = 0; h < k; h++)
+// 				{
+// 					if (x[i][h] < 1 || y[j][h] < 1 || z[i][j][h] < 1 || v[h] < 1)
+// 						continue;
+// 					sum[0] += 2.0 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) );
+// 				}
+// 			}
+// 		}
+
+// 		int DF = cardinality[0] * cardinality[1];
+// 		for (int i = 2; i < cardinality.size(); i++)
+// 		{
+// 			DF *= (cardinality[i] + 1);
+// 		}
+// 		pvalue = pchisq(sum, DF, FALSE);
+// 		out[0] = pvalue[0];
+// 		out[1] = sum[0];
+
+// 		return out;
+
+// 	} else if (hDim == 4) {
+// 		int n = cardinality[3], k = cardinality[2], l = cardinality[1], m = cardinality[0];
+// 		double **v = TwoD(k, n), ***x = ThreeD(m, k, n), ***y = ThreeD(l, k, n), ****z = FourD(m, l, k, n);
+
+// 		for (int i = 0; i < vDim; i++)
+// 		{
+// 			v[(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
+// 			x[(int)A(i, 0) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
+// 			y[(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
+// 			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
+// 		}
+
+// 		for (int i = 0; i < m; i++)
+// 		{
+// 			for (int j = 0; j < l; j++)
+// 			{
+// 				for (int h = 0; h < k; h++)
+// 				{
+// 					for (int f = 0; f < n; f++)
+// 					{
+// 						if (x[i][h][f] < 1 || y[j][h][f] < 1 || z[i][j][h][f] < 1 || v[h][f] < 1)
+// 							continue;
+// 						sum[0] += 2.0 * z[i][j][h][f] * log( (z[i][j][h][f] * v[h][f]) / (x[i][h][f] * y[j][h][f]) );
+// 					}
+// 				}
+// 			}
+// 		}
+
+// 		int DF = cardinality[0] * cardinality[1];
+// 		for (int i = 2; i < cardinality.size(); i++)
+// 		{
+// 			DF *= (cardinality[i] + 1);
+// 		}
+// 		pvalue = pchisq(sum, DF, FALSE);
+// 		out[0] = pvalue[0];
+// 		out[1] = sum[0];
+
+// 		return out;
+
+// 	} else if (hDim == 5) {
+// 		int o = cardinality[4], n = cardinality[3], k = cardinality[2], l = cardinality[1], m = cardinality[0];
+// 		double ***v = ThreeD(k, n, o), ****x = FourD(m, k, n, o), ****y = FourD(l, k, n, o), *****z = FiveD(m, l, k, n, o);
+
+// 		for (int i = 0; i < vDim; i++)
+// 		{
+// 			v[(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
+// 			x[(int)A(i, 0) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
+// 			y[(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
+// 			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
+// 		}
+
+// 		for (int i = 0; i < m; i++)
+// 		{
+// 			for (int j = 0; j < l; j++)
+// 			{
+// 				for (int h = 0; h < k; h++)
+// 				{
+// 					for (int f = 0; f < n; f++)
+// 					{
+// 						for (int e = 0; e < o; e++)
+// 						{
+// 							if (x[i][h][f][e] < 1 || y[j][h][f][e] < 1 || z[i][j][h][f][e] < 1 || v[h][f][e] < 1)
+// 								continue;
+// 							sum[0] += 2.0 * z[i][j][h][f][e] * log( (z[i][j][h][f][e] * v[h][f][e]) / (x[i][h][f][e] * y[j][h][f][e]) );
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+
+// 		int DF = cardinality[0] * cardinality[1];
+// 		for (int i = 2; i < cardinality.size(); i++)
+// 		{
+// 			DF *= (cardinality[i] + 1);
+// 		}
+// 		pvalue = pchisq(sum, DF, FALSE);
+// 		out[0] = pvalue[0];
+// 		out[1] = sum[0];
+
+// 		return out;
+		
+// 	} else {
+// 		int acKey, bcKey, abcKey, cKey;
+// 		unordered_map<int, int> Count;
+// 		unordered_map<int, int> ReMap;
+// 		int teta = 0;
+// 		NumericVector tmp(hDim);
+
+// 		for (int i = 0; i < hDim; i++)
+// 		{
+// 			tmp = A(i, _);
+// 			abcKey = Hash(tmp, 0, FALSE);
+// 			bcKey = Hash(tmp, 1, FALSE);
+// 			cKey = Hash(tmp, 2, FALSE);
+// 			acKey = Hash(tmp, 0, TRUE);
+// 			if (Count[abcKey] == 0) {
+// 				ReMap[teta] = abcKey;
+// 				ReMap[teta+1] = acKey;
+// 				ReMap[teta+2] = bcKey;
+// 				ReMap[teta+3] = cKey;
+// 				teta = teta + 4;
+// 				Count[abcKey]++;
+// 				Count[acKey]++;
+// 				Count[bcKey]++;
+// 				Count[cKey]++;
+// 			}
+// 		}
+
+// 		for (int i = 0; i < ReMap.size(); i = i + 4)
+// 		{
+// 			sum[0] += 2.0 * Count[ReMap[i]] == 0 * log( (Count[ReMap[i]] == 0 * Count[ReMap[i+3]] == 0) / (Count[ReMap[i+1]] == 0 * Count[ReMap[i+2]] == 0) );
+// 		}
+
+// 		int DF = cardinality[0] * cardinality[1];
+// 		for (int i = 2; i < cardinality.size(); i++)
+// 		{
+// 			DF *= (cardinality[i] + 1);
+// 		}
+// 		pvalue = pchisq(sum, DF, FALSE);
+// 		out[0] = pvalue[0];
+// 		out[1] = sum[0];
+
+// 		return out;
+
+// 	}
+// }
 
 template <typename T, int RTYPE> int colCardinality(const Vector<RTYPE>& x, unordered_map<T, int>& y) {
 	int m = x.size();
