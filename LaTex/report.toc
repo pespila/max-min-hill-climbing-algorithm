@@ -1,0 +1,38 @@
+\select@language {english}
+\select@language {english}
+\contentsline {chapter}{\nonumberline List of Figures}{4}{chapter*.2}
+\contentsline {chapter}{\nonumberline List of Tables}{5}{chapter*.3}
+\contentsline {chapter}{\numberline {1}Abstract}{6}{chapter.1}
+\contentsline {chapter}{\numberline {2}Introduction}{7}{chapter.2}
+\contentsline {chapter}{\numberline {3}Background}{9}{chapter.3}
+\contentsline {section}{\numberline {3.1}Notation}{9}{section.3.1}
+\contentsline {section}{\numberline {3.2}Definition (conditional independence)}{9}{section.3.2}
+\contentsline {section}{\numberline {3.3}Definition (Bayesian network)}{10}{section.3.3}
+\contentsline {section}{\numberline {3.4}Definition (Markov condition)}{10}{section.3.4}
+\contentsline {section}{\numberline {3.5}Explanation}{10}{section.3.5}
+\contentsline {section}{\numberline {3.6}Defintion (collider)}{10}{section.3.6}
+\contentsline {section}{\numberline {3.7}Definition (blocked path)}{11}{section.3.7}
+\contentsline {section}{\numberline {3.8}Definition (d-seperation)}{11}{section.3.8}
+\contentsline {section}{\numberline {3.9}Definition (faithful)}{11}{section.3.9}
+\contentsline {section}{\numberline {3.10}Definition (faithfulness condition)}{11}{section.3.10}
+\contentsline {section}{\numberline {3.11}Theorem}{11}{section.3.11}
+\contentsline {section}{\numberline {3.12}Remark and Explanation}{12}{section.3.12}
+\contentsline {section}{\numberline {3.13}Definition}{13}{section.3.13}
+\contentsline {chapter}{\numberline {4}Functions of bnlearn}{14}{chapter.4}
+\contentsline {section}{\numberline {4.1}mmpc(data.frame)}{14}{section.4.1}
+\contentsline {section}{\numberline {4.2}mmhc(data.frame)}{14}{section.4.2}
+\contentsline {chapter}{\numberline {5}The max-min-hill-climbing algorithm}{15}{chapter.5}
+\contentsline {section}{\numberline {5.1}max-min-hill-climbing algorithm}{15}{section.5.1}
+\contentsline {subsection}{\numberline {5.1.1}max-min parents and children (MMPC))}{16}{subsection.5.1.1}
+\contentsline {subsubsection}{\numberline {5.1.1.1}The $MaxMinHeuristic$ function}{17}{subsubsection.5.1.1.1}
+\contentsline {subsubsection}{\numberline {5.1.1.2}The $G^{2}$ value}{18}{subsubsection.5.1.1.2}
+\contentsline {subsubsection}{\numberline {5.1.1.3}How $\overline {MMPC}$ works}{18}{subsubsection.5.1.1.3}
+\contentsline {subsection}{\numberline {5.1.2}The BDeu score}{19}{subsection.5.1.2}
+\contentsline {subsubsection}{\numberline {5.1.2.1}Definition (BDeu score)}{19}{subsubsection.5.1.2.1}
+\contentsline {subsubsection}{\numberline {5.1.2.2}Explanation}{19}{subsubsection.5.1.2.2}
+\contentsline {section}{\numberline {5.2}Introduction to an example}{20}{section.5.2}
+\contentsline {subsection}{\numberline {5.2.1}Student data frame}{21}{subsection.5.2.1}
+\contentsline {section}{\numberline {5.3}Computational effort}{21}{section.5.3}
+\contentsline {chapter}{\numberline {6}Beating bnlearn}{24}{chapter.6}
+\contentsline {chapter}{\numberline {7}Conclusion}{27}{chapter.7}
+\contentsline {chapter}{\nonumberline Bibliography}{28}{chapter*.4}
