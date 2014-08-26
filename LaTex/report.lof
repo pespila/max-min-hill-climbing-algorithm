@@ -1,18 +1,26 @@
 \select@language {english}
 \select@language {english}
 \addvspace {10\p@ }
-\addvspace {10\p@ }
-\contentsline {figure}{\numberline {2.1}{\ignorespaces source: \url {http://en.wikipedia.org/wiki/Bayesian\_network\#mediaviewer/File:SimpleBayesNetNodes.svg}}}{7}{figure.2.1}
-\addvspace {10\p@ }
+\contentsline {figure}{\numberline {1.1}{\ignorespaces source: \url {http://en.wikipedia.org/wiki/Bayesian\_network\#mediaviewer/File:SimpleBayesNetNodes.svg}}}{5}{figure.1.1}
 \addvspace {10\p@ }
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {5.1}{\ignorespaces source: The max-min hill-climbing Bayesian network structure learning algorithm, page 14.}}{15}{figure.5.1}
-\contentsline {figure}{\numberline {5.2}{\ignorespaces source: The max-min hill-climbing Bayesian network structure learning algorithm, page 12.}}{16}{figure.5.2}
-\contentsline {figure}{\numberline {5.3}{\ignorespaces source: The max-min hill-climbing Bayesian network structure learning algorithm, page 8.}}{17}{figure.5.3}
-\contentsline {figure}{\numberline {5.4}{\ignorespaces Picture of my first underlying example.}}{21}{figure.5.4}
-\contentsline {figure}{\numberline {5.5}{\ignorespaces Resulting graph after running the algorithm.}}{23}{figure.5.5}
+\contentsline {figure}{\numberline {3.1}{\ignorespaces The graph of the underlying example.}}{14}{figure.3.1}
+\contentsline {figure}{\numberline {3.2}{\ignorespaces First iteration step of the $MMPC$ algorithm.}}{16}{figure.3.2}
+\contentsline {figure}{\numberline {3.3}{\ignorespaces The first variable joined $PC$.}}{17}{figure.3.3}
+\contentsline {figure}{\numberline {3.4}{\ignorespaces The second variable joined $PC$.}}{18}{figure.3.4}
+\contentsline {figure}{\numberline {3.5}{\ignorespaces The third variable joined $PC$.}}{19}{figure.3.5}
+\contentsline {figure}{\numberline {3.6}{\ignorespaces The skeleton of the graph.}}{20}{figure.3.6}
+\contentsline {figure}{\numberline {3.7}{\ignorespaces The empty graph.}}{21}{figure.3.7}
+\contentsline {figure}{\numberline {3.8}{\ignorespaces Add edges.}}{22}{figure.3.8}
+\contentsline {figure}{\numberline {3.9}{\ignorespaces Reverse edges.}}{23}{figure.3.9}
+\contentsline {figure}{\numberline {3.10}{\ignorespaces Delete edges.}}{24}{figure.3.10}
 \addvspace {10\p@ }
-\contentsline {figure}{\numberline {6.1}{\ignorespaces Comparing our implementation with bnlearn for $MMPC$.}}{25}{figure.6.1}
-\contentsline {figure}{\numberline {6.2}{\ignorespaces Comparing our implementation with bnlearn for $MMPC$.}}{26}{figure.6.2}
+\contentsline {figure}{\numberline {4.1}{\ignorespaces source: The max-min hill-climbing Bayesian network structure learning algorithm, page 14.}}{25}{figure.4.1}
+\contentsline {figure}{\numberline {4.2}{\ignorespaces source: The max-min hill-climbing Bayesian network structure learning algorithm, page 12.}}{26}{figure.4.2}
+\contentsline {figure}{\numberline {4.3}{\ignorespaces source: The max-min hill-climbing Bayesian network structure learning algorithm, page 8.}}{27}{figure.4.3}
+\contentsline {figure}{\numberline {4.4}{\ignorespaces Resulting graph after running the algorithm.}}{30}{figure.4.4}
+\addvspace {10\p@ }
+\contentsline {figure}{\numberline {5.1}{\ignorespaces Comparing our implementation with bnlearn for $MMPC$.}}{32}{figure.5.1}
+\contentsline {figure}{\numberline {5.2}{\ignorespaces Comparing our implementation with bnlearn for $MMPC$.}}{33}{figure.5.2}
 \addvspace {10\p@ }
 \addvspace {10\p@ }
