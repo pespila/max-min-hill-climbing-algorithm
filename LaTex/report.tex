@@ -332,7 +332,7 @@ Once we observe the Bayesian network from our data we then can look at the runni
 
 	In this chapter we want to introduce an example first. By this we will explain the concept behind the algorithm. We also used this example for our computations and for comparison with the bnlearn implementation.
 
-	\section{Introduction to an example}
+	\section{Introduction to an example} \label{s.example}
 
 		We built a data set whose underlying structure is taken from \cite{KoFr}. It is a BN with 5 nodes. In this we have that the intelligence (high or low) and difficulty of an exam (difficult or easy) affect the students grade (good, middle, bad). The intelligence also affects the SAT (the european equivalence to this is the PISA test), which can be good or bad. The professor's letter of recommendation can then be good or bad. This depends on the grade. In the following picture also the probabilities of an event are displayed, where the smallest upper case numbers stand for high, good and easy and the higher numbers for low, bad and difficult.
 
@@ -488,15 +488,102 @@ print(bm)
 
 \chapter{A comparison to the bnlearn package}
 
-	Beating the bnlearn was a very challenging and difficult task. It was a PhD thesis project which went over at least one year. We only had three months for this task. But with some tricks and computational knowledge we were able to implement an algorithm which is fast and valid. The question now is, if we beated the bnlearn package and the answer is no. This comes from the fact, that the bnlearn package has a very smooth and kind of constant running time. We guessed that they were precomputing some values and then just look them up. We also tried this method, but it failed. In the end it sounds like we mist our goal, but that is not the case. As we will see our running time is also quite good and developing goes on. We will also release a package for our algorithm, because for less number of observations, i.e. up to 7,500, our $MMPC$ is faster.
+	Beating the bnlearn was a very challenging and difficult task. It was a PhD thesis project which went over at least one year. We only had three months for this task. But with some tricks and computational knowledge we were able to implement an algorithm which is fast and valid. The question now is, if we our version is faster and the answer is no. There are several reason we want to discuss in this section. As we will see our running time is also quite good and developing goes on. For the discussion we consider our example from \autoref{s.example}. First of all we want to compare the running times of the $MMPC$ function. For that we run our implementation and the one of bnlearn with the example having 1,000, 5,000 and 10,000 numbers of observations. For the rest of this section we measure the elapsed time in secondes. The R code looks as follow, where we used the R package "rbenchmark" to be able to run the benchmark function:
 
-	Now, let's take a look at the running times. First of all we took a range of observations from 1,000 up to 20,000 for $MMPC$ and 10,000 for $MMHC$ respectively in steps of 1,000. We then ran our benchmark 10 times, added up the running times and divided by 10 to avoid large peaks in our plots. What you see on the picture is the number of observations against running time in seconds:
+ 	\begin{verbatim}
+MMPC <- function(myDataFrame) {
+    C <- new(MMHC, myDataFrame)
+    C$mmpc()
+}
+
+myDataFrame <- student(1000)
+C <- new(MMHC, myDataFrame)
+
+bm <- benchmark(MMPC(myDataFrame), mmpc(myDataFrame),
+					columns = c("test", "elapsed", "relative"),
+					replications = 1)
+ 	\end{verbatim}
+
+ 	The parameter of the $MMPC$ function is a R data frame. This function allocates our class $C$. The method $mmpc()$ is executed. To have access to the $PC$ set we would ned to type to the console $C\$pc()$. This method returns the $PC$ set. If we compare our implementation with the bnlearn function with 1,000 observations we get:
+	\begin{verbatim}
+               test elapsed relative
+2 mmpc(myDataFrame)   0.018    2.571
+1 MMPC(myDataFrame)   0.007    1.000
+	\end{verbatim}
+
+	If we repeat this for 5,000 observations we have:
+
+	\begin{verbatim}
+               test elapsed relative
+2 mmpc(myDataFrame)   0.029    1.074
+1 MMPC(myDataFrame)   0.027    1.000
+	\end{verbatim}
+
+	and for 10,000 observations:
+
+	\begin{verbatim}
+               test elapsed relative
+2 mmpc(myDataFrame)   0.021    1.000
+1 MMPC(myDataFrame)   0.050    2.381
+	\end{verbatim}
+
+	As we can see, our implementation is much faster for a smaller amount of data. The bigger the data gets, the slower our code runs. The interesting thing is, that the bnlearn package seems to have constant running time. Another thing is that the tests this algorithm uses are not exactly the same as ours. We tried to set the parameters of the function rightly but it did not work with our data (setting test to "x2" and score to "bde"). For other data it did not make big differences. At the end of this chapter we will see one comparison where the setting of the right parameters worked.\\
+	Before we compare the whole function we want to present a plot where we benchmarked both function 20 times in the range of 1,000 to 20,000 numbers of observations.
 
 	\bild{10timePlot}{16cm}{From 1,000 to 7,500 observations our algorithm (red line) is quite fast. Above this number bnlearn one (green line) is much faster.}{Comparing our implementation with bnlearn for $MMPC$.}
 
-	But if you look at the right boundary of the function you discover that our implementation only needs about 0.08 seconds to find the skeleton of a graph out of 100,000 values. But also the running time for the $MMHC$ algorithm is not bad. About 1.4 seconds for the biggest data frame. To beat bnlearn with this is extremely difficult. They only need about 0.1 seconds and this is amazing.
+	It seems that the break even point of those to implementations is at about 7,500 numbers of observations.\\
+
+	You may ask why we do not compare the scoring function, only the $MMPC$ and the complete $MMHC$. The reason why we do this is, that we can not run the scoring explicitely in the bnlearn function - only within our package. But before we compare the running time of the $MMHC$ function we want to present again the R code where $C$ is again a class:
+
+ 	\begin{verbatim}
+MMHC <- function(myDataFrame) {
+    C <- new(MMHC, myDataFrame)
+    C$mmpc()
+    C$mmhc()
+}
+
+myDataFrame <- student(1000)
+C <- new(MMHC, myDataFrame)
+
+bm <- benchmark(MMHC(myDataFrame), mmhc(myDataFrame),
+					columns = c("test", "elapsed", "relative"),
+					replications = 1)
+ 	\end{verbatim}
+
+ 	The running time varies a lot because our loop is terminated if the score did not increase at least 10 times in a row. That means we apply all our operations to the graph quite often even if we already found the best fit with the data. So for the comparison we took the most common outcomes to compare:
+
+ 	\begin{verbatim}
+                test elapsed relative
+2  mmhc(myDataFrame)   0.024    1.000
+1 MMHCs(myDataFrame)   0.038    1.583
+with 1,000 observations
+ 	\end{verbatim}
+
+ 	\begin{verbatim}
+                test elapsed relative
+2  mmhc(myDataFrame)   0.039    1.000
+1 MMHCs(myDataFrame)   0.228    5.846
+with 5,000 observations
+ 	\end{verbatim}
+
+ 	\begin{verbatim}
+                test elapsed relative
+2  mmhc(myDataFrame)   0.068    1.000
+1 MMHCs(myDataFrame)   0.335    4.926
+with 10,000 observations
+ 	\end{verbatim}
+
+ 	Again we see that our algorithm grows as the data grows. For this part we ran both functions 10 times from 1,000 to 10,000 numbers of observations.
 
 	\bild{compareMMHC}{16cm}{Hear you see that our algorithm (red line) grows linearly where as the bnlearn one (green one) is constant.}{Comparing our implementation with bnlearn for $MMPC$.}
+
+	As the running time of our code grows linearly the bnlearn package seems to stay about constant. We could not figure out how and why the bnlearn package as no growth in its running time but with no result.\\
+	But our running time is maximally 1.5 seconds for a huge data frame. This is still a very good outcome. Maybe in the next months we can improve our algorithm more and more.
+
+	% To the end of this chapter we wanted to run one more comparison. The bnlearn package provides some data frame for testing. On of it is called "learning.test". This data frame has 7 variables and the output of both functions should be:
+
+	% \bild{learning.test}{16cm}{The graph of the data frame learning.test where one connection is not directed.}
 
 \chapter{Conclusion}
 
