@@ -80,9 +80,9 @@ The max-min-hill-climbing algorithm is one of the state of the art algorithms in
 
 \bild{BNexample}{8cm}{A simple example of a Bayesian network where Sprinkler \& Rain, Sprinkler \& Grass Wet and Grass Wet \& Rain are conditionally dependent.}{source: \url{http://en.wikipedia.org/wiki/Bayesian\_network\#mediaviewer/File:SimpleBayesNetNodes.svg}}
 
-Reconstructing those networks is not easy, more precisely it is a np-hard problem. It is not only the amount of data which leads to a bad running time, also the dependencies between nodes can slow the code down.\\
+Reconstructing those networks is not easy, more precisely it is a np-hard problem. It is not only the amount of data which leads to a bad running time, also the dependencies between nodes can slow the code down.
 
-Once we observe the Bayesian network from our data we then can look at the running time of the algorithm. But more important for us was to beat the existing algorithm for R (part of the "bnlearn" package). Our aim was to be faster. After an introduction to the mathematical basis and our implementation we will see it it was possible to optimize our code with RCPP to beat the "bnlearn" algorithm.
+Once we used our data to reconstruct a Bayesian network we can take a look at how long the computations lasted. Our aim was to be faster than the existing algorithm for R (part of the "bnlearn" package). We tried to beat their running times and to be more efficient by dealing with the data. After an introduction to the mathematical basis and our implementation we will see if it was possible to optimize our code with RCPP to beat the "bnlearn" algorithm.
 
 \chapter{Background}
 
@@ -111,7 +111,7 @@ Once we observe the Bayesian network from our data we then can look at the runni
 		\begin{equation}
 			P(X , Y|\mat{Z}) = P(X|\mat{Z})P(Y|\mat{Z})
 		\end{equation}
-		for short. If $X, Y$ are dependent given $\mat{Z}$ we denote $Dep_{P}(X; Y|\mat{Z}$.
+		for short. If $X, Y$ are dependent given $\mat{Z}$ we denote $Dep_{P}(X; Y|\mat{Z})$.
 
 	\section*{Definition (Bayesian network)} \label{s.Def2}
 
@@ -192,8 +192,8 @@ Once we observe the Bayesian network from our data we then can look at the runni
 			\end{tikzpicture}
 		\end{center}
 
-		Here $Z$ is a \textit{collider} because it has two incoming edges. In this case if we just look for $P(X;Y|\{\})$, the path between $X$ and $Y$ would be blocked and for this $X$ and $Y$ are \textit{d-seperated}. If we look for $P(X;Y|\mat{Z})$ with collider $\mat{Z}$ and obviously $\mat{z} \in \mat{Z}, \forall \mat{z} \in \mat{Z}$, then this path is not blocked and we state that $X$ and $Y$ are \textit{d-connected}.\\
-		Because of \autoref{s.Theorem3} and the faithfulness assumptions we state for the rest of our report that the terms d-seperation and conditional independence are equivalent. With this we already know that $X$ and $Y$ are conditional dependent given $\mat{Z}$ in the example above. We want to give you two other examples for d-seperation of variables.
+		Here $Z$ is a \textit{collider} because it has two incoming edges. In this case if we just look for $Ind_{P}(X;Y|\{\})$, the path between $X$ and $Y$ would be blocked and for this $X$ and $Y$ are \textit{d-seperated}. If we look for $Ind_{P}(X;Y|\mat{Z})$ with collider $\mat{Z}$ and obviously $\mat{z} \in \mat{Z}, \forall \mat{z} \in \mat{Z}$, then this path is not blocked and we state that $X$ and $Y$ are \textit{d-connected}.\\
+		Because of \autoref{s.Theorem3} and the faithfulness assumptions we state for the rest of our report that the terms d-seperation and conditional independence are equivalent. With this we already know that $X$ and $Y$ are conditional dependent given $\mat{Z}$ in the example above. We want to give you two other examples for d-seperation.
 
 		\begin{center}
 			\begin{tikzpicture}[->,>=stealth',shorten >=2pt,auto,node distance=2cm,
@@ -280,11 +280,13 @@ Once we observe the Bayesian network from our data we then can look at the runni
 				\begin{equation}
 					Ind(X; T | \mat{Z}) \Longleftrightarrow (Assoc(X; T | \mat{Z} = 0).
 				\end{equation}
+				From now we denote $Ind_{P}(X; Y | \mat{Z})$ as $Ind(X; Y | \mat{Z})$.
 		\end{enumerate}
+
+	Because this algorithm is based on conditional independence testing, i.o.w. measuring the strength of association between two variables, we need some formulas for implementation to get this measure. We followed \cite{SGSN} and calculated the $G^{2}$ statistic, under the null hypothesis of the conditional independence holding. For that we have:\\
 
 	\section*{Lemma ($G^{2}$ value)} \label{s.g2}
 
-		Because this algorithm is based on conditional independence testing, i.o.w. measuring the strength of association between two variables, we need some formulas for implementation to get this measure. We followed \cite{SGSN} and calculated the $G^{2}$ statistic, under the null hypothesis of the conditional independence holding. For that we have:\\
 		Let $S_{ijk}^{ab\mat{c}}$ be the number of times in the data where $X_{i} = a$, $X_{j} = b$ and $X_{k} = \mat{c}$. We define in a similar fashion, $S_{ik}^{a\mat{c}}$, $S_{jk}^{b\mat{c}}$  and $S_{k}^{\mat{c}}$, then the $G^{2}$ statistic is defined as (c.f. \cite{SGSN}):
 
 		\begin{equation}
@@ -297,11 +299,11 @@ Once we observe the Bayesian network from our data we then can look at the runni
 			df = (|D(X_{i})| - 1)(|D(X_{j})| - 1) \prod_{X_{l} \in \mat{X}_{\mat{k}}} |D(X_{l})|,
 		\end{equation}
 
-		where $D(X_{i})$ is the domain (number of distinct values) of variable $X_{i}$. After bringing this to code, we can work with the output of this function.
+		where $D(X_{i})$ is the domain (number of distinct values) of variable $X_{i}$.% After bringing this to code, we can work with the output of this function.
 
 	\section*{Remark}
 
-		\autoref{s.g2} is the basis of our calculations. To know whether two variables $X$ and $Y$ given a set $Z$ are conditionally independent we run this statistical test and seek if it is likely that they are independent or not. In the next chapter you get an introduction on how to we realized this. \\
+		\autoref{s.g2} is the basis of our calculations. To know whether two variables $X$ and $Y$ given a set $\mat{Z}$ are conditionally independent we run this statistical test and seek if it is likely that they are independent or not. In the next chapter you get an introduction on how to we realized this. \\
 		To complete this chapter we give you the definition of the Bayesian Dirichlet likelihood-equivalence uniform (BDeu) score. It is also a statistical test which later helps us to set the edges in our graph such that we observe the graph which is most likely to be the right graph depending on the data. For that we quoted verbatim from \cite{Ca06}.
 
 	\section*{The BDeu score} \label{s.BDeu}
@@ -322,7 +324,7 @@ Once we observe the Bayesian network from our data we then can look at the runni
 			\item \textbf{eta}: We set this value to 1 - the most common setting. There is no rule which value is the best and one could find many papers which try to find the "best" eta. If you are interested in that we recommend you \cite{SKM}
 			\item \textbf{n}: The number of variables in our BN.
 			\item $\boldsymbol{r_{i}}$: How many states the $i-th$ variable can take.
-			\item $\boldsymbol{q_{i}}$: The product of all states of the parent's variables of the $i-th$ variable, e.g. if node $X$ has two parents $Y$ and $Z$ $q_{X} = r_{y} \cdot r_{z}$.
+			\item $\boldsymbol{q_{i}}$: The product of all states of the parent's variables of the $i-th$ variable, e.g. if node $X$ has two parents $Y$ and $Z$ then $q_{X} = r_{y} \cdot r_{z}$.
 			\item $\boldsymbol{w_{ij}}$: This is a configuration of the parents of a certain variable, i.e. recall $X$ with parents $Y, Z$ and we assume that the states of $Y, Z$ are binary. Then $w_{ij}$ can have four different configurations: $(0; 0), (0; 1), (1; 0), (1; 1)$.
 			\item $\boldsymbol{N_{ijk}}$: Counts how often a variable $X_{i}$ takes the value $x_{ik}$ and its parents take the configuration $w_{ij}$.
 			\item $\boldsymbol{N_{ij}, N_{ik}}$: Is the calculation of the sums over the depending $N_{ijk}$ values from above.
@@ -336,7 +338,7 @@ Once we observe the Bayesian network from our data we then can look at the runni
 
 		We built a data set whose underlying structure is taken from \cite{KoFr}. It is a BN with 5 nodes. In this we have that the intelligence (high or low) and difficulty of an exam (difficult or easy) affect the students grade (good, middle, bad). The intelligence also affects the SAT (the european equivalence to this is the PISA test), which can be good or bad. The professor's letter of recommendation can then be good or bad. This depends on the grade. In the following picture also the probabilities of an event are displayed, where the smallest upper case numbers stand for high, good and easy and the higher numbers for low, bad and difficult.
 
-		\bild{example}{16cm}{The graph of our example with 5 nodes and some conditional independencies.}{The graph of the underlying example.} \label{img.exampleGraph}
+		\bild{example}{14cm}{The graph of our example with 5 nodes and some conditional independencies.}{The graph of the underlying example.} \label{img.exampleGraph}
 
 		In science you normally do not start with a graph, reconstruct data and then again reconstruct the graph. You start with (random) data and try to find out which dependencies you find within your data. For our purpose this example helped to check if the code we wrote is valid. Because of randomness in the data the output can vary. If we talk about getting the "right" graph, we mean that it looks like our example. By statistical testing there is no right or wrong.
 
@@ -351,7 +353,7 @@ Once we observe the Bayesian network from our data we then can look at the runni
 
 			\bild{1stStep}{16cm}{The first iterations step where "grade" is selected.}{First iteration step of the $MMPC$ algorithm.} \label{img.gradeSelected}
 
-			To find the Parents and children ($PC$) we first test conditional independence of $T$ with all nodes $\mathcal{V} = \mathcal{D} \setminus \{"grade"\}$. Since $PC = \emptyset$ we are seeking for $Ind(T; X | \emptyset)$ for all $X \in \mathcal{V}$.\\
+			To find the Parents and children ($\mat{PC}$) we first test conditional independence of $T$ with all nodes $\mathcal{V} = \mathcal{D} \setminus \{"grade"\}$. Since $\mat{PC} = \emptyset$ we are seeking for $Ind(T; X | \emptyset)$ for all $X \in \mathcal{V}$.\\
 			The procedure of the $MMPC$ algorithm then works as follows:
 
 			\begin{itemize}
@@ -361,25 +363,25 @@ Once we observe the Bayesian network from our data we then can look at the runni
 				\item Test if the $pvalue$ is smaller than a threshold of $0.05$, if yes then keep this $pvalue$, it's corresponding $G^{2}$ and $X$. If it is bigger than $0.05$ then you know that $T$ and $X$ are conditionally independent and $X$ can be crossed out from $\mathcal{V}$, i.e. you don't have to consider this $X$ in your calculations again.
 				\item At the end let the $X$ join the $\mat{PC}$ set which has the smallest $pvalue$.
 				\item If two $pvalues$ are equaled then take the variable $X$ with the higher $G^{2}$.
-				\item If $X$ joined $PC$ then it can be crossed out from $\mathcal{V}$, since you already know that $X$ and $T$ are conditionally dependent.
-				\item Repeat this calculation but now with all subsets of $PC$. Terminate the algorithm when $\mathcal{V} = \emptyset$.
+				\item If $X$ joined $\mat{PC}$ then it can be crossed out from $\mathcal{V}$, since you already know that $X$ and $T$ are conditionally dependent.
+				\item Repeat this calculation but now with all subsets of $\mat{PC}$. Terminate the algorithm when $\mathcal{V} = \emptyset$.
 			\end{itemize}
 
 			\textbf{Remark:} From \autoref{s.Def9} we also know that two independent variables have an association value of zero. Later when we discuss the pseudo code we compute the association value which is nothing but the $G^{2}$ value. \\
 
-			To come back to our example we assume that the strongest association between "grade" was found for "difficulty" and we found out that "grade" and "SAT" are conditionally independent. Then "difficulty" joins the $PC$ set ($PC = \{"difficulty"\}$) and we won't consider "SAT" for the next calculations, i.e. $\mathcal{V} = \{ "intelligence", "letter" \}$.
+			To come back to our example we assume that the strongest association between "grade" was found for "difficulty" and we found out that "grade" and "SAT" are conditionally independent. Then "difficulty" joins the $\mat{PC}$ set ($\mat{PC} = \{"difficulty"\}$) and we won't consider "SAT" for the next calculations, i.e. $\mathcal{V} = \{ "intelligence", "letter" \}$.
 
-			\bild{1stSelected}{16cm}{Here "difficulty" joined $PC$ and is a parent or a children of "grade".}{The first variable joined $PC$.} \label{img.firstSelected}
+			\bild{1stSelected}{16cm}{Here "difficulty" joined $\mat{PC}$ and is a parent or a children of "grade".}{The first variable joined $\mat{PC}$.} \label{img.firstSelected}
 
 			By testing $Ind("grade"; "intelligence" | "difficulty")$ and $Ind("grade"; "letter" | "difficulty")$ we assume that the stronger association lies between "grade" and "intelligence". Since there is an association between "grade" and "letter", too, i.e. they are not conditionally independent, we have: $\mathcal{V} = \{"letter"\}$ and $PC = \{"difficulty", "intelligence"\}$.
 
-			\bild{2ndSelected}{16cm}{Here "intelligence" joined $PC$ and is a parent or a children of "grade".}{The second variable joined $PC$.} \label{img.secondSelected}
+			\bild{2ndSelected}{16cm}{Here "intelligence" joined $\mat{PC}$ and is a parent or a children of "grade".}{The second variable joined $\mat{PC}$.} \label{img.secondSelected}
 
-			Now we have to calculate the association given all subsets of $PC$, i.e. We test $Ind(T; X | Z) \forall X \in \mathcal{V}, Z \in PC^{2}$. Some of those calculations in the power set of $PC$ are done before (e.g. $Ind("grade"; "letter" | "difficulty")$ c.f. above), so we just saved the corresponding values and used it again. But since the $PC$ grows you have do more and more calculations. We now assume that "letter" also joined our set and we terminate the algorithm. Now we have all possible parents and children of "grade", which we already knew.
+			Now we have to calculate the association given all subsets of $\mat{PC}$, i.e. We test $Ind(T; X | Z), \forall X \in \mathcal{V}, Z \in \mat{PC}^{2}$ where $\mat{PC}^{2}$ is the power set of $\mat{PC}$. The bigger $\mat{PC}$ gets, the more calculations we have to do. Some of those calculations in the power set of $\mat{PC}$ are done before (e.g. $Ind("grade"; "letter" | "difficulty")$ c.f. above), so we just saved the corresponding values and used it again. We now assume that "letter" also joined our set and we terminate the algorithm. Now we have all possible parents and children of "grade", which we already knew.
 
-			\bild{3rdSelected}{16cm}{Here "letter" joined $PC$ and is a parent or a children of "grade".}{The third variable joined $PC$.} \label{img.thirdSelected}
+			\bild{3rdSelected}{16cm}{Here "letter" joined $\mat{PC}$ and is a parent or a children of "grade".}{The third variable joined $\mat{PC}$.} \label{img.thirdSelected}
 
-			It may happen that there are false positive variables in the $PC$ set. For this reason we have to check if the parents/children in the set really belong to our selected variable $\mat{T}$. The relation between $\mat{T}$ and its parents/children is symmetric. That means for a target $\mat{T}$ and $\mat{A} \in \mat{PC}_{T}$ it follows:
+			It may happen that there are false positive variables in the $\mat{PC}$ set. For this reason we have to check if the parents/children in the set really belong to our selected variable $\mat{T}$. The relation between $\mat{T}$ and its parents/children is symmetric. That means for a target $\mat{T}$ and $\mat{A} \in \mat{PC}_{T}$ it follows:
 
 			\begin{equation}
 				\mat{T} \longleftrightarrow \mat{A} \Longleftrightarrow \mat{A} \longleftrightarrow \mat{T} \label{eq.symmetric}
@@ -401,23 +403,23 @@ Once we observe the Bayesian network from our data we then can look at the runni
 				\item Calculate the $BDeu$ score of the current graph. In the first iteration score the empty graph, i.e. the graph without any edges.
 				\item Add an edge randomly between two conditional dependent nodes $X$ and $Y$. From $MMPC$ we already know those variables which are conditionally dependent.
 				\item Calculate the $BDeu$ score with the new set edge.
-				\item If the score is higher than before the edge stays, else the edge is removed. This is the greedy search part. We are seeking for an local optimum.
+				\item If the score is higher than before, the edge stays, else the edge is removed. This is the greedy search part. We are seeking for an local optimum.
 				\item Do this as long as the score stays in its (possible) maximum for at least 10 times in a row.
 				\item Also apply reversing edges and deleting edges to the possible operations on the graph during one iteration step.
 			\end{itemize}
 
-			The following four pictures show what happens during computations:
+			% The following four pictures show what happens during computations:
 
-			\bild{empty}{16cm}{Starting with the empty graph.}{The empty graph.} \label{img.empty}
+			\bild{empty}{12cm}{Starting with the empty graph.}{The empty graph.} \label{img.empty}
 
-			After scoring the empty graph edges where applied to our graph.
-			\bild{add}{16cm}{Adding edges between nodes.}{Add edges.} \label{img.add}
+			% After scoring the empty graph edges where applied to our graph.
+			\bild{add}{12cm}{Adding edges between nodes.}{Add edges.} \label{img.add}
 
-			At a certain point one edge was reversed. We assume that this reversion does not hold, because after scoring it turned out that the score didn't increase.
-			\bild{reverse}{16cm}{Reverse an edge.}{Reverse edges.} \label{img.reverse}
+			% At a certain point one edge was reversed. We assume that this reversion does not hold, because after scoring it turned out that the score didn't increase.
+			\bild{reverse}{12cm}{Reverse an edge.}{Reverse edges.} \label{img.reverse}
 
-			With the back reversed edge we tried to delete one edge. As it would turn out, this edge would be set again.
-			\bild{delete}{16cm}{Delete an edge.}{Delete edges.} \label{img.delete}
+			% With the back reversed edge we tried to delete one edge. As it would turn out, this edge would be set again.
+			\bild{delete}{12cm}{Reversed and deleted edge.}{Delete edges.} \label{img.delete}
 			
 
 \chapter{The max-min-hill-climbing algorithm}
@@ -430,7 +432,7 @@ Once we observe the Bayesian network from our data we then can look at the runni
 
 		\section{max-min parents and children (MMPC))}
 
-			The max-min parents and children (MMPC) is the algorithm which reconstructs the graph skeleton from data. To bring you the concept of this closer, let us first present the pseudo code of it:
+			The max-min parents and children (MMPC) is the algorithm which reconstructs the graph skeleton from data.% To bring you the concept of this closer, let us first present the pseudo code of it:
 
 			\bild{MaxMinHillClimb-003}{18cm}{The pseudo code of the MMPC function. First the $\mat{CPC}$ set is computed by the $\overline{MMPC}$ function. Afterwards the false positives are erased.}{source: The max-min hill-climbing Bayesian network structure learning algorithm, page 12.} \label{img.mmpc}
 
@@ -442,19 +444,19 @@ Once we observe the Bayesian network from our data we then can look at the runni
 
 			\subsection{The $MaxMinHeuristic$ function}
 
-				This function finds the $X$ which maximizes the measure of association between $X$ and $T$ given the current $\mat{CPC}$ set. The current $\mat{CPC}$ set is therefor passed into the function. The return of the function is the $X$ and the value of association between $X$ and $T$ given $\mat{CPC}$. At this point, we left one important question: How do we measure this association.
+				This function finds the $X$ which maximizes the measure of association between $X$ and $T$ given the current $\mat{CPC}$ set. The current $\mat{CPC}$ set is therefor passed into the function. The return of the function is the $X$ and the value of association between $X$ and $T$ given $\mat{CPC}$. This is done via the $G^{2}$ statistic as mentioned before.
 
 		\section{The scoring function}
 
-			The scoring works as we stated earlier in this report. The important thing here is that we only add an edge from $X$ to $Y$ iff $Y$ is a member of the parents/children set of $X$. In the case of scoring most interesting part was $eta$. There is no "perfect" value one could take. There is a lot of research done to find the optimal $eta$ for an algorithm. In our case there are two possibilities: we could set $eta = 1$ or we could calculate it with $eta = \frac{1}{N} \sum_{i = 1}^{N} |X_{i}|$ where $N$ is the number of variables and $|X_{i}|$ is the cardinality of the variable $X_{i}$. In our tests it did not affect the results or the running time. For that reason we decided to set it to one.
+			The scoring works as we stated earlier in this report. The important thing here is that we only add an edge from $X$ to $Y$ iff $Y$ is a member of the parents/children set of $X$. In the case of scoring the most interesting variable is the $eta$. There is no "perfect" value one could take. There is a lot of research done to find the optimal $eta$ for an algorithm. In our case there are two possibilities: we could set $eta = 1$ or we could calculate it with $eta = \frac{1}{N} \sum_{i = 1}^{N} |X_{i}|$ where $N$ is the number of variables and $|X_{i}|$ is the cardinality of the variable $X_{i}$. In our tests it did not affect the results or the running time. For that reason we decided to set it to one.
 			
 
 	\section{Computational optimization}
 
-		We decided to write our algorithm object oriented. To save running time we instantiate our class. The constructor of the class will do some precomputations like getting the cardinality of the variables. Since the class holds all information the algorithm needs, we have our information in every method of our class available. This has the effect that we do not pass the objects (vectors, lists, etc.) from function to function. We work with the right in our class.\\
+		We decided to write our algorithm object oriented. To save running time we instantiate our class. The constructor of the class will do some precomputations like getting the cardinality of the variables. Since the class holds all information the algorithm needs, we have our information in every method of our class available. This has the effect that we do not pass the objects (vectors, lists, etc.) from function to function. We work with them right in our class.\\
 		Another thing we needed to know was that the underlying data matrix is stored differently in R and C++. R saves a matrix firstly by column and then by row, i.e. you have a pointer to a column which holds the pointer to the row. In C++ it is vice versa. We just had to skip the normal way of iterating over matrices in C++.\\
-		To compute the $G^{2}$ you need to count the $S^{ab\textbf{c}}_{ijk}$, etc. values. For this we implemented a powerful application, hash tables. At first side we tried to use the unordered\_map of C++. This is a hash table within you can look up your elements in constant time. We precomputed all possible combinations of our variables, i.e. we tested $Ind(X;Y | \mat{Z})$ for all possible $X$, $Y$ and sets $\mat{Z}$. Our idea was that we only need to look up the values we need in our methods. Of course, this did not improve running time since you had to compute all permutations. With 5 variables and all possible $X, Y, \mat{Z}$ you have $2! + 3! + 4! + 5! = 152$ calculations.\\
-		We then decided to use n-dimensional arrays hash tables where we convert the values of a variable into integer from $1,...n$ where $n = |X|$ are the possible states of one variable. We then use those integer values as indices for our arrays and increment the value of the array everytime it is accessed. Afterwards we just needed to iterate over it again an use the values in the arrays for our calculations. The biggest array we allocate is 5-dimensional. For small problems with less nodes in the graph and less dependencies within those nodes this code runs extremely fast. For bigger problems there also exists an implementation to compute the $G^{2}$ value, but it is quite slow and we try to avoid using it. The difficulty behind our arrays is that we use pointer arrays - otherwise we could not allocate 5-dimensional arrays. Here we needed to be careful to free the memory after usage.\\
+		To compute the $G^{2}$ you need to count the $S^{ab\textbf{c}}_{ijk}$, etc. values. For this we implemented a powerful application: hash tables. At first side we tried to use the unordered\_map of C++. This is a hash table within you can look up your elements in constant time. We precomputed all possible combinations of our variables, i.e. we tested $Ind(X;Y | \mat{Z})$ for all possible $X$, $Y$ and sets $\mat{Z}$. Our idea was that we only need to look up the values we need in our methods. Of course, this did not improve running time since you had to compute all permutations. With 5 variables and all possible $X, Y, \mat{Z}$ you have $2! + 3! + 4! + 5! = 152$ calculations.\\
+		We then decided to use n-dimensional arrays hash tables where we convert the values of a variable into integer from $1,...n$ where $n = |X|$ are the possible states of one variable. We then used those integer values as indices for our arrays and increment the value of the array everytime it is accessed. Afterwards we just needed to iterate over the array again an use the values in the arrays for our calculations. The biggest array we allocate is 5-dimensional. For small problems with less nodes in the graph and less dependencies within those nodes this code runs extremely fast. For bigger problems there also exists an implementation to compute the $G^{2}$ value, but it is quite slow and we try to avoid using it. The difficulty behind our arrays is that we use pointer arrays - otherwise we could not allocate 5-dimensional arrays. Here we needed to be careful to free the memory after usage.\\
 		To present the validity of our code we recall the example from the previous section. For this example we computed 10,000 observations, i.e. we have a R data frame $df \in \mathbb{N}^{10000 \times 5}$, where all nodes have binary values $1, 2$ except the node holding the grade. This has three states: $1, 2, 3$. The time our algorithm needs to compute the skeleton of the graph, i.e. using the $MMPC$ function, is as follows:
 
 		\begin{verbatim}
@@ -462,11 +464,12 @@ df <- student(10000)
 bm <- benchmark(C$mmpc(),
                 columns = c("test", "elapsed", "relative"),
                 replications = 1)
+
              test elapsed relative
 1        C$mmpc()   0.043    1.000
 		\end{verbatim}
 		
-		where the elapsed time is measured in seconds. We see that our implementation is extremely fast, even for a high number of observations. In the next chapter we will see if this time is good enough to be faster than the bnlearn function.\\
+		where the elapsed time is measured in seconds. We see that our implementation with only $0.043$ seconds running time is extremely fast, even for a high number of observations. In the next chapter we will see if this time is good enough to be faster than the bnlearn function.\\
 		By looking at the whole algorithm we have the following running time:
 
 		\begin{verbatim}
@@ -474,21 +477,19 @@ df <- student(10000)
 bm <- benchmark(C$mmhc()
                 columns = c("test", "elapsed", "relative"),
                 replications = 1)
--27812.9 # score returned by BDeu(...)
--27812.9 # score returned by C$mmpc()
-print(bm)
+
                           test elapsed relative
-1                     C$mmhc()       1.000
+1                     C$mmhc()   0.371   1.000
 		\end{verbatim}
 
 		again with the elapsed time in seconds. As we see the most time we loos was in the $BDeu$ scoring. At the end of this work we did not find a way to make this function faster. If you are interested in the progress we recommend you to follow our Github account, stated at the end of this report.\\
-		The "proof" of the validity now follows from the plot we present. Here you can see that it looks like the one we started with. To plot our results we used the "igraph" package in R.
+		The "proof" of the validity now follows from the plot we present. Here you can see that the graph looks like the one we started with. To plot our results we used the "igraph" package in R.
 
 		\bild{graph}{16cm}{The graph returned looks like the one we started with.}{Resulting graph after running the algorithm.} \label{img.resultingGraph}
 
 \chapter{A comparison to the bnlearn package}
 
-	Beating the bnlearn was a very challenging and difficult task. It was a PhD thesis project which went over at least one year. We only had three months for this task. But with some tricks and computational knowledge we were able to implement an algorithm which is fast and valid. The question now is, if we our version is faster and the answer is no. There are several reason we want to discuss in this section. As we will see our running time is also quite good and developing goes on. For the discussion we consider our example from \autoref{s.example}. First of all we want to compare the running times of the $MMPC$ function. For that we run our implementation and the one of bnlearn with the example having 1,000, 5,000 and 10,000 numbers of observations. For the rest of this section we measure the elapsed time in secondes. The R code looks as follow, where we used the R package "rbenchmark" to be able to run the benchmark function:
+	Beating the bnlearn was a very challenging and difficult task. It was a PhD thesis project which went over at least one year. We only had three months for this task. But with some tricks and computational knowledge we were able to implement an algorithm which is fast and valid. The question now is, if our version is faster and the answer is no. As we will see our running time is also quite good and developing goes on. For the discussion we consider our example from \autoref{s.example}. First of all we want to compare the running times of the $MMPC$ function. For that we run our implementation and the one of bnlearn with the example having 1,000, 5,000 and 10,000 numbers of observations. For the rest of this section we measure the elapsed time in secondes. The R code looks as follow, where we used the R package "rbenchmark" to be able to run the benchmark function:
 
  	\begin{verbatim}
 MMPC <- function(myDataFrame) {
@@ -500,11 +501,11 @@ myDataFrame <- student(1000)
 C <- new(MMHC, myDataFrame)
 
 bm <- benchmark(MMPC(myDataFrame), mmpc(myDataFrame),
-					columns = c("test", "elapsed", "relative"),
-					replications = 1)
+                    columns = c("test", "elapsed", "relative"),
+                    replications = 1)
  	\end{verbatim}
 
- 	The parameter of the $MMPC$ function is a R data frame. This function allocates our class $C$. The method $mmpc()$ is executed. To have access to the $PC$ set we would ned to type to the console $C\$pc()$. This method returns the $PC$ set. If we compare our implementation with the bnlearn function with 1,000 observations we get:
+ 	The parameter of the $MMPC$ function is a R data frame. This function allocates our class $C$. The method $mmpc()$ is executed. To have access to the $\mat{PC}$ set we would ned to type to the console $C\$pc()$. This method returns the $\mat{PC}$ set. If we compare our implementation with the bnlearn function with 1,000 observations we get:
 	\begin{verbatim}
                test elapsed relative
 2 mmpc(myDataFrame)   0.018    2.571
@@ -527,14 +528,14 @@ bm <- benchmark(MMPC(myDataFrame), mmpc(myDataFrame),
 1 MMPC(myDataFrame)   0.050    2.381
 	\end{verbatim}
 
-	As we can see, our implementation is much faster for a smaller amount of data. The bigger the data gets, the slower our code runs. The interesting thing is, that the bnlearn package seems to have constant running time. Another thing is that the tests this algorithm uses are not exactly the same as ours. We tried to set the parameters of the function rightly but it did not work with our data (setting test to "x2" and score to "bde"). For other data it did not make big differences. At the end of this chapter we will see one comparison where the setting of the right parameters worked.\\
+	As we can see, our implementation is much faster for a smaller amount of data. The bigger the data gets, the slower our code runs. The interesting thing is, that the bnlearn package seems to have constant running time. Another thing is that the tests this algorithm uses are not exactly the same as ours. We tried to set the parameters of the function rightly but it did not work with our data (setting test to "x2" and score to "bde"). For other data changing those parameters did not make big differences.\\% At the end of this chapter we will see one comparison where the setting of the right parameters worked.\\
 	Before we compare the whole function we want to present a plot where we benchmarked both function 20 times in the range of 1,000 to 20,000 numbers of observations.
 
 	\bild{10timePlot}{16cm}{From 1,000 to 7,500 observations our algorithm (red line) is quite fast. Above this number bnlearn one (green line) is much faster.}{Comparing our implementation with bnlearn for $MMPC$.}
 
 	It seems that the break even point of those to implementations is at about 7,500 numbers of observations.\\
 
-	You may ask why we do not compare the scoring function, only the $MMPC$ and the complete $MMHC$. The reason why we do this is, that we can not run the scoring explicitely in the bnlearn function - only within our package. But before we compare the running time of the $MMHC$ function we want to present again the R code where $C$ is again a class:
+	You may ask why we do not compare the scoring function, only the $MMPC$ and the complete $MMHC$. The reason is, that we can not run the scoring explicitely in the bnlearn function - only within our package. But before we compare the running time of the $MMHC$ function we want to present again the R code where $C$ is again a class:
 
  	\begin{verbatim}
 MMHC <- function(myDataFrame) {
@@ -547,8 +548,8 @@ myDataFrame <- student(1000)
 C <- new(MMHC, myDataFrame)
 
 bm <- benchmark(MMHC(myDataFrame), mmhc(myDataFrame),
-					columns = c("test", "elapsed", "relative"),
-					replications = 1)
+                    columns = c("test", "elapsed", "relative"),
+                    replications = 1)
  	\end{verbatim}
 
  	The running time varies a lot because our loop is terminated if the score did not increase at least 10 times in a row. That means we apply all our operations to the graph quite often even if we already found the best fit with the data. So for the comparison we took the most common outcomes to compare:
@@ -578,7 +579,7 @@ with 10,000 observations
 
 	\bild{compareMMHC}{16cm}{Hear you see that our algorithm (red line) grows linearly where as the bnlearn one (green one) is constant.}{Comparing our implementation with bnlearn for $MMPC$.}
 
-	As the running time of our code grows linearly the bnlearn package seems to stay about constant. We could not figure out how and why the bnlearn package as no growth in its running time but with no result.\\
+	As the running time of our code grows linearly the bnlearn package seems to stay about constant. We could not figure out how and why the bnlearn package has no growth in its running time.\\
 	But our running time is maximally 1.5 seconds for a huge data frame. This is still a very good outcome. Maybe in the next months we can improve our algorithm more and more.
 
 	% To the end of this chapter we wanted to run one more comparison. The bnlearn package provides some data frame for testing. On of it is called "learning.test". This data frame has 7 variables and the output of both functions should be:
@@ -616,7 +617,7 @@ Luis M. de Campos,\\
 A Scoring Function for Learning Bayesian Networks based on Mutual
 Information and Conditional Independence Tests,\\
 Journal of Machine Learning Research 7, 2006
-\bibitem{SKM}[SKM]
+\bibitem[SKM]{SKM}
 On Sensitivity of the MAP Bayesian Network Structure to the Equivalent Sample Size Parameter,\\
 Tomi Silander and Petri Kontkanen and Petri Myllymäki,\\
 UAI, 2007
