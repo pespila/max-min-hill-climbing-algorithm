@@ -13,35 +13,13 @@ install.packages("mmhc...")
 
 Here is the example from the man pages of the package:
 
-Call the function
--------------------------------
-data <- student(1000) # as above
-mmhc(data) # gives you the plot of the graph (no return value)
-
-Manuell workflow:
--------------------------------
-With this you are able to reconstruct the graph step by step
-library(Rcpp) # load Rcpp package
-library(igraph) # load igraph package
-data <- student(1000) # initalize the underlying example with 1000 observations
-C <- new(MMHC, data) # initalize the class object
-C$mmpc() # first reconstruct the skeleton (max-min parents and children algorithm)
-C$pc() # returns the PC set. It is a list where the n-th list element stands for the n-th node in your graph. The elements of one node are the parents/children of the node.
-C$mmhc() # set the edges (BDeu score)
-C$adjMat() # returns the adjacency matrix
-C$score() # returns the score of the graph
-plotObj <- graph.adjacency(C$adjMat()) # makes a plotable object with the igraph package
-plot(plotObj) # plots the object
-
-
-    
-    R functions\tab ----------------------\cr
+## Basic R functions
     
     student(int x) \tab returns a data frame with x observations; one of the two self made examples\cr
     rainy(int x) \tab returns a data frame with x observations; one of the two self made examples\cr
     mmhc(data.frame x) \tab input: the observed data x (a data frame); calculates everything and makes a plot\cr
     
-    C++ methods \tab ----------------------\cr
+## Basic C++ methods
     
     C <- new(MMHC, data.frame) \tab initalizes the mmhc class\cr
     C$mmpc() \tab executes the MMPC algorithm\cr
@@ -51,14 +29,16 @@ plot(plotObj) # plots the object
     C$score() \tab this C++-methods returns the score of the reconstructed graph\cr
     C$mat() \tab this C++-methods returns the data frame converted into an integer matrix\cr
 
-\examples{
-    ## Call the function
-    
+How to use the algorithm
+-------------------------------
+
     data <- student(1000) # as above
     mmhc(data) # gives you the plot of the graph (no return value)
     
-    
-    ## Manuel Workflow: With this you are able to reconstruct the graph step by step
+Manuel Workflow
+-------------------------------
+
+## Producing the data step by step
     
     library(Rcpp) # load Rcpp package
     library(igraph) # load igraph package
@@ -71,4 +51,3 @@ plot(plotObj) # plots the object
     C$score() # returns the score of the graph
     plotObj <- graph.adjacency(C$adjMat()) # makes a plotable object with the igraph package
     plot(plotObj) # plots the object
-}
