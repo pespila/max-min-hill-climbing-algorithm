@@ -40,7 +40,7 @@ Manuel Workflow
 
 ### Producing the data step by step
     
-    *library(Rcpp)* # load Rcpp package
+    _library(Rcpp)_ # load Rcpp package
     *library(igraph)* # load igraph package
     *data <- student(1000)* # initalize the underlying example with 1000 observations
     *C <- new(MMHC, data)* # initalize the class object
