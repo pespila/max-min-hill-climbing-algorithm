@@ -38,7 +38,7 @@ How to use the algorithm
 Manuel Workflow
 -------------------------------
 
-## Producing the data step by step
+### Producing the data step by step
     
     library(Rcpp) # load Rcpp package
     library(igraph) # load igraph package
