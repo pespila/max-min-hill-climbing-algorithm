@@ -78,7 +78,6 @@ mmhc(data) # gives you the plot of the graph (no return value)
     bnlearn-package
 }
 \examples{
-    %%
     ## Call the function
     
     data <- student(1000) # as above
