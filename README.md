@@ -15,25 +15,25 @@ Here is the example from the man pages of the package:
 
 ## Basic R functions
     
-    **student(int x)**   *returns a data frame with x observations; one of the two self made examples*
-    **rainy(int x)**   *returns a data frame with x observations; one of the two self made examples*
-    **mmhc(data.frame x)**   *input: the observed data x (a data frame); calculates everything and makes a plot*
++ **student(int x)**   *returns a data frame with x observations; one of the two self made examples*
++ **rainy(int x)**   *returns a data frame with x observations; one of the two self made examples*
++ **mmhc(data.frame x)**   *input: the observed data x (a data frame); calculates everything and makes a plot*
     
 ## Basic C++ methods
     
-    **C <- new(MMHC, data.frame)**   *initalizes the mmhc class*
-    **C$mmpc()**   *executes the MMPC algorithm*
-    **C$mmhc()**   *executes the MMHC algorithm*
-    **C$pc()**   *this C++-methods returns the PC set*
-    **C$adjMat()**   *this C++-methods returns the adjacency matrix*
-    **C$score()**   *this C++-methods returns the score of the reconstructed graph*
-    **C$mat()**   *this C++-methods returns the data frame converted into an integer matrix*
++ **C <- new(MMHC, data.frame)**   *initalizes the mmhc class*
++ **C$mmpc()**   *executes the MMPC algorithm*
++ **C$mmhc()**   *executes the MMHC algorithm*
++ **C$pc()**   *this C++-methods returns the PC set*
++ **C$adjMat()**   *this C++-methods returns the adjacency matrix*
++ **C$score()**   *this C++-methods returns the score of the reconstructed graph*
++ **C$mat()**   *this C++-methods returns the data frame converted into an integer matrix*
 
 How to use the algorithm
 -------------------------------
 
-    **data<- student(1000)** *# as above*
-    **mmhc(data)** *# gives you the plot of the graph (no return value)*
++ **data<- student(1000)** *# as above*
++ **mmhc(data)** *# gives you the plot of the graph (no return value)*
     
 Manuel Workflow
 -------------------------------
