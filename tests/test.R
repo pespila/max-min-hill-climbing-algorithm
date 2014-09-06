@@ -19,3 +19,7 @@ B$score()
 C$mmpc()
 C$mmhc()
 C$score()
+
+mmhc(data1)
+mmhc(data2)
+mmhc(data3)
