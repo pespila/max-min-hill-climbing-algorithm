@@ -1,5 +1,5 @@
 student <- function(rows) { # returns an example data frame with rows numbers of observations
-    rows <- 5
+    cols <- 5
     binary <- c(1, 2)
     trinary <- c(1, 2, 3)
     dimnames <- list(c(), c("difficulty", "intelligence", "SAT", "grade", "letter"))#, "prop"))

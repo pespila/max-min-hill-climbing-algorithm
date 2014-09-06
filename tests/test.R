@@ -1,0 +1,21 @@
+library(Rcpp)
+library(igraph)
+library(mmhc)
+
+data1 <- student(1000)
+data2 <- student(5000)
+data3 <- rainy(5000)
+
+A <- new(MMHC, data1)
+B <- new(MMHC, data2)
+C <- new(MMHC, data3)
+
+A$mmpc()
+A$mmhc()
+A$score()
+B$mmpc()
+B$mmhc()
+B$score()
+C$mmpc()
+C$mmhc()
+C$score()
