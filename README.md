@@ -3,8 +3,7 @@ max-min-hill-climbing-algorithm
 
 This algorithm reconstructs Bayesian Networks from observational data. Therefor it first builds the skeleton of the DAG (directed acyclic graph) with the max-min parents and children (mmpc) algorithm. Afterwards it directs the edges between the vertices with the Bayesian Dirichlet likelihood-equivalence uniform score. For more information on that read the report appended or "The max-min hill-climbing Bayesian network structure learning algorithm", by Ioannis Tsamardinos, Laura E. Brown & Constantin F. Aliferis.
 
-===============================
-INSTALL
+## INSTALL
 ===============================
 Before you can use this package, be sure you have the latest R version (>=3.0), "RCPP" version (>=0.11.1) and the "igraph" package installed.
 
@@ -13,7 +12,8 @@ install.packages("mmhc...")
 
 Here is the example from the man pages of the package:
 
-## Manuel Workflow: With this you are able to reconstruct the graph step by step
+## Manuel Workflow:
+With this you are able to reconstruct the graph step by step
 library(Rcpp) # load Rcpp package
 library(igraph) # load igraph package
 data <- student(1000) # initalize the underlying example with 1000 observations
