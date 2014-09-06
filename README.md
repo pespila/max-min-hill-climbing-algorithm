@@ -40,14 +40,14 @@ Manuel Workflow
 
 ### Producing the data step by step
     
-*library(Rcpp)* # load Rcpp package
-*library(igraph)* # load igraph package
-*data <- student(1000)* # initalize the underlying example with 1000 observations
-*C <- new(MMHC, data)* # initalize the class object
-*C$mmpc()* # first reconstruct the skeleton (max-min parents and children algorithm)
-*C$pc()* # returns the PC set. It is a list where the n-th list element stands for the n-th node in your graph. The elements of one node are the parents/children of the node.
-*C$mmhc()* # set the edges (BDeu score)
-*C$adjMat()* # returns the adjacency matrix
-*C$score()* # returns the score of the graph
-*plotObj <- graph.adjacency(C$adjMat())* # makes a plotable object with the igraph package
-    *plot(plotObj)* # plots the object
++ *library(Rcpp)* # load Rcpp package
++ *library(igraph)* # load igraph package
++ *data <- student(1000)* # initalize the underlying example with 1000 observations
++ *C <- new(MMHC, data)* # initalize the class object
++ *C$mmpc()* # first reconstruct the skeleton (max-min parents and children algorithm)
++ *C$pc()* # returns the PC set. It is a list where the n-th list element stands for the n-th node in your graph. The elements of one node are the parents/children of the node.
++ *C$mmhc()* # set the edges (BDeu score)
++ *C$adjMat()* # returns the adjacency matrix
++ *C$score()* # returns the score of the graph
++ *plotObj <- graph.adjacency(C$adjMat())* # makes a plotable object with the igraph package
++ *plot(plotObj)* # plots the object
