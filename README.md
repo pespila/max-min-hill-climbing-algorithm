@@ -7,7 +7,7 @@ INSTALL
 -------------------------------
 Before you can use this package, be sure you have the **latest R** version (>=3.0), **RCPP** version (>=0.11.1) and the **igraph** package installed.
 
-Download the R source file and install it into your R environment with:
+Download the R source file (**mmhc_1.0.tar.gz**), open R (with in console, RStudio, etc.), navigate to your downloaded file (**setwd(...)**) and install it into your R environment with:
 
 **install.packages("mmhc_1.0.tar.gz")**
 
