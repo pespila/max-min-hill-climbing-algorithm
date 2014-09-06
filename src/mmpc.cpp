@@ -1,8 +1,8 @@
 #include "mmhc.h"
 
-MMHC::MMHC() {}
+MMHC::MMHC() {} // default constructor
 
-MMHC::MMHC(SEXP x) {
+MMHC::MMHC(SEXP x) { // my constructor sets all the important variables which are needed
     DataFrame B(x);
 	this->vDim = B.nrows();
 	this->hDim = B.length();
@@ -29,9 +29,9 @@ MMHC::MMHC(SEXP x) {
     this->D4 = this->FourD(this->maxi, this->maxi, this->maxi, this->maxi);
     this->D44 = this->FourD(this->maxi, this->maxi, this->maxi, this->maxi);
     this->D5 = this->FiveD(this->maxi, this->maxi, this->maxi, this->maxi, this->maxi);
-}
+} // end constructor
 
-MMHC::~MMHC() {
+MMHC::~MMHC() { // my destructor: frees all the allocated integer arrays
     this->maxi = max(this->cardinality);
     for (int i = 0; i < this->maxi; i++)
     {
@@ -102,8 +102,9 @@ MMHC::~MMHC() {
 	free(D22);
 	free(D1);
 	free(D11);
-}
+} // end destructor
 
+// template which takes an arbitrary R vector and returns the cardinality of the vector
 template <typename T, int RTYPE> int MMHC::colCardinality(const Vector<RTYPE>& x, unordered_map<T, int>& y) {
 	int m = x.size();
 	y.clear();
@@ -113,6 +114,7 @@ template <typename T, int RTYPE> int MMHC::colCardinality(const Vector<RTYPE>& x
 	return y.size();
 }
 
+// the main execution of calculating the cardinality
 void MMHC::Cardinality() {
 	IntegerVector x;
 	unordered_map<int, int> y;
@@ -122,6 +124,7 @@ void MMHC::Cardinality() {
 	}
 }
 
+// my hash function to fastly generate integer hash values
 int MMHC::Hash(IntegerVector& array, int i, bool skip) {
 	int out = 0;
 	for (i; i < array.size(); i++) {
@@ -133,6 +136,7 @@ int MMHC::Hash(IntegerVector& array, int i, bool skip) {
 	return out;
 }
 
+// makes an one dimensional pointer array
 double *MMHC::OneD(double x) {
 	double *matrix = (double*)calloc(x, sizeof(double));
 	for (int i = 0; i < x; i++)
@@ -140,6 +144,7 @@ double *MMHC::OneD(double x) {
 	return matrix;
 }
 
+// makes an two dimensional pointer array
 double **MMHC::TwoD(double x, double y) {
 	double **matrix = (double**)calloc(x, sizeof(double*));
 	for (int i = 0; i < x; i++)	{
@@ -150,6 +155,7 @@ double **MMHC::TwoD(double x, double y) {
 	return matrix;
 }
 
+// makes an three dimensional pointer array
 double ***MMHC::ThreeD(double x, double y, double z) {
 	double ***matrix = (double***)calloc(x, sizeof(double*));
 	for (int i = 0; i < x; i++)	{
@@ -163,6 +169,7 @@ double ***MMHC::ThreeD(double x, double y, double z) {
 	return matrix;
 }
 
+// makes an four dimensional pointer array
 double ****MMHC::FourD(double x, double y, double z, double a) {
 	double ****matrix = (double****)calloc(x, sizeof(double*));
 	for (int i = 0; i < x; i++)	{
@@ -179,6 +186,7 @@ double ****MMHC::FourD(double x, double y, double z, double a) {
 	return matrix;
 }
 
+// makes an five dimensional pointer array
 double *****MMHC::FiveD(double x, double y, double z, double a, double b) {
 	double *****matrix = (double*****)calloc(x, sizeof(double*));
 	for (int i = 0; i < x; i++)	{
@@ -198,14 +206,14 @@ double *****MMHC::FiveD(double x, double y, double z, double a, double b) {
 	return matrix;
 }
 
+// Calculation of the S values in the MMPC algorithm
 NumericVector MMHC::Svalue(IntegerMatrix& A, const IntegerVector& cardinality) {
 	int hDim = A.ncol(), vDim = A.nrow();
 	NumericVector sum(1, 0.0), pvalue(1, 0.0), out(2, 0.0);
 
-	if (hDim == 2) {
+	if (hDim == 2) { // case: empty set
 		int l = cardinality[1], m = cardinality[0];
-//		double *x = OneD(m), *y = OneD(l), **z = TwoD(m, l);
-
+        
 		for (int i = 0; i < vDim; i++) {
 			this->D1[A(i, 0) - 1]++;
 			this->D11[A(i, 1) - 1]++;
@@ -235,9 +243,8 @@ NumericVector MMHC::Svalue(IntegerMatrix& A, const IntegerVector& cardinality) {
 
 		return out;
 
-	}  else if (hDim == 3) {
+	}  else if (hDim == 3) { // case: one element in CPC
 		int k = cardinality[2], l = cardinality[1], m = cardinality[0];
-//		double *v = OneD(k), **x = TwoD(m, k), **y = TwoD(l, k), ***z = ThreeD(m, l, k);
 
 		for (int i = 0; i < vDim; i++) {
 			this->D1[A(i, 2) - 1]++;
@@ -276,9 +283,8 @@ NumericVector MMHC::Svalue(IntegerMatrix& A, const IntegerVector& cardinality) {
 
 		return out;
 
-	} else if (hDim == 4) {
+	} else if (hDim == 4) { // case: two elements in CPC
 		int n = cardinality[3], k = cardinality[2], l = cardinality[1], m = cardinality[0];
-//		double **v = TwoD(k, n), ***x = ThreeD(m, k, n), ***y = ThreeD(l, k, n), ****z = FourD(m, l, k, n);
 
 		for (int i = 0; i < vDim; i++) {
 			this->D2[A(i, 2) - 1][A(i, 3) - 1]++;
@@ -323,9 +329,8 @@ NumericVector MMHC::Svalue(IntegerMatrix& A, const IntegerVector& cardinality) {
 
 		return out;
 
-	} else if (hDim == 5) {
+	} else if (hDim == 5) { // case: three elements in CPC
 		int o = cardinality[4], n = cardinality[3], k = cardinality[2], l = cardinality[1], m = cardinality[0];
-//		double ***v = ThreeD(k, n, o), ****x = FourD(m, k, n, o), ****y = FourD(l, k, n, o), *****z = FiveD(m, l, k, n, o);
 
 		for (int i = 0; i < vDim; i++) {
 			this->D3[A(i, 2) - 1][A(i, 3) - 1][A(i, 4) - 1]++;
@@ -375,7 +380,7 @@ NumericVector MMHC::Svalue(IntegerMatrix& A, const IntegerVector& cardinality) {
 
 		return out;
 		
-	} else {
+	} else { // default: no calculations done yet.
 		// int acKey, bcKey, abcKey, cKey;
 		// unordered_map<int, int> Count;
 		// unordered_map<int, int> ReMap;
@@ -417,6 +422,7 @@ NumericVector MMHC::Svalue(IntegerMatrix& A, const IntegerVector& cardinality) {
 	}
 }
 
+// returns a partial matrix out of a given matrix
 IntegerMatrix MMHC::partialMatrix(const IntegerVector& pa) {
 	IntegerMatrix partMat(this->vDim, pa.size());
 	for (int i = 0; i < pa.size(); i++)
@@ -424,6 +430,7 @@ IntegerMatrix MMHC::partialMatrix(const IntegerVector& pa) {
 	return partMat;
 }
 
+// calculates the cardinality of all columns of a partial matrix
 IntegerVector MMHC::CorrespondingCardinality(const IntegerVector& pa) {
 	IntegerVector tmpCardinality;
 	for (int i = 0; i < pa.size(); i++)
@@ -431,6 +438,7 @@ IntegerVector MMHC::CorrespondingCardinality(const IntegerVector& pa) {
 	return tmpCardinality;
 }
 
+// sets the cols which are used for calculations
 IntegerVector MMHC::SetCols(const IntegerVector& cpc, int T, int X) {
 	IntegerVector pa;
 	pa.push_back(X);
@@ -440,6 +448,7 @@ IntegerVector MMHC::SetCols(const IntegerVector& cpc, int T, int X) {
 	return pa;
 }
 
+// helper function: the CPC set is updated with this
 void MMHC::UpdateCPC(List& CPC, double selected) {
 	IntegerVector tmp;
 	if (CPC.size() == 0) {
@@ -460,6 +469,7 @@ void MMHC::UpdateCPC(List& CPC, double selected) {
 	}
 }
 
+// checks if y is in the vector x
 bool MMHC::IsIn(const IntegerVector& x, double y) {
 	bool out = FALSE;
 	for (int i = 0; i < x.size(); i++) {
@@ -471,6 +481,7 @@ bool MMHC::IsIn(const IntegerVector& x, double y) {
 	return out;
 }
 
+// the MaxMinHeuristic functions: implemented as stated in the report
 void MMHC::MaxMinHeuristic(const IntegerVector& cpc, List& CPCprops, IntegerVector& variablesToTest, int T) {
 	IntegerMatrix statisticMatrix;
 	IntegerVector pa, tmpCardinality, rejectedInLastStep = as<IntegerVector>(CPCprops[1]), temporaryMinimum = rejectedInLastStep, accepted;
@@ -502,11 +513,13 @@ void MMHC::MaxMinHeuristic(const IntegerVector& cpc, List& CPCprops, IntegerVect
 		CPCprops[2] = temporaryMinimum;
 }
 
+// adds +1 to all values, because R is not able to start iterating with 0 as all good languages do
 void MMHC::CompatibilityToR(IntegerVector& cpc) {
 	for (int i = 0; i < cpc.size(); i++)
 		cpc[i]++;
 }
 
+// the forward phase: implemented as the report states
 List MMHC::Forward(int T) {
 	IntegerVector cpc, variablesToTest;
 	List CPC, CPCprops;
@@ -573,6 +586,7 @@ List MMHC::Forward(int T) {
 	return CPC;
 }
 
+// backward phase: also implemented as the report states
 IntegerVector MMHC::Backward(List& CPC, int T) {
 	IntegerVector cpc = as<IntegerVector>(CPC[CPC.size()-1]), rm, pa, tmpCardinality, fromCPC;
 	NumericVector pvalue;
@@ -609,6 +623,7 @@ IntegerVector MMHC::Backward(List& CPC, int T) {
 	}
 }
 
+// the MMPC function: Workflow as in the report
 void MMHC::mmpc() {
 	IntegerVector cpc, pcVec, tmppc;
 	List CPC, tmpPC;

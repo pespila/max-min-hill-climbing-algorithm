@@ -1,6 +1,7 @@
 #ifndef CLASSES_H
 #define CLASSES_H
 
+// include libraries and set namespaces
 #include <Rcpp.h>
 #include <cstdlib>
 #include <tr1/unordered_map>
@@ -9,8 +10,9 @@ using namespace std;
 using namespace std::tr1;
 using namespace Rcpp;
 
+// define the prototype of the class
 class MMHC {
-    private:
+    private: // private variables
 		int vDim, hDim, maxi;
 		double alpha, eta, score;
 		List pc;
@@ -26,9 +28,9 @@ class MMHC {
         double**** D4;
         double**** D44;
         double***** D5;
-	public:
-        MMHC();
-		MMHC(SEXP);
+	public: // public variables and methods
+        MMHC(); // default constructor (needed!!!)
+		MMHC(SEXP); // my constructor
 		~MMHC();
 
 		SEXP GetPC() {return this->pc;}

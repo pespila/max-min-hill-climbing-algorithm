@@ -1,15 +1,19 @@
 max-min-hill-climbing-algorithm
 ===============================
 
-This algorithm reconstructs Bayesian Networks from observational data. Therefor it first builds the skeleton of the DAG (directed acyclic graph) with the max-min parents and children (mmpc) algorithm. Afterwards it directs the edges between the vertices with the Bayesian Dirichlet likelihood-equivalence uniform score. For more information on that read the report appended or "The max-min hill-climbing Bayesian network structure learning algorithm", by Ioannis Tsamardinos, Laura E. Brown & Constantin F. Aliferis.
+*This algorithm reconstructs Bayesian Networks from observational data. Therefor it first builds the skeleton of the DAG (directed acyclic graph) with the max-min parents and children (MMPC) algorithm. Afterwards it directs the edges between the vertices with the Bayesian Dirichlet likelihood-equivalence uniform score. For more information on that read the report appended or **"The max-min hill-climbing Bayesian network structure learning algorithm"**, by Ioannis Tsamardinos, Laura E. Brown & Constantin F. Aliferis.*
 
 INSTALL
 -------------------------------
-Before you can use this package, be sure you have the latest R version (>=3.0), "RCPP" version (>=0.11.1) and the "igraph" package installed.
+Before you can use this package, be sure you have the **latest R** version (>=3.0), **RCPP** version (>=0.11.1) and the **igraph** package installed.
 
-Download the R-source file and install it into your R environment with:
+Download the R source file and install it into your R environment with:
 
-install.packages("mmhc...")
+**install.packages("mmhc_1.0.tar.gz")**
+
+Include the library with:
+
+**library(mmhc)**
 
 Here is the example from the man pages of the package:
 
@@ -32,7 +36,7 @@ Here is the example from the man pages of the package:
 How to use the algorithm
 -------------------------------
 
-+ **data<- student(1000)** *# as above*
++ **data <- student(1000)** *# as above*
 + **mmhc(data)** *# gives you the plot of the graph (no return value)*
     
 Manuel Workflow

@@ -1,5 +1,6 @@
 #include "mmhc.h"
 
+// calculates something like a unique Matrix and uses the the rows as hashes which are saved in a map
 unordered_map<int, int> MMHC::UniqueMap(IntegerMatrix& A) {
     IntegerVector u;
 	int key;
@@ -21,6 +22,7 @@ unordered_map<int, int> MMHC::UniqueMap(IntegerMatrix& A) {
 	return Uni;
 }
 
+// implementation of the Nijk value from BDeu score for one vector
 int MMHC::getSingleN_ijk(IntegerVector& vec, int k) {
 	int count = 0;
 	for (int i = 0; i < vec.size(); i++)
@@ -29,6 +31,7 @@ int MMHC::getSingleN_ijk(IntegerVector& vec, int k) {
 	return count;
 }
 
+// implementation of the Nijk value from BDeu score for two vectors
 int MMHC::getVecN_ijk(IntegerVector& vec, IntegerVector& parentVec, int j, int k) {
 	int count = 0;
 	for (int i = 0; i < vec.size(); i++)
@@ -37,6 +40,7 @@ int MMHC::getVecN_ijk(IntegerVector& vec, IntegerVector& parentVec, int j, int k
 	return count;
 }
 
+// implementation of the Nijk value from BDeu score for more than two vectors
 int MMHC::getMapN_ijk(IntegerVector& vec, IntegerMatrix& parentMatrix, unordered_map<int, int> parentMap, int j, int k) {
 	int count = 0;
 	IntegerVector u;
@@ -48,6 +52,7 @@ int MMHC::getMapN_ijk(IntegerVector& vec, IntegerMatrix& parentMatrix, unordered
 	return count;
 }
 
+// calculation of the Nijk value from BDeu score with one vector
 double MMHC::ScoreNodeWithNoneParents(IntegerVector& vec, int r) {
 	double gammaJ = this->eta / 1.0, gammaK = this->eta / (1.0 * r);
 	double rScore = 0.0, qScore = 0.0;
@@ -63,6 +68,7 @@ double MMHC::ScoreNodeWithNoneParents(IntegerVector& vec, int r) {
 	return qScore;
 }
 
+// calculation of the Nijk value from BDeu score with two vectors
 double MMHC::ScoreNodeWithOneParent(IntegerVector& vec, IntegerVector& parentVec, int r, int q) {
 	double gammaJ = this->eta / q, gammaK = this->eta / (q * r);
 	double rScore = 0.0, qScore = 0.0;
@@ -82,6 +88,7 @@ double MMHC::ScoreNodeWithOneParent(IntegerVector& vec, IntegerVector& parentVec
 	return qScore;
 }
 
+// calculation of the Nijk value from BDeu score with more than two vectors
 double MMHC::ScoreNodeWithMoreParents(IntegerVector& vec, IntegerMatrix& Parent, int r, int q) {
 	unordered_map<int, int> parentMap = UniqueMap(Parent);
 	double gammaJ = this->eta / q, gammaK = this->eta / ( q * r);
@@ -102,6 +109,7 @@ double MMHC::ScoreNodeWithMoreParents(IntegerVector& vec, IntegerMatrix& Parent,
 	return qScore;
 }
 
+// returns the parents of a specific node depending on an adjacency matrix
 NumericVector MMHC::ReturnParents(int i, IntegerMatrix& AdjMat) {
 	NumericVector parents;
 	for (int j = 0; j < this->hDim; j++)
@@ -110,6 +118,7 @@ NumericVector MMHC::ReturnParents(int i, IntegerMatrix& AdjMat) {
 	return parents;
 }
 
+// the score of the empty graph
 void MMHC::InitScore() {
 	IntegerVector g;
 	for (int i = 0; i < this->hDim; i++) {
@@ -118,6 +127,7 @@ void MMHC::InitScore() {
 	}
 }
 
+// scoring function for the graph
 void MMHC::ScoreGraph(IntegerMatrix& AdjMat, NumericVector& tmp) {
 	IntegerMatrix parentMatrix;
 	IntegerVector childVector, parentVector, allParents;
@@ -143,6 +153,7 @@ void MMHC::ScoreGraph(IntegerMatrix& AdjMat, NumericVector& tmp) {
 	}
 }
 
+// function which sets edges for initializing the graph at the first iteration step
 void MMHC::SettingEdges() {
 	NumericVector tmp(this->hDim);
 	double before, after;
@@ -166,6 +177,7 @@ void MMHC::SettingEdges() {
 	}
 }
 
+// adds, reverses and deletes edges, looks if this operation brought success or not
 void MMHC::AddReverseDelete(IntegerMatrix& AdjMat, NumericVector& scores) {
 	srand(time(NULL));
 	NumericVector tmp(this->hDim);
@@ -216,7 +228,7 @@ void MMHC::AddReverseDelete(IntegerMatrix& AdjMat, NumericVector& scores) {
 	}
 }
 
-
+// the MMHC algorithm function: implemented as the report states
 void MMHC::mmhc() {
 	NumericVector tmpScores;
 	IntegerMatrix tmpAdjMat(this->hDim, this->hDim);
