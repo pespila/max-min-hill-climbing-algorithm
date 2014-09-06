@@ -580,16 +580,46 @@ with 10,000 observations
 	\bild{compareMMHC}{16cm}{Hear you see that our algorithm (red line) grows linearly where as the bnlearn one (green one) is constant.}{Comparing our implementation with bnlearn for $MMPC$.}
 
 	As the running time of our code grows linearly the bnlearn package seems to stay about constant. We could not figure out how and why the bnlearn package has no growth in its running time.\\
-	But our running time is maximally 1.5 seconds (at average) for a huge data frame. This is still a very good outcome. Maybe in the next months we can improve our algorithm depending on running time for the scoring function.
+	But our running time is maximally 1.5 seconds (at average) for a huge data frame. This is still a very good outcome. Maybe in the next months we can improve our algorithm depending on running time for the scoring function.\\
+
+	To the end of this section we want to present a last comparison between the two implementations. Here we were able to use the exact same algorithms. The underlying data is called "learning.test" and is from the bnlearn package. Normally it does not return a complete DAG (one edge without an arrow should be in ther), but for our testing purpose this was no problem. It is a data frame which holds observational data of 6 nodes with 5,000 observations. We first want to compare the $MMPC$ algorithms again and then the $MMHC$. For the max-min parents and children we get:
+
+ 	\begin{verbatim}
+                              test elapsed relative
+1                         C$mmpc()   0.025    1.136
+2 mmpc(learning.test, test = "x2")   0.022    1.000
+ 	\end{verbatim}
+
+ 	And again we see that our $MMPC$ implementation is approximately as fast as the bnlearn function. But the scoring will slow the code down for this example. We took the average time elapsed for comparison after computing the benchmark 100 times:
+
+  	\begin{verbatim}
+                 test elapsed relative
+1            C$mmhc()   0.323    8.500
+2 mmhc(learning.test)   0.038    1.000
+ 	\end{verbatim}
+
+ 	We saw that the main work which has to be done in the next months is to find a better and more performant implementation for the scoring part of the algorithm. But we are pretty sure, that we will be able to improve running time. To this end, we want to present the graph which is produced using the "learning.test" data. We present both: our outcome and the outcome of the bnlearn package.
 
 	% To the end of this chapter we wanted to run one more comparison. The bnlearn package provides some data frame for testing. On of it is called "learning.test". This data frame has 7 variables and the output of both functions should be:
 
-	% \bild{learning.test}{16cm}{The graph of the data frame learning.test where one connection is not directed.}
+	\bild{LTbn}{16cm}{The graph of the data frame "learning.test" where one connection is not directed.}{Plot of learning.test with bnlearn package.}
+	\bild{LTmine}{16cm}{The graph of the data frame "learning.test" where all connections are directed.}{Plot of learning.test with our package.}
 
 \chapter{Conclusion}
 
 	Despite the fact that we could not be faster than the bnlearn package, it was worth to implement this algorithm. In the future there will be the chance to improve running time and make our algorithm faster. But for now we provide the opportunity to construct Bayesian Networks from a smaller amount of data with an unreached running time. We really hope that research goes on and maybe there will be an implementation in the future (maybe we can do that) or even a new algorithm which reconstructs Bayesian Networks and runs faster than all existing ones.
 
+\chapter*{Acknowledgment}
+
+	There are several people I like to thank. Since this is not a published paper I did not ask if I am allowed to mention those people, but I am pretty sure that they are happy about it.
+
+	\begin{itemize}
+		\item My girlfriend who is always there for me.
+		\item Markus Hofstetter to whom I could talk about this project a couple of times and getting new ideas.
+		\item Tomi Silander: a scientist who not only answered an e-mail within 30 minutes, who also gave me a lot of input and help.
+		\item Prof. Dr. Rainer Spang who always has a sympathetic ear, not only for me also for other students.
+		\item And last but of course not least Dr. Giusi Moffa who supported me even in times were she was already gone to Basel. Thanks a lot for being so patient with me and explaining complicated stuff in an easy way.
+	\end{itemize}
 
 \begin{thebibliography}{56}
 

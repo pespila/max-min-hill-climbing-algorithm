@@ -18,9 +18,12 @@ source("R/data.R")
 mmhc <- function(data) {
     library(Rcpp) # load Rcpp package
     library(igraph) # load igraph package
+    columnNames <- colnames(df) # get the column names of the data frame
     C <- new(MMHC, data) # initalize the class object
     C$mmpc() # first reconstruct the skeleton (max-min parents and children algorithm)
     C$mmhc() # set the edges (BDeu score)
-    plotObj <- graph.adjacency(C$adjMat()) # makes a plotable object with the igraph package
+    plotObj <- C$adjMat()
+    colnames(plotObj) <- columnNames
+    plotObj <- graph.adjacency(plotObj) # makes a plotable object with the igraph package
     plot(plotObj) # plots the object
 }
