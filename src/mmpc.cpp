@@ -1,122 +1,146 @@
-#include <Rcpp.h>
-#include <cstdlib>
-#include <tr1/unordered_map>
+#include "mmhc.h"
 
-using namespace std;
-using namespace std::tr1;
-using namespace Rcpp;
+MMHC::MMHC() {}
 
-int Hash(NumericVector& array, int i, bool skip) {
+MMHC::MMHC(SEXP x) {
+    DataFrame B(x);
+	this->vDim = B.nrows();
+	this->hDim = B.length();
+	this->A = IntegerMatrix(this->vDim, this->hDim);
+	this->graph = IntegerMatrix(this->hDim, this->hDim);
+	this->scores = NumericVector(this->hDim);
+	IntegerVector tmp;
+	for (int i = 0; i < this->hDim; i++) {
+		tmp = B[i];
+		this->A(_, i) = tmp;
+	}
+	this->alpha = 0.05;
+	this->eta = 1.0;
+	// this->eta = (double)(sum(this->cardinality))/(double)(this->cardinality.size());
+	this->cardinality = IntegerVector(this->hDim, 0);
+	Cardinality();
+    this->maxi = max(this->cardinality);
+    this->D1 = this->OneD(this->maxi);
+    this->D11 = this->OneD(this->maxi);
+    this->D2 = this->TwoD(this->maxi, this->maxi);
+    this->D22 = this->TwoD(this->maxi, this->maxi);
+    this->D3 = this->ThreeD(this->maxi, this->maxi, this->maxi);
+    this->D33 = this->ThreeD(this->maxi, this->maxi, this->maxi);
+    this->D4 = this->FourD(this->maxi, this->maxi, this->maxi, this->maxi);
+    this->D44 = this->FourD(this->maxi, this->maxi, this->maxi, this->maxi);
+    this->D5 = this->FiveD(this->maxi, this->maxi, this->maxi, this->maxi, this->maxi);
+}
+
+MMHC::~MMHC() {
+    this->maxi = max(this->cardinality);
+    for (int i = 0; i < this->maxi; i++)
+    {
+    	for (int j = 0; j < this->maxi; j++)
+		{
+			for (int a = 0; a < this->maxi; a++)
+			{
+				for (int b = 0; b < this->maxi; b++)
+				{
+					free(D5[i][j][a][b]);
+				}
+				free(D5[i][j][a]);
+			}
+			free(D5[i][j]);
+		}
+		free(D5[i]);
+	}
+	free(D5);
+    for (int i = 0; i < this->maxi; i++)
+    {
+        for (int j = 0; j < this->maxi; j++)
+		{
+			for (int a = 0; a < this->maxi; a++)
+			{
+				free(D4[i][j][a]);
+			}
+			free(D4[i][j]);
+		}
+		free(D4[i]);
+	}
+	free(D4);
+    for (int i = 0; i < this->maxi; i++)
+    {
+    	for (int j = 0; j < this->maxi; j++)
+		{
+			for (int a = 0; a < this->maxi; a++)
+			{
+				free(D44[i][j][a]);
+			}
+			free(D44[i][j]);
+		}
+		free(D44[i]);
+	}
+	free(D44);
+    for (int i = 0; i < this->maxi; i++)
+    {
+        for (int j = 0; j < this->maxi; j++)
+		{
+			free(D3[i][j]);
+		}
+		free(D3[i]);
+	}
+	free(D3);
+    for (int i = 0; i < this->maxi; i++)
+    {
+    	for (int j = 0; j < this->maxi; j++)
+		{
+			free(D33[i][j]);
+		}
+		free(D33[i]);
+	}
+	free(D33);
+    for (int i = 0; i < this->maxi; i++)
+    	free(D2[i]);
+	free(D2);
+    for (int i = 0; i < this->maxi; i++)
+		free(D22[i]);
+	free(D22);
+	free(D1);
+	free(D11);
+}
+
+template <typename T, int RTYPE> int MMHC::colCardinality(const Vector<RTYPE>& x, unordered_map<T, int>& y) {
+	int m = x.size();
+	y.clear();
+	for (int i = 0; i < m; i++)
+		y[x[i]] = 1;
+
+	return y.size();
+}
+
+void MMHC::Cardinality() {
+	IntegerVector x;
+	unordered_map<int, int> y;
+	for (int i = 0; i < this->hDim; i++) {
+		x = this->A(_, i);
+		this->cardinality[i] = colCardinality<int, INTSXP>(x, y);
+	}
+}
+
+int MMHC::Hash(IntegerVector& array, int i, bool skip) {
 	int out = 0;
-	for (i; i < array.size(); i++)
+	for (i; i < array.size(); i++) {
 		if (skip && i == 1)
 			continue;
 		out += 10*out + array[i];
+	}
 
 	return out;
 }
 
-// double *OneD(double x) {
-// 	double *matrix = (double*)R_alloc(x, sizeof(double));
-// 	for (int i = 0; i < x; i++)
-// 	{
-// 		matrix[i] = 0;
-// 	}
-// 	return matrix;
-// }
-
-// double **TwoD(double x, double y) {
-// 	double **matrix = (double**)R_alloc(x, sizeof(double*));
-
-// 	for (int i = 0; i < x; i++)
-// 	{
-// 		matrix[i] = (double*)R_alloc(y, sizeof(double));
-// 		for (int j = 0; j < y; j++)
-// 		{
-// 			matrix[i][j] = 0;
-// 		}
-// 	}
-
-// 	return matrix;
-// }
-
-// double ***ThreeD(double x, double y, double z) {
-// 	double ***matrix = (double***)R_alloc(x, sizeof(double*));
-
-// 	for (int i = 0; i < x; i++)
-// 	{
-// 		matrix[i] = (double**)R_alloc(y, sizeof(double*));
-// 		for (int j = 0; j < y; j++)
-// 		{
-// 			matrix[i][j] = (double*)R_alloc(z, sizeof(double));
-// 			for (int k = 0; k < z; k++)
-// 			{
-// 				matrix[i][j][k] = 0;
-// 			}
-// 		}
-// 	}
-
-// 	return matrix;
-// }
-
-// double ****FourD(double x, double y, double z, double a) {
-// 	double ****matrix = (double****)R_alloc(x, sizeof(double*));
-
-// 	for (int i = 0; i < x; i++)
-// 	{
-// 		matrix[i] = (double***)R_alloc(y, sizeof(double*));
-// 		for (int j = 0; j < y; j++)
-// 		{
-// 			matrix[i][j] = (double**)R_alloc(z, sizeof(double*));
-// 			for (int k = 0; k < z; k++)
-// 			{
-// 				matrix[i][j][k] = (double*)R_alloc(a, sizeof(double));
-// 				for (int l = 0; l < a; l++)
-// 				{
-// 					matrix[i][j][k][l] = 0;
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return matrix;
-// }
-
-// double *****FiveD(double x, double y, double z, double a, double b) {
-// 	double *****matrix = (double*****)R_alloc(x, sizeof(double*));
-
-// 	for (int i = 0; i < x; i++)
-// 	{
-// 		matrix[i] = (double****)R_alloc(y, sizeof(double*));
-// 		for (int j = 0; j < y; j++)
-// 		{
-// 			matrix[i][j] = (double***)R_alloc(z, sizeof(double*));
-// 			for (int k = 0; k < z; k++)
-// 			{
-// 				matrix[i][j][k] = (double**)R_alloc(a, sizeof(double*));
-// 				for (int l = 0; l < a; l++)
-// 				{
-// 					matrix[i][j][k][l] = (double*)R_alloc(b, sizeof(double));
-// 					for (int m = 0; m < b; m++)
-// 					{
-// 						matrix[i][j][k][l][m] = 0;
-// 					}
-// 				}
-// 			}
-// 		}
-// 	}
-
-// 	return matrix;
-// }
-
-double *OneD(double x) {
+double *MMHC::OneD(double x) {
 	double *matrix = (double*)calloc(x, sizeof(double));
 	for (int i = 0; i < x; i++)
 		matrix[i] = 0;
 	return matrix;
 }
 
-double **TwoD(double x, double y) {
+double **MMHC::TwoD(double x, double y) {
 	double **matrix = (double**)calloc(x, sizeof(double*));
 	for (int i = 0; i < x; i++)	{
 		matrix[i] = (double*)calloc(y, sizeof(double));
@@ -126,7 +150,7 @@ double **TwoD(double x, double y) {
 	return matrix;
 }
 
-double ***ThreeD(double x, double y, double z) {
+double ***MMHC::ThreeD(double x, double y, double z) {
 	double ***matrix = (double***)calloc(x, sizeof(double*));
 	for (int i = 0; i < x; i++)	{
 		matrix[i] = (double**)calloc(y, sizeof(double*));
@@ -139,7 +163,7 @@ double ***ThreeD(double x, double y, double z) {
 	return matrix;
 }
 
-double ****FourD(double x, double y, double z, double a) {
+double ****MMHC::FourD(double x, double y, double z, double a) {
 	double ****matrix = (double****)calloc(x, sizeof(double*));
 	for (int i = 0; i < x; i++)	{
 		matrix[i] = (double***)calloc(y, sizeof(double*));
@@ -155,7 +179,7 @@ double ****FourD(double x, double y, double z, double a) {
 	return matrix;
 }
 
-double *****FiveD(double x, double y, double z, double a, double b) {
+double *****MMHC::FiveD(double x, double y, double z, double a, double b) {
 	double *****matrix = (double*****)calloc(x, sizeof(double*));
 	for (int i = 0; i < x; i++)	{
 		matrix[i] = (double****)calloc(y, sizeof(double*));
@@ -174,35 +198,32 @@ double *****FiveD(double x, double y, double z, double a, double b) {
 	return matrix;
 }
 
-// SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
-SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
+NumericVector MMHC::Svalue(IntegerMatrix& A, const IntegerVector& cardinality) {
 	int hDim = A.ncol(), vDim = A.nrow();
 	NumericVector sum(1, 0.0), pvalue(1, 0.0), out(2, 0.0);
 
 	if (hDim == 2) {
 		int l = cardinality[1], m = cardinality[0];
-		double *x = OneD(m), *y = OneD(l), **z = TwoD(m, l);
+//		double *x = OneD(m), *y = OneD(l), **z = TwoD(m, l);
 
 		for (int i = 0; i < vDim; i++) {
-			x[(int)A(i, 0) - 1]++;
-			y[(int)A(i, 1) - 1]++;
-			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1]++;
+			this->D1[A(i, 0) - 1]++;
+			this->D11[A(i, 1) - 1]++;
+			this->D2[A(i, 0) - 1][A(i, 1) - 1]++;
 		}
 
 		for (int i = 0; i < m; i++) {
 			for (int j = 0; j < l; j++) {
-				if (x[i] < 1 || y[j] < 1 || z[i][j] < 1)
+				if (this->D1[i] < 1 || this->D11[j] < 1 || this->D2[i][j] < 1)
 					continue;
-				sum[0] += 2.0 * z[i][j] * log( (z[i][j] * vDim) / (x[i] * y[j]) );
+				sum[0] += 2.0 * this->D2[i][j] * log( (this->D2[i][j] * vDim) / (this->D1[i] * this->D11[j]) );
+                this->D2[i][j] = 0;
 			}
+            this->D1[i] = 0;
 		}
-
-		for (int i = 0; i < m; i++)
-			free(z[i]);
-
-		free(z);
-		free(x);
-		free(y);
+        
+        for (int i = 0; i < l; i++)
+            this->D11[i] = 0;
 
 		int DF = cardinality[0] * cardinality[1];
 		for (int i = 2; i < cardinality.size(); i++)
@@ -216,44 +237,34 @@ SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 
 	}  else if (hDim == 3) {
 		int k = cardinality[2], l = cardinality[1], m = cardinality[0];
-		double *v = OneD(k), **x = TwoD(m, k), **y = TwoD(l, k), ***z = ThreeD(m, l, k);
+//		double *v = OneD(k), **x = TwoD(m, k), **y = TwoD(l, k), ***z = ThreeD(m, l, k);
 
 		for (int i = 0; i < vDim; i++) {
-			v[(int)A(i, 2) - 1]++;
-			x[(int)A(i, 0) - 1][(int)A(i, 2) - 1]++;
-			y[(int)A(i, 1) - 1][(int)A(i, 2) - 1]++;
-			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1][(int)A(i, 2) - 1]++;
+			this->D1[A(i, 2) - 1]++;
+			this->D2[A(i, 0) - 1][A(i, 2) - 1]++;
+			this->D22[A(i, 1) - 1][A(i, 2) - 1]++;
+			this->D3[A(i, 0) - 1][A(i, 1) - 1][A(i, 2) - 1]++;
 		}
 
 		for (int i = 0; i < m; i++) {
 			for (int j = 0; j < l; j++) {
 				for (int h = 0; h < k; h++) {
-					if (x[i][h] < 1 || y[j][h] < 1 || z[i][j][h] < 1 || v[h] < 1)
+					if (this->D2[i][h] < 1 || this->D22[j][h] < 1 || this->D3[i][j][h] < 1 || this->D1[h] < 1)
 						continue;
-					sum[0] += 2.0 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) );
+					sum[0] += 2.0 * this->D3[i][j][h] * log( (this->D3[i][j][h] * this->D1[h]) / (this->D2[i][h] * this->D22[j][h]) );
+                    this->D3[i][j][h] = 0;
 				}
 			}
 		}
-
-		for (int i = 0; i < m; i++)
+		for (int i = 0; i < this->maxi; i++)
 		{
-			for (int j = 0; j < l; j++)
+			for (int j = 0; j < this->maxi; j++)
 			{
-				free(z[i][j]);
+				this->D2[i][j] = 0;
+                this->D22[i][j] = 0;
 			}
-			free(z[i]);
+            this->D1[i] = 0;
 		}
-		free(z);
-
-		for (int i = 0; i < l; i++)
-			free(y[i]);
-		free(y);
-
-		for (int i = 0; i < m; i++)
-			free(x[i]);
-		free(x);
-
-		free(v);
 
 		int DF = cardinality[0] * cardinality[1];
 		for (int i = 2; i < cardinality.size(); i++)
@@ -267,65 +278,40 @@ SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 
 	} else if (hDim == 4) {
 		int n = cardinality[3], k = cardinality[2], l = cardinality[1], m = cardinality[0];
-		double **v = TwoD(k, n), ***x = ThreeD(m, k, n), ***y = ThreeD(l, k, n), ****z = FourD(m, l, k, n);
+//		double **v = TwoD(k, n), ***x = ThreeD(m, k, n), ***y = ThreeD(l, k, n), ****z = FourD(m, l, k, n);
 
 		for (int i = 0; i < vDim; i++) {
-			v[(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
-			x[(int)A(i, 0) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
-			y[(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
-			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
+			this->D2[A(i, 2) - 1][A(i, 3) - 1]++;
+			this->D3[A(i, 0) - 1][A(i, 2) - 1][A(i, 3) - 1]++;
+			this->D33[A(i, 1) - 1][A(i, 2) - 1][A(i, 3) - 1]++;
+			this->D4[A(i, 0) - 1][A(i, 1) - 1][A(i, 2) - 1][A(i, 3) - 1]++;
 		}
 
 		for (int i = 0; i < m; i++) {
 			for (int j = 0; j < l; j++) {
 				for (int h = 0; h < k; h++) {
 					for (int f = 0; f < n; f++) {
-						if (x[i][h][f] < 1 || y[j][h][f] < 1 || z[i][j][h][f] < 1 || v[h][f] < 1)
+						if (this->D3[i][h][f] < 1 || this->D33[j][h][f] < 1 || this->D4[i][j][h][f] < 1 || this->D2[h][f] < 1)
 							continue;
-						sum[0] += 2.0 * z[i][j][h][f] * log( (z[i][j][h][f] * v[h][f]) / (x[i][h][f] * y[j][h][f]) );
+						sum[0] += 2.0 * this->D4[i][j][h][f] * log( (this->D4[i][j][h][f] * this->D2[h][f]) / (this->D3[i][h][f] * this->D33[j][h][f]) );
+                        this->D4[i][j][h][f] = 0;
 					}
 				}
 			}
 		}
 
-		for (int i = 0; i < m; i++)
+		for (int i = 0; i < this->maxi; i++)
 		{
-			for (int j = 0; j < l; j++)
+			for (int j = 0; j < this->maxi; j++)
 			{
-				for (int a = 0; a < k; a++)
+				for (int k = 0; k < this->maxi; k++)
 				{
-					free(z[i][j][a]);
+                    this->D3[i][j][k] = 0;
+                    this->D33[i][j][k] = 0;
 				}
-				free(z[i][j]);
+                this->D2[i][j] = 0;
 			}
-			free(z[i]);
 		}
-		free(z);
-
-		for (int i = 0; i < l; i++)
-		{
-			for (int j = 0; j < k; j++)
-			{
-				free(y[i][j]);
-			}
-			free(y[i]);
-		}
-		free(y);
-
-		for (int i = 0; i < m; i++)
-		{
-			for (int j = 0; j < k; j++)
-			{
-				free(x[i][j]);
-			}
-			free(x[i]);
-		}
-		free(x);
-
-		for (int i = 0; i < k; i++)
-			free(v[i]);
-		free(v);
-
 
 		int DF = cardinality[0] * cardinality[1];
 		for (int i = 2; i < cardinality.size(); i++)
@@ -339,13 +325,13 @@ SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 
 	} else if (hDim == 5) {
 		int o = cardinality[4], n = cardinality[3], k = cardinality[2], l = cardinality[1], m = cardinality[0];
-		double ***v = ThreeD(k, n, o), ****x = FourD(m, k, n, o), ****y = FourD(l, k, n, o), *****z = FiveD(m, l, k, n, o);
+//		double ***v = ThreeD(k, n, o), ****x = FourD(m, k, n, o), ****y = FourD(l, k, n, o), *****z = FiveD(m, l, k, n, o);
 
 		for (int i = 0; i < vDim; i++) {
-			v[(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
-			x[(int)A(i, 0) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
-			y[(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
-			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
+			this->D3[A(i, 2) - 1][A(i, 3) - 1][A(i, 4) - 1]++;
+			this->D4[A(i, 0) - 1][A(i, 2) - 1][A(i, 3) - 1][A(i, 4) - 1]++;
+			this->D44[A(i, 1) - 1][A(i, 2) - 1][A(i, 3) - 1][A(i, 4) - 1]++;
+			this->D5[A(i, 0) - 1][A(i, 1) - 1][A(i, 2) - 1][A(i, 3) - 1][A(i, 4) - 1]++;
 		}
 
 		for (int i = 0; i < m; i++) {
@@ -353,71 +339,32 @@ SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 				for (int h = 0; h < k; h++) {
 					for (int f = 0; f < n; f++) {
 						for (int e = 0; e < o; e++) {
-							if (x[i][h][f][e] < 1 || y[j][h][f][e] < 1 || z[i][j][h][f][e] < 1 || v[h][f][e] < 1)
+							if (this->D4[i][h][f][e] < 1 || this->D44[j][h][f][e] < 1 || this->D5[i][j][h][f][e] < 1 || this->D3[h][f][e] < 1)
 								continue;
-							sum[0] += 2.0 * z[i][j][h][f][e] * log( (z[i][j][h][f][e] * v[h][f][e]) / (x[i][h][f][e] * y[j][h][f][e]) );
-						}
+							sum[0] += 2.0 * this->D5[i][j][h][f][e] * log( (this->D5[i][j][h][f][e] * this->D3[h][f][e]) / (this->D4[i][h][f][e] * this->D44[j][h][f][e]) );
+						    this->D5[i][j][h][f][e] = 0;
+                        }
 					}
 				}
 			}
 		}
 
-		for (int i = 0; i < m; i++)
+		for (int i = 0; i < this->maxi; i++)
 		{
-			for (int j = 0; j < l; j++)
+			for (int j = 0; j < this->maxi; j++)
 			{
-				for (int a = 0; a < k; a++)
+				for (int k = 0; k < this->maxi; k++)
 				{
-					for (int b = 0; b < n; b++)
+					for (int l = 0; l < this->maxi; l++)
 					{
-						free(z[i][j][a][b]);
+                        this->D4[i][j][k][l] = 0;
+                        this->D44[j][j][k][l] = 0;
 					}
-					free(z[i][j][a]);
+                    this->D3[i][j][k] = 0;
 				}
-				free(z[i][j]);
 			}
-			free(z[i]);
 		}
-		free(z);
-
-		for (int i = 0; i < l; i++)
-		{
-			for (int j = 0; j < k; j++)
-			{
-				for (int a = 0; a < n; a++)
-				{
-					free(y[i][j][a]);
-				}
-				free(y[i][j]);
-			}
-			free(y[i]);
-		}
-		free(y);
-
-		for (int i = 0; i < m; i++)
-		{
-			for (int j = 0; j < k; j++)
-			{
-				for (int a = 0; a < n; a++)
-				{
-					free(x[i][j][a]);
-				}
-				free(x[i][j]);
-			}
-			free(x[i]);
-		}
-		free(x);
-
-		for (int i = 0; i < k; i++)
-		{
-			for (int j = 0; j < n; j++)
-			{
-				free(v[i][j]);
-			}
-			free(v[i]);
-		}
-		free(v);
-
+        
 		int DF = cardinality[0] * cardinality[1];
 		for (int i = 2; i < cardinality.size(); i++)
 			DF *= (cardinality[i] + 1);
@@ -470,273 +417,31 @@ SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
 	}
 }
 
-
-// SEXP Svalue(NumericMatrix& A, const NumericVector& cardinality) {
-// 	int hDim = A.ncol(), vDim = A.nrow();
-// 	NumericVector sum(1, 0.0), pvalue(1, 0.0), out(2, 0.0);
-
-// 	if (hDim == 2) {
-// 		int l = cardinality[1], m = cardinality[0];
-// 		double *x = OneD(m), *y = OneD(l), **z = TwoD(m, l);
-
-// 		for (int i = 0; i < vDim; i++)
-// 		{
-// 			x[(int)A(i, 0) - 1]++;
-// 			y[(int)A(i, 1) - 1]++;
-// 			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1]++;
-// 		}
-
-// 		for (int i = 0; i < m; i++)
-// 		{
-// 			for (int j = 0; j < l; j++)
-// 			{
-// 				if (x[i] < 1 || y[j] < 1 || z[i][j] < 1)
-// 					continue;
-// 				sum[0] += 2.0 * z[i][j] * log( (z[i][j] * vDim) / (x[i] * y[j]) );
-// 			}
-// 		}
-
-// 		int DF = cardinality[0] * cardinality[1];
-// 		for (int i = 2; i < cardinality.size(); i++)
-// 		{
-// 			DF *= (cardinality[i] + 1);
-// 		}
-// 		pvalue = pchisq(sum, DF, FALSE);
-// 		out[0] = pvalue[0];
-// 		out[1] = sum[0];
-
-// 		return out;
-
-// 	}  else if (hDim == 3) {
-// 		int k = cardinality[2], l = cardinality[1], m = cardinality[0];
-// 		double *v = OneD(k), **x = TwoD(m, k), **y = TwoD(l, k), ***z = ThreeD(m, l, k);
-
-// 		for (int i = 0; i < vDim; i++)
-// 		{
-// 			v[(int)A(i, 2) - 1]++;
-// 			x[(int)A(i, 0) - 1][(int)A(i, 2) - 1]++;
-// 			y[(int)A(i, 1) - 1][(int)A(i, 2) - 1]++;
-// 			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1][(int)A(i, 2) - 1]++;
-// 		}
-
-// 		for (int i = 0; i < m; i++)
-// 		{
-// 			for (int j = 0; j < l; j++)
-// 			{
-// 				for (int h = 0; h < k; h++)
-// 				{
-// 					if (x[i][h] < 1 || y[j][h] < 1 || z[i][j][h] < 1 || v[h] < 1)
-// 						continue;
-// 					sum[0] += 2.0 * z[i][j][h] * log( (z[i][j][h] * v[h]) / (x[i][h] * y[j][h]) );
-// 				}
-// 			}
-// 		}
-
-// 		int DF = cardinality[0] * cardinality[1];
-// 		for (int i = 2; i < cardinality.size(); i++)
-// 		{
-// 			DF *= (cardinality[i] + 1);
-// 		}
-// 		pvalue = pchisq(sum, DF, FALSE);
-// 		out[0] = pvalue[0];
-// 		out[1] = sum[0];
-
-// 		return out;
-
-// 	} else if (hDim == 4) {
-// 		int n = cardinality[3], k = cardinality[2], l = cardinality[1], m = cardinality[0];
-// 		double **v = TwoD(k, n), ***x = ThreeD(m, k, n), ***y = ThreeD(l, k, n), ****z = FourD(m, l, k, n);
-
-// 		for (int i = 0; i < vDim; i++)
-// 		{
-// 			v[(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
-// 			x[(int)A(i, 0) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
-// 			y[(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
-// 			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1]++;
-// 		}
-
-// 		for (int i = 0; i < m; i++)
-// 		{
-// 			for (int j = 0; j < l; j++)
-// 			{
-// 				for (int h = 0; h < k; h++)
-// 				{
-// 					for (int f = 0; f < n; f++)
-// 					{
-// 						if (x[i][h][f] < 1 || y[j][h][f] < 1 || z[i][j][h][f] < 1 || v[h][f] < 1)
-// 							continue;
-// 						sum[0] += 2.0 * z[i][j][h][f] * log( (z[i][j][h][f] * v[h][f]) / (x[i][h][f] * y[j][h][f]) );
-// 					}
-// 				}
-// 			}
-// 		}
-
-// 		int DF = cardinality[0] * cardinality[1];
-// 		for (int i = 2; i < cardinality.size(); i++)
-// 		{
-// 			DF *= (cardinality[i] + 1);
-// 		}
-// 		pvalue = pchisq(sum, DF, FALSE);
-// 		out[0] = pvalue[0];
-// 		out[1] = sum[0];
-
-// 		return out;
-
-// 	} else if (hDim == 5) {
-// 		int o = cardinality[4], n = cardinality[3], k = cardinality[2], l = cardinality[1], m = cardinality[0];
-// 		double ***v = ThreeD(k, n, o), ****x = FourD(m, k, n, o), ****y = FourD(l, k, n, o), *****z = FiveD(m, l, k, n, o);
-
-// 		for (int i = 0; i < vDim; i++)
-// 		{
-// 			v[(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
-// 			x[(int)A(i, 0) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
-// 			y[(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
-// 			z[(int)A(i, 0) - 1][(int)A(i, 1) - 1][(int)A(i, 2) - 1][(int)A(i, 3) - 1][(int)A(i, 4) - 1]++;
-// 		}
-
-// 		for (int i = 0; i < m; i++)
-// 		{
-// 			for (int j = 0; j < l; j++)
-// 			{
-// 				for (int h = 0; h < k; h++)
-// 				{
-// 					for (int f = 0; f < n; f++)
-// 					{
-// 						for (int e = 0; e < o; e++)
-// 						{
-// 							if (x[i][h][f][e] < 1 || y[j][h][f][e] < 1 || z[i][j][h][f][e] < 1 || v[h][f][e] < 1)
-// 								continue;
-// 							sum[0] += 2.0 * z[i][j][h][f][e] * log( (z[i][j][h][f][e] * v[h][f][e]) / (x[i][h][f][e] * y[j][h][f][e]) );
-// 						}
-// 					}
-// 				}
-// 			}
-// 		}
-
-// 		int DF = cardinality[0] * cardinality[1];
-// 		for (int i = 2; i < cardinality.size(); i++)
-// 		{
-// 			DF *= (cardinality[i] + 1);
-// 		}
-// 		pvalue = pchisq(sum, DF, FALSE);
-// 		out[0] = pvalue[0];
-// 		out[1] = sum[0];
-
-// 		return out;
-		
-// 	} else {
-// 		int acKey, bcKey, abcKey, cKey;
-// 		unordered_map<int, int> Count;
-// 		unordered_map<int, int> ReMap;
-// 		int teta = 0;
-// 		NumericVector tmp(hDim);
-
-// 		for (int i = 0; i < hDim; i++)
-// 		{
-// 			tmp = A(i, _);
-// 			abcKey = Hash(tmp, 0, FALSE);
-// 			bcKey = Hash(tmp, 1, FALSE);
-// 			cKey = Hash(tmp, 2, FALSE);
-// 			acKey = Hash(tmp, 0, TRUE);
-// 			if (Count[abcKey] == 0) {
-// 				ReMap[teta] = abcKey;
-// 				ReMap[teta+1] = acKey;
-// 				ReMap[teta+2] = bcKey;
-// 				ReMap[teta+3] = cKey;
-// 				teta = teta + 4;
-// 				Count[abcKey]++;
-// 				Count[acKey]++;
-// 				Count[bcKey]++;
-// 				Count[cKey]++;
-// 			}
-// 		}
-
-// 		for (int i = 0; i < ReMap.size(); i = i + 4)
-// 		{
-// 			sum[0] += 2.0 * Count[ReMap[i]] == 0 * log( (Count[ReMap[i]] == 0 * Count[ReMap[i+3]] == 0) / (Count[ReMap[i+1]] == 0 * Count[ReMap[i+2]] == 0) );
-// 		}
-
-// 		int DF = cardinality[0] * cardinality[1];
-// 		for (int i = 2; i < cardinality.size(); i++)
-// 		{
-// 			DF *= (cardinality[i] + 1);
-// 		}
-// 		pvalue = pchisq(sum, DF, FALSE);
-// 		out[0] = pvalue[0];
-// 		out[1] = sum[0];
-
-// 		return out;
-
-// 	}
-// }
-
-template <typename T, int RTYPE> int colCardinality(const Vector<RTYPE>& x, unordered_map<T, int>& y) {
-	int m = x.size();
-	y.clear();
-	for (int i = 0; i < m; i++)
-		y[x[i]] = 1;
-
-	return y.size();
-}
-
-void Cardinality(NumericMatrix& A, NumericVector& cardinality) {
-	NumericVector x;
-	unordered_map<double, int> y;
-	for (int i = 0; i < A.ncol(); i++)
-	{
-		x = A(_, i);
-		cardinality.push_back(colCardinality<double, REALSXP>(x, y));
-	}
-}
-
-NumericMatrix partialMatrix(const NumericMatrix& A, NumericVector& pa) {
-	NumericMatrix partMat(A.nrow(), pa.size());
-
+IntegerMatrix MMHC::partialMatrix(const IntegerVector& pa) {
+	IntegerMatrix partMat(this->vDim, pa.size());
 	for (int i = 0; i < pa.size(); i++)
-		partMat(_, i) = A(_, pa(i));
-
+		partMat(_, i) = this->A(_, pa(i));
 	return partMat;
 }
 
-void ElementsToTest(NumericVector& variablesToTest, NumericVector& cpc, int *T, int n) {
-	variablesToTest = NumericVector::create();
-	for (int i = 0; i < n; i++)
-	{
-		int k = 0;
-		for (int j = 0; j < cpc.size(); j++)
-		{
-			if (i != cpc[j])
-				k++;
-		}
-		if (k == cpc.size() && i != *T)
-			variablesToTest.push_back(i);
-	}
-}
-
-NumericVector CorrespondingCardinality(NumericVector& pa, const NumericVector& cardinality) {
-	NumericVector tmpCardinality;
-
+IntegerVector MMHC::CorrespondingCardinality(const IntegerVector& pa) {
+	IntegerVector tmpCardinality;
 	for (int i = 0; i < pa.size(); i++)
-	{
-		tmpCardinality.push_back(cardinality[pa[i]]);
-	}
-
+		tmpCardinality.push_back(this->cardinality[pa[i]]);
 	return tmpCardinality;
 }
 
-NumericVector SetCols(NumericVector& cpc, int T, int X) {
-	NumericVector pa;
+IntegerVector MMHC::SetCols(const IntegerVector& cpc, int T, int X) {
+	IntegerVector pa;
 	pa.push_back(X);
 	pa.push_back(T);
 	for (int i = 0; i < cpc.size(); i++)
-	{
 		pa.push_back(cpc[i]);
-	}
 	return pa;
 }
 
-void UpdateCPC(List& CPC, int selected) {
-	NumericVector tmp;
+void MMHC::UpdateCPC(List& CPC, double selected) {
+	IntegerVector tmp;
 	if (CPC.size() == 0) {
 		CPC.push_back(0);
 		CPC.push_back(R_NilValue);
@@ -747,45 +452,42 @@ void UpdateCPC(List& CPC, int selected) {
 		int CPCLength = CPC.size();
 		CPC[0] = CPCLength;
 		CPC.push_back(selected);
-		for (int i = 2; i < CPCLength; i++)
-		{
-			tmp = as<NumericVector>(CPC[i]);
+		for (int i = 2; i < CPCLength; i++) {
+			tmp = as<IntegerVector>(CPC[i]);
 			tmp.push_back(selected);
 			CPC.push_back(tmp);
 		}
 	}
 }
 
-bool IsIn(NumericVector& x, double y) {
+bool MMHC::IsIn(const IntegerVector& x, double y) {
 	bool out = FALSE;
-	for (int i = 0; i < x.size(); i++)
-	{
+	for (int i = 0; i < x.size(); i++) {
 		if (x[i] == y) {
 			out = TRUE;
 			break;
 		}
 	}
-
 	return out;
 }
 
-void MaxMinHeuristic(NumericMatrix& A, NumericVector& cpc, List& CPCprops, NumericVector& variablesToTest, const NumericVector& cardinality, int T, double alpha) {//, double selectedBefore = -1.0, double minimum = 1.0) {
-	NumericMatrix statisticMatrix;
-	NumericVector pa, pvalue, tmpCardinality, rejectedInLastStep = as<NumericVector>(CPCprops[1]), temporaryMinimum = rejectedInLastStep, accepted;
+void MMHC::MaxMinHeuristic(const IntegerVector& cpc, List& CPCprops, IntegerVector& variablesToTest, int T) {
+	IntegerMatrix statisticMatrix;
+	IntegerVector pa, tmpCardinality, rejectedInLastStep = as<IntegerVector>(CPCprops[1]), temporaryMinimum = rejectedInLastStep, accepted;
+	NumericVector pvalue;
 
-	for (int i = 0; i < variablesToTest.size(); i++)
-	{
+	for (int i = 0; i < variablesToTest.size(); i++) {
 		pa = SetCols(cpc, T, variablesToTest[i]);
-		tmpCardinality = CorrespondingCardinality(pa, cardinality);
-		statisticMatrix = partialMatrix(A, pa);
+		tmpCardinality = CorrespondingCardinality(pa);
+		statisticMatrix = partialMatrix(pa);
 		pvalue = Svalue(statisticMatrix, tmpCardinality);
 
-		if (pvalue[0] < alpha) {
+		if (pvalue[0] < this->alpha) {
 			if (pvalue[0] < rejectedInLastStep[1]) {
 				temporaryMinimum = rejectedInLastStep;
-				rejectedInLastStep = NumericVector::create(variablesToTest[i], pvalue[0], pvalue[1]);
+				rejectedInLastStep = IntegerVector::create(variablesToTest[i], pvalue[0], pvalue[1]);
 			} else if (pvalue[0] == rejectedInLastStep[1] && pvalue[1] > rejectedInLastStep[2]) {
-				rejectedInLastStep = NumericVector::create(variablesToTest[i], rejectedInLastStep[1], pvalue[1]);
+				rejectedInLastStep = IntegerVector::create(variablesToTest[i], rejectedInLastStep[1], pvalue[1]);
 			}
 		} else {
 			accepted.push_back(variablesToTest[i]);
@@ -800,37 +502,29 @@ void MaxMinHeuristic(NumericMatrix& A, NumericVector& cpc, List& CPCprops, Numer
 		CPCprops[2] = temporaryMinimum;
 }
 
-void CompatibilityToR(NumericVector& cpc) {
+void MMHC::CompatibilityToR(IntegerVector& cpc) {
 	for (int i = 0; i < cpc.size(); i++)
 		cpc[i]++;
 }
 
-// List Forward(NumericMatrix& A, int T, const NumericVector& cardinality, double alpha) {
-List Forward(NumericMatrix& A, int T, NumericVector& cardinality, SEXP a) {
-	// NumericMatrix A(x);
-	NumericVector cpc, variablesToTest;//, cardinality(z);
-	// int *t = INTEGER(y), n = A.ncol();
-	// int T = *t - 1;
-	int n = A.ncol();
-	double *beta = REAL(a);
-	double alpha = *beta;
+List MMHC::Forward(int T) {
+	IntegerVector cpc, variablesToTest;
 	List CPC, CPCprops;
-	// *T = *T - 1;
-
-	NumericVector reject = NumericVector::create(-1.0, 1.0, 1.0), accepted = NumericVector::create(T), tmpAccepted;
+	
+	IntegerVector reject = IntegerVector::create(-1.0, 1.0, 1.0), accepted = IntegerVector::create(T), tmpAccepted;
 	CPCprops.push_back(T);
 	CPCprops.push_back(reject);
 	CPCprops.push_back(reject);
 
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < this->hDim; i++)
 		if (i != T)
 			variablesToTest.push_back(i);
 
 	UpdateCPC(CPC, 0);
-	MaxMinHeuristic(A, cpc, CPCprops, variablesToTest, cardinality, T, alpha);
+	MaxMinHeuristic(cpc, CPCprops, variablesToTest, T);
 	
-	reject = as<NumericVector>(CPCprops[1]);
-	tmpAccepted = as<NumericVector>(CPCprops[0]);
+	reject = as<IntegerVector>(CPCprops[1]);
+	tmpAccepted = as<IntegerVector>(CPCprops[0]);
 
 	if (reject[0] != -1.0) {
 		UpdateCPC(CPC, reject[0]);
@@ -841,21 +535,20 @@ List Forward(NumericMatrix& A, int T, NumericVector& cardinality, SEXP a) {
 	for (int i = 0; i < tmpAccepted.size(); i++)
 		accepted.push_back(tmpAccepted[i]);
 
-	variablesToTest = NumericVector::create();
-	for (int i = 0; i < n; i++)
+	variablesToTest = IntegerVector::create();
+	for (int i = 0; i < this->hDim; i++)
 	{
 		if (!IsIn(accepted, i)) {
 			variablesToTest.push_back(i);
 		}
 	}
 
-	// if (variablesToTest.size() > 0) {
 	while (variablesToTest.size() > 0) {
-		CPCprops[1] = NumericVector::create(-1.0, 1.0, 1.0);
-		MaxMinHeuristic(A, cpc, CPCprops, variablesToTest, cardinality, T, alpha);
+		CPCprops[1] = IntegerVector::create(-1.0, 1.0, 1.0);
+		MaxMinHeuristic(cpc, CPCprops, variablesToTest, T);
 
-		reject = as<NumericVector>(CPCprops[1]);
-		tmpAccepted = as<NumericVector>(CPCprops[0]);
+		reject = as<IntegerVector>(CPCprops[1]);
+		tmpAccepted = as<IntegerVector>(CPCprops[0]);
 
 		if (reject[0] != -1.0) {
 			UpdateCPC(CPC, reject[0]);
@@ -865,51 +558,44 @@ List Forward(NumericMatrix& A, int T, NumericVector& cardinality, SEXP a) {
 			for (int i = 0; i < tmpAccepted.size(); i++)
 				accepted.push_back(tmpAccepted[i]);
 
-			variablesToTest = NumericVector::create();
-			for (int i = 0; i < n; i++)
+			variablesToTest = IntegerVector::create();
+			for (int i = 0; i < this->hDim; i++)
 			{
 				if (!IsIn(accepted, i)) {
 					variablesToTest.push_back(i);
 				}
 			}
 		} else {
-			variablesToTest = NumericVector::create();
+			variablesToTest = IntegerVector::create();
 		}
 	}
-
-	// CompatibilityToR(cpc);
 
 	return CPC;
 }
 
-NumericVector Backward(NumericMatrix& A, NumericVector& cardinality, SEXP a, List& CPC, int T) {
-	// NumericMatrix A(x);
-	// NumericVector cardinality(z);
-	double *alpha = REAL(a);
-	NumericVector cpc = as<NumericVector>(CPC[CPC.size()-1]), rm, pa, tmpCardinality, pvalue, fromCPC;
-	NumericMatrix statisticMatrix;
+IntegerVector MMHC::Backward(List& CPC, int T) {
+	IntegerVector cpc = as<IntegerVector>(CPC[CPC.size()-1]), rm, pa, tmpCardinality, fromCPC;
+	NumericVector pvalue;
+	IntegerMatrix statisticMatrix;
 	int k = -1;
 
 	if (cpc.size() == 1) {
 		return cpc;
 	} else {
-
-		for (int i = 0; i < cpc.size(); i++)
-		{
-			for (int j = 1; j < CPC.size(); j++)
-			{
+		for (int i = 0; i < cpc.size(); i++) {
+			for (int j = 1; j < CPC.size(); j++) {
 				if (j == 1) {
-					fromCPC = NumericVector::create();
+					fromCPC = IntegerVector::create();
 				} else {
-					fromCPC = as<NumericVector>(CPC[j]);
+					fromCPC = as<IntegerVector>(CPC[j]);
 				}
 
 				pa = SetCols(fromCPC, T, cpc[i]);
-				tmpCardinality = CorrespondingCardinality(pa, cardinality);
-				statisticMatrix = partialMatrix(A, pa);
+				tmpCardinality = CorrespondingCardinality(pa);
+				statisticMatrix = partialMatrix(pa);
 				pvalue = Svalue(statisticMatrix, tmpCardinality);
 
-				if (pvalue[0] > *alpha && pvalue[0] != 1.0) {
+				if (pvalue[0] > this->alpha && pvalue[0] != 1.0) {
 					k = i;
 					break;
 				}
@@ -923,48 +609,30 @@ NumericVector Backward(NumericMatrix& A, NumericVector& cardinality, SEXP a, Lis
 	}
 }
 
-// [[Rcpp::export]]
-List MMPC(SEXP x, SEXP a) {
-	NumericMatrix A(x);
-	NumericVector cpc, pc, tmppc;
-	List CPC, PC, tmpPC;
-	NumericVector count, cardinality;
-	Cardinality(A, cardinality);
+void MMHC::mmpc() {
+	IntegerVector cpc, pcVec, tmppc;
+	List CPC, tmpPC;
 	
-	for (int T = 0; T < 5; T++)
-	{
-		CPC = Forward(A, T, cardinality, a);
-		cpc = as<NumericVector>(CPC[CPC.size()-1]);
+	for (int T = 0; T < this->hDim; T++) {
+		CPC = Forward(T);
+		cpc = as<IntegerVector>(CPC[CPC.size()-1]);
 		if (cpc.size() == 0) {
-			PC.push_back(R_NilValue);
+			this->pc.push_back(R_NilValue);
 		} else {
-			pc = Backward(A, cardinality, a, CPC, T);
-
-			for (int j = 0; j < pc.size(); j++)
-			{
-				tmpPC = Forward(A, (int)pc[j], cardinality, a);
-				tmppc = Backward(A, cardinality, a, tmpPC, (int)pc[j]);
+			pcVec = Backward(CPC, T);
+			for (int j = 0; j < pcVec.size(); j++) {
+				tmpPC = Forward((int)pcVec[j]);
+				tmppc = Backward(tmpPC, (int)pcVec[j]);
 				if (!(IsIn(tmppc, T))) {
-					int k = pc.size();
-					for (int l = 0; l < k; l++)
-					{
-						if (pc[l] == pc[j]) {
-							pc.erase(l);
+					for (int l = 0; l < pcVec.size(); l++) {
+						if (pcVec[l] == pcVec[j]) {
+							pcVec.erase(l);
 						}
 					}
 				}
 			}
-
-			CompatibilityToR(pc);
-			PC.push_back(pc);
+			CompatibilityToR(pcVec);
+			this->pc.push_back(pcVec);
 		}
-
-		// cpc = Backward(A, CPC, cardinality, T, 0.05);
-		// PC.push_back(cpc);
 	}
-
-	// PC = Forward(x, y, z, a);
-	// PC.push_back(cpc);
-
-	return PC;
 }

@@ -11,12 +11,21 @@ using namespace Rcpp;
 
 class MMHC {
     private:
-		int vDim, hDim;
+		int vDim, hDim, maxi;
 		double alpha, eta, score;
 		List pc;
 		IntegerMatrix A, graph;
 		IntegerVector cardinality;
 		NumericVector scores;
+        double* D1;
+        double* D11;
+        double** D2;
+        double** D22;
+        double*** D3;
+        double*** D33;
+        double**** D4;
+        double**** D44;
+        double***** D5;
 	public:
         MMHC();
 		MMHC(SEXP);
@@ -25,6 +34,7 @@ class MMHC {
 		SEXP GetPC() {return this->pc;}
 		double GetScore() {return this->score;}
 		SEXP GetGraph() {return this->graph;}
+        SEXP GetMat() {return this->A;}
 
 		template <typename T, int RTYPE> int colCardinality(const Vector<RTYPE>& x, unordered_map<T, int>& y);
 		void Cardinality();
