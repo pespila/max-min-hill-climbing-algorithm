@@ -12,6 +12,13 @@
 %\usepackage{mathpazo,tgpagella} % auch sehr schöne Schriften
 \usepackage{setspace} % Zeilenabstand
 \usepackage{amssymb}
+
+\usepackage{xcolor}
+\usepackage{framed}
+
+\colorlet{shadecolor}{yellow}
+\fboxsep=1pt
+
 \onehalfspacing % 1,5 Zeilen
 % Schriften-Größen
 \setkomafont{chapter}{\huge\rmfamily} % Überschrift der Ebene
@@ -45,6 +52,10 @@
 \usepackage{tabularx} % Für Tabellen mit vorgegeben Größen
 \usepackage{array}
 \usepackage{float}
+
+\floatstyle{ruled}
+\newfloat{program}{thp}{lop}
+\floatname{program}{Program}
 \restylefloat{table}
 % Bilder
 \usepackage{graphicx} % Bilder
