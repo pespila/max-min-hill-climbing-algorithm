@@ -15,6 +15,11 @@ Include the library with:
 
 **library(mmhc)**
 
+Don't forget to include:
+
+**library(Rcpp)**
+**library(igraph)**
+
 Here is the example from the man pages of the package:
 
 ## Basic R functions
