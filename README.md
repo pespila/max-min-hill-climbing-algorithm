@@ -1,8 +1,7 @@
 max-min-hill-climbing-algorithm
 ===============================
 
-The max-min hill-climbing Bayesian network structure learning algorithm, Ioannis Tsamardinos · Laura E. Brown · Constantin F. Aliferis, Mach Learn DOI 10.1007/s10994-006-6889-7
--------------------------------
+**The max-min hill-climbing Bayesian network structure learning algorithm, Ioannis Tsamardinos · Laura E. Brown · Constantin F. Aliferis, Mach Learn DOI 10.1007/s10994-006-6889-7**
 
 *This algorithm reconstructs Bayesian Networks from observational data. Therefor it first builds the skeleton of the DAG (directed acyclic graph) with the max-min parents and children (MMPC) algorithm. Afterwards it directs the edges between the vertices with the Bayesian Dirichlet likelihood-equivalence uniform score. For more information on that read the report appended or* **The max-min hill-climbing Bayesian network structure learning algorithm** *, by Ioannis Tsamardinos, Laura E. Brown & Constantin F. Aliferis.*
 
