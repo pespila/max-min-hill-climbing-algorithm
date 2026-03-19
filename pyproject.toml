@@ -9,6 +9,21 @@ description = "Max-Min Hill-Climbing (MMHC) Bayesian network structure learning 
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
+authors = [{name = "Michael Wallner"}]
+keywords = ["bayesian-network", "structure-learning", "mmhc", "causal-inference", "dag"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Typing :: Typed",
+]
 dependencies = [
     "numpy>=1.24",
     "scipy>=1.10",
@@ -16,6 +31,11 @@ dependencies = [
     "numba>=0.57",
     "pandas>=2.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/pespila/max-min-hill-climbing-algorithm"
+Repository = "https://github.com/pespila/max-min-hill-climbing-algorithm"
+Issues = "https://github.com/pespila/max-min-hill-climbing-algorithm/issues"
 
 [project.optional-dependencies]
 dev = [
