@@ -58,6 +58,9 @@ notebooks = [
     "pyvis>=0.3",
 ]
 
+[tool.hatch.build.targets.sdist]
+exclude = ["legacy/", "app/", "notebooks/", ".coverage", ".ruff_cache/", ".claude/"]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/mmhc"]
 
